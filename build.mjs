@@ -22,6 +22,7 @@ const check = args.has("--check");
 const dist = args.has("--dist");
 
 const STATIC_FILES = [
+  "LICENSE",
   "index.html",
   "404.html",
   "styles.css",
