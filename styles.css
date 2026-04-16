@@ -11,6 +11,17 @@
 
 @font-face {
   font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/cormorant-garamond-500-italic.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
+    U+2212, U+2215;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
@@ -21,22 +32,22 @@
 }
 
 @font-face {
-  font-family: Inter;
+  font-family: "Instrument Sans";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("fonts/inter-400.woff2") format("woff2");
+  src: url("fonts/instrument-sans-400.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
     U+2212, U+2215;
 }
 
 @font-face {
-  font-family: Inter;
+  font-family: "Instrument Sans";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("fonts/inter-600.woff2") format("woff2");
+  src: url("fonts/instrument-sans-600.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
     U+2212, U+2215;
@@ -45,7 +56,9 @@
 :root {
   color-scheme: dark;
   --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-body: Inter, Arial, sans-serif;
+  --font-body:
+    "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
   --night-900: #060914;
   --night-800: #10172b;
   --tower-stone-900: #231d1f;
@@ -195,14 +208,14 @@ main:focus {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.27;
+  opacity: 0.34;
   background-image:
     repeating-linear-gradient(
       90deg,
-      rgba(255, 246, 229, 0.025) 0,
-      rgba(255, 246, 229, 0.025) 1px,
+      rgba(255, 246, 229, 0.038) 0,
+      rgba(255, 246, 229, 0.038) 1px,
       transparent 1px,
-      transparent 48px
+      transparent 72px
     ),
     linear-gradient(
       180deg,
@@ -210,8 +223,8 @@ main:focus {
       rgba(255, 246, 229, 0.05) 24%,
       rgba(255, 246, 229, 0) 55%
     );
-  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 70%);
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 70%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.48), transparent 72%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.48), transparent 72%);
 }
 
 .section {
@@ -244,6 +257,26 @@ main:focus {
   opacity: 0.88;
 }
 
+.hero-kicker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-kicker::before {
+  content: "";
+  display: inline-block;
+  width: 36px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(217, 164, 109, 0) 0%,
+    rgba(217, 164, 109, 0.82) 30%,
+    rgba(217, 164, 109, 0.82) 100%
+  );
+  flex: 0 0 auto;
+}
+
 .hero h1,
 .story-shell h2,
 .panel-card h2 {
@@ -262,12 +295,23 @@ main:focus {
     0 8px 32px rgba(6, 9, 20, 0.36),
     0 2px 8px rgba(6, 9, 20, 0.22),
     0 0 120px rgba(255, 209, 168, 0.1);
+}
+
+.hero h1 .hero-word {
+  display: inline-block;
   animation: hero-rise 820ms both;
-  animation-delay: 120ms;
+  animation-delay: 200ms;
+}
+
+.hero h1 .hero-word--accent {
+  font-style: italic;
+  color: var(--torch-300);
+  animation-delay: 380ms;
 }
 
 .hero-kicker {
   animation: hero-rise 820ms both;
+  animation-delay: 60ms;
 }
 
 @keyframes hero-rise {
@@ -280,6 +324,35 @@ main:focus {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes veil-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.scene-shell {
+  animation: veil-fade-in 1400ms ease-out both;
+}
+
+.site-shell {
+  animation: veil-fade-in 1600ms ease-out both;
+  animation-delay: 120ms;
+}
+
+.bottom-bar .bottom-btn,
+.site-copyright {
+  animation: hero-rise 820ms both;
+  animation-delay: 560ms;
+}
+
+.bottom-bar .bottom-btn:nth-child(2) {
+  animation-delay: 660ms;
 }
 
 .page-center {
@@ -409,12 +482,37 @@ main:focus {
   box-shadow: none;
 }
 
+.bottom-btn--icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--torch-300);
+  opacity: 0;
+  transform: translate(-50%, 4px) scale(0.6);
+  box-shadow: 0 0 18px rgba(255, 210, 160, 0.8);
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
 .bottom-btn--icon:hover,
 .bottom-btn--icon:focus-visible,
 .bottom-btn--icon[aria-expanded="true"] {
   transform: translateY(-2px);
   border-color: transparent;
   box-shadow: none;
+}
+
+.bottom-btn--icon:hover::after,
+.bottom-btn--icon:focus-visible::after,
+.bottom-btn--icon[aria-expanded="true"]::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
 }
 
 .btn-icon {
@@ -434,12 +532,13 @@ main:focus {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-meta);
+  color: var(--text-accent);
   opacity: 0;
   pointer-events: none;
   transition:
     opacity 220ms ease,
-    transform 220ms ease;
+    transform 220ms ease,
+    color 220ms ease;
   text-shadow: var(--text-meta-shadow);
 }
 
@@ -661,12 +760,19 @@ main:focus {
   .btn-icon-label,
   .panel-overlay,
   .panel-card,
-  .reveal {
+  .reveal,
+  .bottom-btn--icon::after {
     transition: none;
   }
 
   .hero-kicker,
-  .hero h1 {
+  .hero h1,
+  .hero h1 .hero-word,
+  .hero h1 .hero-word--accent,
+  .scene-shell,
+  .site-shell,
+  .bottom-bar .bottom-btn,
+  .site-copyright {
     animation: none;
   }
 
