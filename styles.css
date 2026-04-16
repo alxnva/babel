@@ -445,8 +445,8 @@ main:focus {
   z-index: 10;
   display: flex;
   justify-content: center;
-  gap: 16px;
-  padding: 0 24px max(22px, env(safe-area-inset-bottom));
+  gap: 24px;
+  padding: 0 24px max(30px, calc(22px + env(safe-area-inset-bottom)));
   pointer-events: none;
 }
 
@@ -540,7 +540,7 @@ main:focus {
 .site-copyright {
   position: fixed;
   left: 20px;
-  bottom: max(22px, env(safe-area-inset-bottom));
+  bottom: max(30px, calc(22px + env(safe-area-inset-bottom)));
   z-index: 10;
   margin: 0;
   color: var(--text-meta);
@@ -674,7 +674,7 @@ main:focus {
   .hero-minimal {
     position: fixed;
     right: 0;
-    bottom: 12%;
+    bottom: 16%;
     left: 0;
     max-width: 85vw;
     padding: 0 24px;
@@ -712,13 +712,13 @@ main:focus {
   }
 
   .bottom-bar {
-    gap: 12px;
+    gap: 18px;
     padding-inline: 18px;
   }
 
   .bottom-btn--icon {
-    width: 80px;
-    height: 80px;
+    width: 76px;
+    height: 76px;
   }
 
   .site-copyright {
