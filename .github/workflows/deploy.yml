@@ -42,6 +42,9 @@ jobs:
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Cloudflare deploy secrets are not configured; skipping deploy."
+          elif ! npx wrangler pages project list >/dev/null 2>&1; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deploy credentials are not valid; skipping deploy."
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
