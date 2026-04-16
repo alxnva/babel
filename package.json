@@ -1,0 +1,25 @@
+{
+  "name": "babel-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static source for alexnava.me. Built with esbuild into a generated dist/ payload for Cloudflare Pages.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:dist": "node build.mjs --dist",
+    "verify": "node build.mjs --check",
+    "watch": "node build.mjs --watch",
+    "deploy:preview": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me --branch=preview",
+    "deploy:prod": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me",
+    "format": "prettier --write \"src/**/*.js\" \"*.html\" \"*.css\" \"*.md\""
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "prettier": "^3.3.3",
+    "three": "0.128.0",
+    "wrangler": "^4.83.0"
+  }
+}

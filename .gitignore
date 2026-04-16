@@ -1,0 +1,23 @@
+# Windows shell metadata
+Thumbs.db
+Desktop.ini
+
+# Workspace/editor state
+.vscode/
+.vs/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Local exports and review artifacts
+*.zip
+*.png
+
+# Node / build
+node_modules/
+dist/
+.cache/
+.wrangler/
+scripts/
+vendor/

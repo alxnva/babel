@@ -1,0 +1,7 @@
+# Legacy cleanup
+/explore / 301
+/explore/* / 301
+/tower-world / 301
+/tower-world.html / 301
+/babel_explorable_world.html / 301
+/prototype/* / 301
