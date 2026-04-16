@@ -63,6 +63,7 @@ When bumping visible assets, bump the `?v=NNN` query strings in `index.html` and
 - Use `npm run deploy:prod` to publish `dist/` to the Pages production hostname.
 - Cloudflare Pages should publish `dist/`, not the repo root.
 - The build copies `LICENSE` into `dist/` so released assets ship with the project license text.
+- GitHub Actions can deploy production builds from `main` when `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets are configured.
 
 ## License
 
