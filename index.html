@@ -131,20 +131,34 @@
       aria-labelledby="panel-about-title"
       hidden
     >
-      <div class="panel-card" tabindex="-1">
+      <div class="panel-notebook panel-surface" tabindex="-1">
         <button class="panel-close" aria-label="Close">&times;</button>
-        <p class="eyebrow">About</p>
-        <h2 id="panel-about-title">What I make.</h2>
-        <p class="panel-body">
-          I build interfaces, tools, and product systems that stay calm under pressure. This
-          homepage is intentionally spare, but the work it points to is tactile, technical, and
-          product-shaped.
-        </p>
-        <p class="panel-footnote">
-          Scene study rendered with
-          <a href="https://threejs.org" target="_blank" rel="noopener noreferrer">Three.js</a>
-          (MIT).
-        </p>
+        <div class="panel-notebook__spread">
+          <div class="panel-notebook__page panel-notebook__page--left">
+            <p class="eyebrow" data-scramble>About</p>
+            <h2 id="panel-about-title" data-scramble>What I make.</h2>
+            <span class="panel-notebook__initial" aria-hidden="true">A</span>
+          </div>
+          <div class="panel-notebook__binding" aria-hidden="true">
+            <span class="panel-notebook__ring"></span>
+            <span class="panel-notebook__ring"></span>
+            <span class="panel-notebook__ring"></span>
+            <span class="panel-notebook__ring"></span>
+            <span class="panel-notebook__ring"></span>
+          </div>
+          <div class="panel-notebook__page panel-notebook__page--right">
+            <p class="panel-body" data-scramble>
+              I build interfaces, tools, and product systems that stay calm under pressure. This
+              homepage is intentionally spare, but the work it points to is tactile, technical,
+              and product-shaped.
+            </p>
+            <p class="panel-footnote" data-scramble>
+              Scene study rendered with
+              <a href="https://threejs.org" target="_blank" rel="noopener noreferrer">Three.js</a>
+              (MIT).
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -156,13 +170,53 @@
       aria-labelledby="panel-contact-title"
       hidden
     >
-      <div class="panel-card" tabindex="-1">
+      <div class="panel-letter panel-surface" tabindex="-1">
         <button class="panel-close" aria-label="Close">&times;</button>
-        <p class="eyebrow">Contact</p>
-        <h2 id="panel-contact-title">Email works best.</h2>
-        <p class="panel-body">
-          <a href="mailto:alexonava@gmail.com">alexonava@gmail.com</a>
-        </p>
+        <div class="panel-letter__sheet">
+          <p class="eyebrow" data-scramble>Contact</p>
+          <h2 id="panel-contact-title" data-scramble>Email works best.</h2>
+          <p class="panel-body" data-scramble>
+            <a href="mailto:alexonava@gmail.com">alexonava@gmail.com</a>
+          </p>
+          <span class="panel-letter__seal" aria-hidden="true"></span>
+        </div>
+        <svg
+          class="panel-letter__quill"
+          viewBox="0 0 60 220"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M30 10 C 48 40 52 90 46 150 C 44 170 38 185 30 200"
+            fill="none"
+            stroke="#3c2e1c"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+          <path
+            d="M30 30 C 40 55 44 90 40 140 M30 30 C 20 55 16 90 20 140"
+            fill="#e8dcc4"
+            stroke="#6b5a42"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M30 30 C 40 55 44 90 40 140 L 30 150 L 20 140 C 16 90 20 55 30 30 Z"
+            fill="#d6c9ae"
+            stroke="#6b5a42"
+            stroke-width="1"
+          />
+          <path
+            d="M32 60 L 36 80 M28 60 L 24 80 M33 90 L 38 115 M27 90 L 22 115 M34 125 L 39 145 M26 125 L 21 145"
+            stroke="#8a7a5e"
+            stroke-width="0.6"
+            stroke-linecap="round"
+          />
+          <path
+            d="M28 200 L 32 200 L 31 214 L 29 214 Z"
+            fill="#2a1f12"
+          />
+        </svg>
       </div>
     </div>
 
