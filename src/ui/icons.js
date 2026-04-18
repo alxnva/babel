@@ -387,6 +387,203 @@
     return render;
   }
 
+  const HOLY_FIRE_PROC_CHANCE = 0.35;
+  const HOLY_FIRE_DURATION_MS = 1300;
+  const HOLY_FIRE_OVERLAY_PAD = 44;
+
+  function prefersReducedMotion() {
+    return (
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  }
+
+  function spawnHolyFireProc(button) {
+    if (button.dataset.holyFireActive === "1") {
+      return;
+    }
+    button.dataset.holyFireActive = "1";
+
+    const buttonRect = button.getBoundingClientRect();
+    const buttonW = buttonRect.width || 88;
+    const buttonH = buttonRect.height || 88;
+    const overlayW = buttonW + HOLY_FIRE_OVERLAY_PAD * 2;
+    const overlayH = buttonH + HOLY_FIRE_OVERLAY_PAD * 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const overlay = document.createElement("canvas");
+    overlay.className = "holy-fire-proc";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.style.position = "absolute";
+    overlay.style.left = `-${HOLY_FIRE_OVERLAY_PAD}px`;
+    overlay.style.top = `-${HOLY_FIRE_OVERLAY_PAD}px`;
+    overlay.style.width = `${overlayW}px`;
+    overlay.style.height = `${overlayH}px`;
+    overlay.style.pointerEvents = "none";
+    overlay.style.zIndex = "2";
+    overlay.width = Math.round(overlayW * dpr);
+    overlay.height = Math.round(overlayH * dpr);
+    button.appendChild(overlay);
+
+    const ctx = overlay.getContext("2d");
+    if (!ctx) {
+      overlay.remove();
+      button.dataset.holyFireActive = "0";
+      return;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const innerSize = Math.min(buttonW, buttonH) * 0.78;
+    const innerX = (overlayW - innerSize) / 2;
+    const innerY = (overlayH - innerSize) / 2;
+    const innerR = innerSize * 0.16;
+    const cx = overlayW / 2;
+    const cy = overlayH / 2;
+
+    const flames = [];
+
+    function pickPerimeterPoint() {
+      const side = Math.floor(Math.random() * 4);
+      const along = Math.random();
+      if (side === 0) {
+        return { px: innerX + along * innerSize, py: innerY, nx: 0, ny: -1 };
+      }
+      if (side === 1) {
+        return { px: innerX + innerSize, py: innerY + along * innerSize, nx: 1, ny: 0 };
+      }
+      if (side === 2) {
+        return { px: innerX + along * innerSize, py: innerY + innerSize, nx: 0, ny: 1 };
+      }
+      return { px: innerX, py: innerY + along * innerSize, nx: -1, ny: 0 };
+    }
+
+    function spawnFlame() {
+      const seed = pickPerimeterPoint();
+      flames.push({
+        px: seed.px,
+        py: seed.py,
+        vx: seed.nx * (0.35 + Math.random() * 0.55),
+        vy: seed.ny * (0.25 + Math.random() * 0.45) - 0.55,
+        age: 0,
+        life: 600 + Math.random() * 350,
+        size: 4.5 + Math.random() * 5.5,
+      });
+    }
+
+    for (let idx = 0; idx < 16; idx += 1) {
+      spawnFlame();
+    }
+
+    const startTime = performance.now();
+    let lastFrame = startTime;
+
+    function drawFrame(now) {
+      const elapsed = now - startTime;
+      const dt = Math.min(40, now - lastFrame);
+      lastFrame = now;
+
+      if (elapsed > HOLY_FIRE_DURATION_MS) {
+        overlay.remove();
+        button.dataset.holyFireActive = "0";
+        return;
+      }
+
+      const spawnIntensity = Math.max(0, 1 - elapsed / HOLY_FIRE_DURATION_MS);
+      if (Math.random() < spawnIntensity * 0.85) {
+        spawnFlame();
+        if (Math.random() < 0.55) {
+          spawnFlame();
+        }
+      }
+
+      let envelope;
+      const fadeInMs = 120;
+      const fadeOutMs = 360;
+      if (elapsed < fadeInMs) {
+        envelope = elapsed / fadeInMs;
+      } else if (elapsed < HOLY_FIRE_DURATION_MS - fadeOutMs) {
+        envelope = 1;
+      } else {
+        envelope = Math.max(0, 1 - (elapsed - (HOLY_FIRE_DURATION_MS - fadeOutMs)) / fadeOutMs);
+      }
+
+      ctx.clearRect(0, 0, overlayW, overlayH);
+
+      const haloPulse = 1 + 0.09 * Math.sin(elapsed * 0.012);
+      const haloOuter = innerSize * 0.95 * haloPulse;
+      const haloInner = innerSize * 0.38;
+      const halo = ctx.createRadialGradient(cx, cy, haloInner, cx, cy, haloOuter);
+      halo.addColorStop(0, `rgba(255, 234, 170, ${0.4 * envelope})`);
+      halo.addColorStop(0.55, `rgba(255, 198, 110, ${0.24 * envelope})`);
+      halo.addColorStop(1, "rgba(255, 160, 60, 0)");
+      ctx.fillStyle = halo;
+      ctx.fillRect(0, 0, overlayW, overlayH);
+
+      ctx.save();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = `rgba(255, 224, 150, ${0.85 * envelope})`;
+      ctx.shadowColor = `rgba(255, 200, 110, ${0.95 * envelope})`;
+      ctx.shadowBlur = 18;
+      roundedRectPath(ctx, innerX, innerY, innerSize, innerSize, innerR);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(255, 252, 235, ${0.72 * envelope})`;
+      ctx.shadowBlur = 6;
+      roundedRectPath(ctx, innerX, innerY, innerSize, innerSize, innerR);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let idx = flames.length - 1; idx >= 0; idx -= 1) {
+        const flame = flames[idx];
+        flame.age += dt;
+        if (flame.age >= flame.life) {
+          flames.splice(idx, 1);
+          continue;
+        }
+        const step = dt * 0.06;
+        flame.px += flame.vx * step;
+        flame.py += flame.vy * step;
+        flame.vy -= 0.012 * step;
+
+        const lifeT = flame.age / flame.life;
+        const alpha = (1 - lifeT) * envelope;
+        const size = flame.size * (1 - lifeT * 0.55);
+
+        ctx.fillStyle = `rgba(220, 80, 30, ${alpha * 0.42})`;
+        ctx.beginPath();
+        ctx.arc(flame.px, flame.py, size * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = `rgba(255, 140, 50, ${alpha * 0.68})`;
+        ctx.beginPath();
+        ctx.arc(flame.px, flame.py, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = `rgba(255, 240, 200, ${alpha * 0.95})`;
+        ctx.beginPath();
+        ctx.arc(flame.px, flame.py, size * 0.42, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      requestAnimationFrame(drawFrame);
+    }
+    requestAnimationFrame(drawFrame);
+  }
+
+  function bindHolyFireProc(button) {
+    button.addEventListener("click", () => {
+      if (prefersReducedMotion()) {
+        return;
+      }
+      if (Math.random() < HOLY_FIRE_PROC_CHANCE) {
+        spawnHolyFireProc(button);
+      }
+    });
+  }
+
   ui.initBottomNavIcons = function initBottomNavIcons() {
     const aboutCanvas = document.getElementById("btn-icon-about");
     const contactCanvas = document.getElementById("btn-icon-contact");
@@ -398,6 +595,13 @@
       bindCanvas(aboutCanvas, drawNotebook),
       bindCanvas(contactCanvas, drawLetter),
     ];
+
+    [aboutCanvas, contactCanvas].forEach((canvas) => {
+      const button = canvas.closest(".bottom-btn");
+      if (button) {
+        bindHolyFireProc(button);
+      }
+    });
 
     renderers.forEach((render) => render());
     let rerenderScheduled = false;
