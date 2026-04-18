@@ -51,7 +51,7 @@ const entryOptions = (entry) => ({
   entryPoints: [join(__dirname, "src", entry)],
   bundle: false,
   minify: true,
-  target: "es2019",
+  target: "es2022",
   format: "iife",
   legalComments: "none",
   write: false,
