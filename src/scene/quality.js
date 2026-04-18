@@ -4,13 +4,13 @@
 
   const TIER_ORDER = ["low", "balanced", "high"];
   const SCENE_TUNER_DEFAULTS = Object.freeze({
-    defaultVisible: true,
-    defaultZoom: 12,
+    defaultVisible: false,
+    defaultZoom: 18,
     maxZoom: 18,
     minZoom: -12,
     storageKeys: Object.freeze({
-      visible: "babel.sceneTuner.visible.v2",
-      zoom: "babel.sceneTuner.zoom.v2",
+      visible: "babel.sceneTuner.visible.v3",
+      zoom: "babel.sceneTuner.zoom.v3",
     }),
   });
   const SCENE_COMPOSITION_PROFILES = {

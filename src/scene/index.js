@@ -2692,7 +2692,7 @@
       Nt.push(c);
     }
     ye.add(Ut);
-    const to = i.lowPower ? 14 : 32,
+    const to = i.lowPower ? 4 : 8,
       oo = new THREE.Group();
     const PLANT = plantPalette || {
       leafDeep: "#2c3c18",
@@ -2901,7 +2901,7 @@
         (l.receiveShadow = !i.lowPower),
         oo.add(l));
     }
-    const so = i.lowPower ? 3 : 7;
+    const so = i.lowPower ? 2 : 3;
     for (let e = 0; e < so; e += 1) {
       const t = Qe(6300 + 4.3 * e) * Math.PI * 2,
         o = 22 + 70 * Qe(6301 + 3.1 * e),
