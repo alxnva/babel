@@ -6,7 +6,8 @@
     ("function" == typeof t.initHeroChrome && t.initHeroChrome(),
       "function" == typeof t.initPanels && t.initPanels(),
       "function" == typeof t.initBottomNavIcons && t.initBottomNavIcons(),
-      "function" == typeof e.initHomeScene && e.initHomeScene());
+      "function" == typeof e.initHomeScene && e.initHomeScene(),
+      "function" == typeof t.initSceneTuner && t.initSceneTuner());
   }
   "loading" === document.readyState
     ? document.addEventListener("DOMContentLoaded", t, { once: !0 })

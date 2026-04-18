@@ -9,11 +9,14 @@ const ENTRIES = [
   "main.js",
   "scene/helpers.js",
   "scene/palette.js",
+  "scene/quality.js",
+  "scene/visibility.js",
   "scene/textures.js",
   "scene/index.js",
   "ui/hero.js",
   "ui/icons.js",
   "ui/panels.js",
+  "ui/scene-tuner.js",
 ];
 
 const args = new Set(process.argv.slice(2));

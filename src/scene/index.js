@@ -23,10 +23,19 @@
     // 2. Camera-following atmosphere layers
     // 3. Scroll-driven animation loop
     const cloudGroups = [];
-    let cloudsEnabled = false;
+    let cloudsEnabled = true;
+    function setCloudGroupSceneVisibility(group, visible) {
+      if (!group) return;
+      group.userData = group.userData || {};
+      group.userData.sceneVisible = visible;
+      group.visible = cloudsEnabled && visible;
+    }
     function applyCloudVisibility() {
       cloudGroups.forEach((g) => {
-        if (g) g.visible = cloudsEnabled;
+        if (g) {
+          const sceneVisible = g.userData?.sceneVisible !== false;
+          g.visible = cloudsEnabled && sceneVisible;
+        }
       });
     }
     t.setClouds = function (on) {
@@ -36,18 +45,120 @@
       ((cloudsEnabled = !cloudsEnabled), applyCloudVisibility(), cloudsEnabled);
       return cloudsEnabled;
     };
-    const reducedMotionMQ = window.matchMedia("(prefers-reduced-motion: reduce)"),
-      o = (function detectLowPower() {
-        const mem = typeof navigator.deviceMemory === "number" && navigator.deviceMemory <= 2;
-        const coarse =
-          typeof window.matchMedia === "function" &&
-          window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-        const smallVp = Math.min(window.innerWidth, window.innerHeight) <= 480;
-        const hc = (navigator.hardwareConcurrency || 8) <= 4;
-        return mem || (coarse && (smallVp || hc));
-      })();
-    function s() {
-      return o;
+    const reducedMotionMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const fallbackProfile =
+      typeof t.getSceneQualityProfile === "function"
+        ? t.getSceneQualityProfile("high")
+        : {
+            tier: "high",
+            isLow: false,
+            antialias: true,
+            anisotropy: { min: 1, max: 8 },
+            counts: {
+              orbitalGlowLayers: 3,
+              haloSprites: 90,
+              haloBands: 50,
+              haloTwisters: 28,
+              upperGlowSprites: 14,
+              midCloudTextures: 8,
+              midCloudSprites: 26,
+              groundPlantSprites: 220,
+              buttresses: 8,
+              reliefBricks: 36,
+              driftClouds: 16,
+              emberClouds: 34,
+              hazeClouds: 40,
+              pulseClouds: 4,
+              pulsePuffsPerCluster: 5,
+              plumeColumns: 18,
+              craterHaze: 7,
+            },
+            dprCap: 2,
+            geometry: {
+              circleSegments: 88,
+              overlaySegments: 80,
+              pointFieldCount: 210,
+              skyHeightSegments: 14,
+              skyWidthSegments: 24,
+            },
+            lighting: {
+              ambientIntensity: 0.22,
+              directionalIntensity: 3.55,
+              extraDirectional: true,
+              fogFar: 150,
+              fogNear: 62,
+              hemisphereIntensity: 0.71,
+            },
+            shadows: { enabled: true, mapSize: 1536 },
+            textures: {
+              cloudAtlasSize: 512,
+              groundSize: 1024,
+              overlaySize: 512,
+              towerWidth: 1280,
+            },
+          };
+    const sceneTunerDefaults =
+      typeof t.getSceneTunerDefaults === "function"
+        ? t.getSceneTunerDefaults()
+        : { defaultVisible: true, defaultZoom: 12, maxZoom: 18, minZoom: -12 };
+    const fallbackComposition =
+      typeof t.getSceneCompositionProfile === "function"
+        ? t.getSceneCompositionProfile({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            zoom: sceneTunerDefaults.defaultZoom,
+          })
+        : {
+            camera: {
+              fov: 46,
+              heightBase: 21.9,
+              heightScrollDelta: 0.9,
+              lookAtBase: 12.4,
+              lookAtScrollDelta: 2.1,
+              orbitBase: window.innerWidth < 1100 ? 55 : 46,
+              orbitScale: 1.14,
+              orbitScrollDelta: 2.4,
+              orbitTrim: 0.18,
+            },
+            cloudAnchorY: -7.5,
+            name: window.innerWidth <= 760 && window.innerHeight > window.innerWidth ? "portraitPhone" : "desktop",
+            sceneOffsetY: -7.5,
+            towerScale: 1,
+          };
+    const qualityState =
+      typeof t.createSceneQualityState === "function"
+        ? t.createSceneQualityState({
+            navigatorInfo: navigator,
+            search: window.location?.search || "",
+            viewport: { width: window.innerWidth, height: window.innerHeight },
+          })
+        : {
+            caps: { maxAnisotropy: 1, maxTextureSize: 0 },
+            controls: { debug: false, overrideTier: null, requestedTier: "auto" },
+            getProfile() {
+              return fallbackProfile;
+            },
+            initialTier: fallbackProfile.tier,
+            sample() {
+              return null;
+            },
+          };
+    const qualityControls = qualityState.controls || {
+      debug: false,
+      overrideTier: null,
+      requestedTier: "auto",
+    };
+    const qualityDebug = qualityControls.debug ? (window.BabelSite.sceneDebug = {}) : null;
+    function updateSceneDebug(extra = {}) {
+      if (!qualityDebug) return;
+      Object.assign(qualityDebug, {
+        caps: qualityState.caps || null,
+        initialTier: qualityState.initialTier || fallbackProfile.tier,
+        overrideTier: qualityControls.overrideTier,
+        requestedTier: qualityControls.requestedTier,
+        tier: i.profile.tier,
+        ...extra,
+      });
     }
     let sceneVisible = true;
     if (typeof IntersectionObserver === "function") {
@@ -63,24 +174,24 @@
         sceneVisible = true;
       }
     }
-    const i = { lowPower: s() },
-      w = i.lowPower ? 16 : 24,
-      p = i.lowPower ? 10 : 14,
-      M = i.lowPower ? 56 : 88,
-      E = i.lowPower ? 48 : 74,
-      m = i.lowPower ? 10 : 14,
-      u = i.lowPower ? 110 : 210,
+    const i = { lowPower: fallbackProfile.isLow, profile: fallbackProfile },
+      w = i.profile.geometry.skyWidthSegments,
+      p = i.profile.geometry.skyHeightSegments,
+      M = i.profile.geometry.circleSegments,
+      E = i.profile.geometry.overlaySegments,
+      m = i.profile.counts.upperGlowSprites,
+      u = i.profile.geometry.pointFieldCount,
       g = {
         fogColor: 2236204,
-        fogNear: i.lowPower ? 56 : 62,
-        fogFar: i.lowPower ? 138 : 150,
+        fogNear: i.profile.lighting.fogNear,
+        fogFar: i.profile.lighting.fogFar,
         ambientColor: 16048366,
-        ambientIntensity: i.lowPower ? 0.18 : 0.22,
+        ambientIntensity: i.profile.lighting.ambientIntensity,
         hemisphereSkyColor: 8688804,
         hemisphereGroundColor: 2104108,
-        hemisphereIntensity: i.lowPower ? 0.63 : 0.71,
+        hemisphereIntensity: i.profile.lighting.hemisphereIntensity,
         directionalColor: 16764342,
-        directionalIntensity: i.lowPower ? 2.05 : 3.55,
+        directionalIntensity: i.profile.lighting.directionalIntensity,
         directionalPosition: { x: 21, y: 29, z: 23 },
       },
       f = {
@@ -92,21 +203,83 @@
         shellOpacity: 0.472,
       },
       T = new THREE.Scene();
+    function s() {
+      return i.profile.isLow;
+    }
     T.fog = new THREE.Fog(g.fogColor, g.fogNear, g.fogFar);
     const R = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 240),
       b = new THREE.WebGLRenderer({
         alpha: !0,
-        antialias: !i.lowPower,
+        antialias: i.profile.antialias,
         powerPreference: "high-performance",
       });
     function P(e, t) {
-      return Math.max(1, Math.min(b.capabilities.getMaxAnisotropy(), i.lowPower ? e : t));
+      const n = i.profile.anisotropy || { min: e, max: t };
+      const s = Math.max(e, n.min ?? e);
+      const o = Math.min(t, n.max ?? t);
+      return Math.max(1, Math.min(b.capabilities.getMaxAnisotropy(), i.lowPower ? s : o));
     }
     (b.setClearColor(0, 0),
       (b.outputEncoding = THREE.sRGBEncoding),
-      (b.shadowMap.enabled = !i.lowPower),
       (b.shadowMap.type = THREE.PCFSoftShadowMap),
       e.appendChild(b.domElement));
+    const visibilityTracker =
+      typeof t.createSceneVisibilityTracker === "function"
+        ? t.createSceneVisibilityTracker({ THREE, camera: R })
+        : null;
+    const decorativeSystems = [];
+    function registerDecorativeSystem(config) {
+      const system = {
+        active: true,
+        bucket: config.importance === "core" ? "core" : "midAtmosphere",
+        ...config,
+      };
+      decorativeSystems.push(system);
+      return system;
+    }
+    function getProfileCount(key, fallback) {
+      const value = i.profile.counts?.[key];
+      return typeof value === "number" ? value : fallback;
+    }
+    function setRecordVisibility(records, active, limit = records.length) {
+      for (let index = 0; index < records.length; index += 1) {
+        const record = records[index];
+        const visible = active && index < limit;
+        if (record.mesh) record.mesh.visible = visible;
+        if (record.meshes) {
+          record.meshes.forEach((mesh) => {
+            mesh.visible = visible;
+          });
+        }
+      }
+    }
+    function setShadowParticipation(target, { cast = false, receive = false } = {}) {
+      if (!target || typeof target.traverse !== "function") return;
+      target.traverse((node) => {
+        if ("castShadow" in node) node.castShadow = cast;
+        if ("receiveShadow" in node) node.receiveShadow = receive;
+      });
+    }
+    function applyActiveQualityProfile(profile, reason = "runtime") {
+      i.profile = profile || fallbackProfile;
+      i.lowPower = i.profile.isLow;
+      T.fog.near = i.profile.lighting.fogNear;
+      T.fog.far = i.profile.lighting.fogFar;
+      H.intensity = i.profile.lighting.ambientIntensity;
+      y.intensity = i.profile.lighting.hemisphereIntensity;
+      v.intensity = i.profile.lighting.directionalIntensity;
+      fillLight.visible = Boolean(i.profile.lighting.extraDirectional);
+      b.shadowMap.enabled = Boolean(i.profile.shadows.enabled);
+      v.castShadow = Boolean(i.profile.shadows.enabled);
+      if (i.profile.shadows.enabled && i.profile.shadows.mapSize > 0) {
+        (v.shadow.mapSize.width = i.profile.shadows.mapSize),
+          (v.shadow.mapSize.height = i.profile.shadows.mapSize),
+          (v.shadow.needsUpdate = !0);
+      }
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, i.profile.dprCap || 1);
+      b.setPixelRatio(pixelRatio);
+      updateSceneDebug({ reason, pixelRatio });
+    }
     const S = new THREE.Group();
     T.add(S);
     const H = new THREE.AmbientLight(g.ambientColor, g.ambientIntensity),
@@ -115,26 +288,24 @@
         g.hemisphereGroundColor,
         g.hemisphereIntensity,
       ),
-      v = new THREE.DirectionalLight(g.directionalColor, g.directionalIntensity);
+      v = new THREE.DirectionalLight(g.directionalColor, g.directionalIntensity),
+      fillLight = new THREE.DirectionalLight(9086928, 0.6);
     (v.position.set(g.directionalPosition.x, g.directionalPosition.y, g.directionalPosition.z),
-      i.lowPower ||
-        ((v.castShadow = !0),
-        (v.shadow.mapSize.width = 2048),
-        (v.shadow.mapSize.height = 2048),
-        (v.shadow.camera.left = -60),
-        (v.shadow.camera.right = 60),
-        (v.shadow.camera.top = 60),
-        (v.shadow.camera.bottom = -60),
-        (v.shadow.camera.near = 1),
-        (v.shadow.camera.far = 120),
-        (v.shadow.bias = -0.00045),
-        (v.shadow.normalBias = 0.028),
-        (v.shadow.radius = 2.6)),
-      T.add(H, y, v));
-    if (!i.lowPower) {
-      const e = new THREE.DirectionalLight(9086928, 0.6);
-      (e.position.set(-18, 22, -14), T.add(e));
-    }
+      (v.shadow.camera.left = -60),
+      (v.shadow.camera.right = 60),
+      (v.shadow.camera.top = 60),
+      (v.shadow.camera.bottom = -60),
+      (v.shadow.camera.near = 1),
+      (v.shadow.camera.far = 120),
+      (v.shadow.bias = -0.00045),
+      (v.shadow.normalBias = 0.028),
+      (v.shadow.radius = 2.6),
+      fillLight.position.set(-18, 22, -14),
+      T.add(H, y, v, fillLight),
+      applyActiveQualityProfile(
+        typeof qualityState.getProfile === "function" ? qualityState.getProfile() : fallbackProfile,
+        "initial",
+      ));
     const x = new THREE.Mesh(
       new THREE.SphereGeometry(130, w, p),
       new THREE.ShaderMaterial({
@@ -335,9 +506,9 @@
     for (
       var Y = [16777215, 16774352, 16763972, 16755232, 16746512, 16733440, 15610624],
         D = [],
-        O = i.lowPower ? 40 : 90,
-        q = i.lowPower ? 24 : 50,
-        L = O + q + (i.lowPower ? 14 : 28),
+        O = i.profile.counts.haloSprites,
+        q = i.profile.counts.haloBands,
+        L = O + q + i.profile.counts.haloTwisters,
         V = 0;
       V < L;
       V++
@@ -419,7 +590,7 @@
       }
       return n;
     }
-    for (var te = [], oe = i.lowPower ? 1 : 3, ae = 0; ae < oe; ae++) {
+    for (var te = [], oe = i.profile.counts.orbitalGlowLayers, ae = 0; ae < oe; ae++) {
       for (
         var re = 137.5 * ae + 42,
           ne = function (e) {
@@ -475,6 +646,16 @@
           noReturn: ne(4.1 * re) > 0.6,
         }));
     }
+    const haloSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return target.copy(C);
+      },
+      group: I,
+      importance: "midAtmosphere",
+      name: "halo",
+      radius: 42,
+    });
+    setShadowParticipation(I);
     const ye = new THREE.Group();
     S.add(ye);
     const ve = new THREE.CircleGeometry(88, M, 0, 2 * Math.PI),
@@ -485,7 +666,12 @@
       xe.setZ(e, a(t, o));
     }
     ve.computeVertexNormals();
-    const Ce = c({ THREE: THREE, lowPower: i.lowPower, chooseAnisotropy: P }),
+    const Ce = c({
+        THREE: THREE,
+        lowPower: i.lowPower,
+        qualityProfile: i.profile,
+        chooseAnisotropy: P,
+      }),
       Ie = new THREE.Mesh(
         ve,
         new THREE.MeshStandardMaterial({
@@ -499,9 +685,13 @@
       );
     ((Ie.rotation.x = -Math.PI / 2), (Ie.receiveShadow = !i.lowPower), ye.add(Ie));
     if (createGroundOverlayTexture) {
-      const e = createGroundOverlayTexture({ THREE: THREE, lowPower: i.lowPower });
+      const e = createGroundOverlayTexture({
+        THREE: THREE,
+        lowPower: i.lowPower,
+        qualityProfile: i.profile,
+      });
       if (e) {
-        const overlayGeom = new THREE.CircleGeometry(70, i.lowPower ? 48 : 80),
+        const overlayGeom = new THREE.CircleGeometry(70, i.profile.geometry.overlaySegments),
           overlayPos = overlayGeom.attributes.position;
         for (let e = 0; e < overlayPos.count; e += 1) {
           const t = overlayPos.getX(e),
@@ -559,7 +749,7 @@
           return new THREE.IcosahedronGeometry(e, 1);
         },
       ],
-      Fe = i.lowPower ? 14 : 28;
+      Fe = i.profile.counts.haloTwisters;
     for (let e = 0; e < Fe; e++) {
       const t = 9100 + 43 * e,
         o = Qe(t),
@@ -633,6 +823,7 @@
         Ge.add(h));
     }
     (ye.add(Ge),
+      setShadowParticipation(Ge),
       (function () {
         const e = 128,
           t = document.createElement("canvas");
@@ -1111,7 +1302,7 @@
     const Ke = new THREE.Group();
     S.add(Ke);
     const et = [],
-      tt = i.lowPower ? 8 : 14;
+      tt = i.profile.counts.upperGlowSprites;
     for (let e = 0; e < tt; e += 1) {
       const t = Qe(903 + 1.37 * e),
         o = Qe(917 + 2.11 * e),
@@ -1144,6 +1335,16 @@
           speed: 0.008 + 0.016 * a,
         }));
     }
+    const upperGlowSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return Ke.getWorldPosition(target);
+      },
+      group: Ke,
+      importance: "midAtmosphere",
+      name: "upperGlow",
+      radius: 118,
+    });
+    setShadowParticipation(Ke);
     const ot = new THREE.Group();
     S.add(ot);
     const at = [];
@@ -1240,15 +1441,15 @@
         b
       );
     }
-    const nt = i.lowPower ? 4 : 8,
+    const nt = i.profile.counts.midCloudTextures,
       st = [];
     for (let e = 0; e < nt; e++) {
-      const t = i.lowPower ? 256 : 512,
+      const t = i.profile.textures.cloudAtlasSize,
         o = Math.floor(0.6 * t),
         a = 7 * e + 42;
       st.push({ mid: rt(a, t, o, "mid") });
     }
-    const it = i.lowPower ? 18 : 26;
+    const it = i.profile.counts.midCloudSprites;
     for (let e = 0; e < it; e++) {
       const t = 8800 + 31 * e,
         o = Qe(t),
@@ -1286,6 +1487,16 @@
           baseOpacity: 0.55 + 0.28 * n,
         }));
     }
+    const midCloudSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return ot.getWorldPosition(target);
+      },
+      group: ot,
+      importance: "midAtmosphere",
+      name: "midClouds",
+      radius: 112,
+    });
+    setShadowParticipation(ot);
     const lt = new THREE.Group();
     ye.add(lt);
     const ht = [],
@@ -1310,7 +1521,7 @@
         const o = new THREE.CanvasTexture(e);
         return ((o.encoding = THREE.sRGBEncoding), (o.anisotropy = P(1, 2)), o);
       })(),
-      dt = i.lowPower ? 110 : 220;
+      dt = i.profile.counts.groundPlantSprites;
     if (ct)
       for (let e = 0; e < dt; e += 1) {
         const t = Qe(1001 + 1.43 * e),
@@ -1426,6 +1637,7 @@
     const Et = d({
       THREE: THREE,
       lowPower: i.lowPower,
+      qualityProfile: i.profile,
       chooseAnisotropy: P,
       collapseYaw: pt,
       collapseSpread: Mt,
@@ -1550,7 +1762,7 @@
         }),
       );
     ((ftSoot.position.y = wt + 0.1), _e.add(ftSoot));
-    const ftButtressCount = i.lowPower ? 6 : 8,
+    const ftButtressCount = i.profile.counts.buttresses,
       ftButtressMaterial = new THREE.MeshStandardMaterial({
         color: h.plinthColor,
         map: Et.colorMap,
@@ -1967,7 +2179,7 @@
         roughness: 0.92,
         metalness: 0.03,
       }),
-      reliefBrickCount = i.lowPower ? 18 : 36;
+      reliefBrickCount = i.profile.counts.reliefBricks;
     for (let e = 0; e < reliefBrickCount; e += 1) {
       const o = Qe(7301 + 1.53 * e),
         a = Qe(7351 + 2.17 * e),
@@ -2140,7 +2352,7 @@
         const o = new THREE.CanvasTexture(e);
         return ((o.encoding = THREE.sRGBEncoding), o);
       })(),
-      $t = i.lowPower ? 9 : 18,
+      $t = i.profile.counts.plumeColumns,
       Yt = [];
     for (let e = 0; e < $t; e++) {
       const t = 8200 + 31 * e,
@@ -2181,7 +2393,7 @@
           haze: 0,
         }));
     }
-    const craterHazeCount = i.lowPower ? 4 : 7;
+    const craterHazeCount = i.profile.counts.craterHaze;
     for (let e = 0; e < craterHazeCount; e += 1) {
       const o = Qe(8701 + 1.91 * e),
         a = Qe(8751 + 2.37 * e),
@@ -2220,6 +2432,21 @@
           haze: 1,
         }));
     }
+    const plumeSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return xt.getWorldPosition(target);
+      },
+      group: xt,
+      importance: "nearAtmosphere",
+      name: "plumes",
+      radius: 24,
+    });
+    Yt.forEach((e) => {
+      if (e.mesh) {
+        e.mesh.castShadow = !1;
+        e.mesh.receiveShadow = !1;
+      }
+    });
     const Dt = new THREE.Group();
     ye.add(Dt);
     const Ot = new THREE.MeshStandardMaterial({
@@ -3007,6 +3234,7 @@
     const driftCloudGroup = new THREE.Group();
     cloudAnchor.add(driftCloudGroup);
     cloudGroups.push(driftCloudGroup);
+    setCloudGroupSceneVisibility(driftCloudGroup, true);
     const driftClouds = [],
       driftCloudTexture = (function () {
         const e = document.createElement("canvas");
@@ -3035,7 +3263,7 @@
         const n = new THREE.CanvasTexture(e);
         return ((n.encoding = THREE.sRGBEncoding), (n.anisotropy = P(1, 2)), n);
       })(),
-      driftCloudCount = i.lowPower ? 8 : 16;
+      driftCloudCount = i.profile.counts.driftClouds;
     for (let e = 0; e < driftCloudCount; e += 1) {
       const t = Qe(401 + 2.13 * e),
         o = Qe(503 + 1.73 * e),
@@ -3068,6 +3296,17 @@
           ampY: 0.18 + 0.52 * o,
         }));
     }
+    const driftCloudSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return driftCloudGroup.getWorldPosition(target);
+      },
+      group: driftCloudGroup,
+      importance: "backsideDecor",
+      isCloudGroup: true,
+      name: "driftClouds",
+      radius: 46,
+    });
+    setShadowParticipation(driftCloudGroup);
     const vo = new THREE.BufferGeometry(),
       xo = new Float32Array(3 * u),
       Co = new Float32Array(3 * u);
@@ -3098,6 +3337,7 @@
     ye.add(Io);
     const emberCloudGroup = new THREE.Group();
     (cloudAnchor.add(emberCloudGroup), cloudGroups.push(emberCloudGroup));
+    setCloudGroupSceneVisibility(emberCloudGroup, true);
     const emberClouds = [],
       emberCloudTexture = (function () {
         const e = document.createElement("canvas");
@@ -3124,7 +3364,7 @@
         const n = new THREE.CanvasTexture(e);
         return ((n.encoding = THREE.sRGBEncoding), (n.anisotropy = P(1, 2)), n);
       })(),
-      emberCloudCount = i.lowPower ? 18 : 34;
+      emberCloudCount = i.profile.counts.emberClouds;
     if (emberCloudTexture)
       for (let e = 0; e < emberCloudCount; e += 1) {
         const t = Qe(1201 + 1.37 * e),
@@ -3157,11 +3397,22 @@
             drift: 0.22 * (n - 0.5),
             phase: t * Math.PI * 2,
             speed: 0.9 + 1.3 * r,
-            ampY: 0.12 + 0.3 * o,
-          }));
+          ampY: 0.12 + 0.3 * o,
+        }));
       }
+    const emberCloudSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return emberCloudGroup.getWorldPosition(target);
+      },
+      group: emberCloudGroup,
+      importance: "backsideDecor",
+      isCloudGroup: true,
+      name: "emberClouds",
+      radius: 34,
+    });
+    setShadowParticipation(emberCloudGroup);
     const hazeClouds = [],
-      hazeCloudCount = i.lowPower ? 18 : 40,
+      hazeCloudCount = i.profile.counts.hazeClouds,
       hazeCloudGroup = new THREE.Group(),
       hazeCloudCanvas = document.createElement("canvas");
     ((hazeCloudCanvas.width = 128), (hazeCloudCanvas.height = 128));
@@ -3211,14 +3462,26 @@
         }));
     }
     (cloudAnchor.add(hazeCloudGroup), cloudGroups.push(hazeCloudGroup));
+    setCloudGroupSceneVisibility(hazeCloudGroup, true);
+    const hazeCloudSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return hazeCloudGroup.getWorldPosition(target);
+      },
+      group: hazeCloudGroup,
+      importance: "backsideDecor",
+      isCloudGroup: true,
+      name: "hazeClouds",
+      radius: 30,
+    });
+    setShadowParticipation(hazeCloudGroup);
     // Pulsing far-cloud billows fade in and out around the skyline anchor.
-    const pulseCloudCount = i.lowPower ? 2 : 4,
+    const pulseCloudCount = i.profile.counts.pulseClouds,
       pulseClouds = [],
       pulseCloudGroup = new THREE.Group();
     pulseCloudGroup.renderOrder = 10;
     const pulseCloudTexture = driftCloudTexture || emberCloudTexture;
     if (pulseCloudTexture) {
-      const pulsePuffsPerCluster = i.lowPower ? 3 : 5,
+      const pulsePuffsPerCluster = i.profile.counts.pulsePuffsPerCluster,
         treeAlignedAngle = Math.atan2(28, -42),
         treeAlignedDistance = Math.sqrt(2548);
       for (let e = 0; e < pulseCloudCount; e += 1) {
@@ -3261,13 +3524,75 @@
         });
       }
     }
-    (cloudAnchor.add(pulseCloudGroup), cloudGroups.push(pulseCloudGroup), applyCloudVisibility());
+    (cloudAnchor.add(pulseCloudGroup),
+      cloudGroups.push(pulseCloudGroup),
+      setCloudGroupSceneVisibility(pulseCloudGroup, true),
+      applyCloudVisibility());
+    const pulseCloudSystem = registerDecorativeSystem({
+      getCenter(target) {
+        return pulseCloudGroup.getWorldPosition(target);
+      },
+      group: pulseCloudGroup,
+      importance: "backsideDecor",
+      isCloudGroup: true,
+      name: "pulseClouds",
+      radius: 122,
+    });
+    setShadowParticipation(pulseCloudGroup);
     const oa = { scrollTarget: 0, scroll: 0, width: window.innerWidth, height: window.innerHeight },
+      compositionState = { profile: fallbackComposition, zoom: sceneTunerDefaults.defaultZoom },
       aa = 1.15,
       cloudCameraVector = new THREE.Vector3(),
       cloudViewVector = new THREE.Vector3(),
       cloudOffsetVector = new THREE.Vector3(),
       cloudLookTarget = new THREE.Vector3();
+    function resolveSceneCompositionProfile() {
+      return typeof t.getSceneCompositionProfile === "function"
+        ? t.getSceneCompositionProfile({
+            width: oa.width,
+            height: oa.height,
+            zoom: compositionState.zoom,
+          })
+        : fallbackComposition;
+    }
+    function applySceneComposition(profile, reason = "runtime") {
+      compositionState.profile = profile || fallbackComposition;
+      const cameraProfile = compositionState.profile.camera || fallbackComposition.camera;
+      R.fov = cameraProfile.fov;
+      R.aspect = oa.width / oa.height;
+      R.updateProjectionMatrix();
+      ye.position.y = compositionState.profile.sceneOffsetY;
+      cloudAnchor.position.y = compositionState.profile.cloudAnchorY;
+      _e.scale.setScalar(compositionState.profile.towerScale || 1);
+      updateSceneDebug({
+        composition: compositionState.profile.name,
+        compositionReason: reason,
+        manualZoom: compositionState.zoom,
+      });
+    }
+    t.getSceneZoom = function () {
+      return compositionState.zoom;
+    };
+    t.getSceneZoomRange = function () {
+      return {
+        defaultZoom: sceneTunerDefaults.defaultZoom,
+        maxZoom: sceneTunerDefaults.maxZoom,
+        minZoom: sceneTunerDefaults.minZoom,
+      };
+    };
+    t.setSceneZoom = function (value, reason = "manual") {
+      const clampZoom =
+        typeof t.clampSceneTunerZoom === "function"
+          ? t.clampSceneTunerZoom
+          : (candidate, fallback = compositionState.zoom) => {
+              const numeric = Number(candidate);
+              return Number.isFinite(numeric) ? numeric : fallback;
+            };
+      const nextZoom = clampZoom(value, compositionState.zoom);
+      compositionState.zoom = nextZoom;
+      applySceneComposition(resolveSceneCompositionProfile(), reason);
+      return nextZoom;
+    };
     function cloudViewFade(e, t, a, r, n, s = 0.92, minOpacity = 0.14) {
       const i = cloudCameraVector.copy(e).distanceTo(R.position),
         l = Math.min(1, Math.max(0, (i - t) / a));
@@ -3281,23 +3606,58 @@
         w = Math.min(1, Math.max(0, (d - r) / n));
       return Math.max(minOpacity, Math.min(l, w));
     }
+    function updateDecorativeVisibility() {
+      const debugSystems = qualityDebug ? {} : null;
+      let cloudVisibilityDirty = false;
+
+      if (visibilityTracker) {
+        visibilityTracker.updateCameraState();
+      }
+
+      decorativeSystems.forEach((system) => {
+        if (!visibilityTracker || system.importance === "core") {
+          system.active = true;
+          system.bucket = system.importance === "core" ? "core" : system.bucket;
+        } else {
+          const center = system.getCenter(system._center || (system._center = new THREE.Vector3()));
+          system.bucket = visibilityTracker.classifySphere({
+            center,
+            importance: system.importance,
+            previousBucket: system.bucket,
+            radius: system.radius || 0,
+          });
+          system.active = visibilityTracker.shouldUpdateBucket(system.bucket);
+        }
+
+        if (system.group) {
+          if (system.isCloudGroup) {
+            setCloudGroupSceneVisibility(system.group, system.active);
+            cloudVisibilityDirty = true;
+          } else {
+            system.group.visible = visibilityTracker
+              ? visibilityTracker.shouldRenderBucket(system.bucket)
+              : system.active;
+          }
+        }
+
+        if (debugSystems) {
+          debugSystems[system.name] = { active: system.active, bucket: system.bucket };
+        }
+      });
+
+      if (cloudVisibilityDirty) {
+        applyCloudVisibility();
+      }
+
+      if (debugSystems) {
+        qualityDebug.systems = debugSystems;
+      }
+    }
     function ra() {
       ((oa.width = window.innerWidth),
         (oa.height = window.innerHeight),
-        (function () {
-          ((i.lowPower = s()),
-            (R.fov = 46),
-            R.updateProjectionMatrix(),
-            (ye.position.y = -7.5),
-            _e.scale.setScalar(1),
-            (Ke.visible = !0),
-            (b.shadowMap.enabled = !i.lowPower));
-          const e = i.lowPower ? 1.8 : 2,
-            t = window.devicePixelRatio || 1;
-          b.setPixelRatio(Math.min(t, e));
-        })(),
-        (R.aspect = oa.width / oa.height),
-        R.updateProjectionMatrix(),
+        applySceneComposition(resolveSceneCompositionProfile(), "resize"),
+        applyActiveQualityProfile(i.profile, "resize"),
         b.setSize(oa.width, oa.height));
     }
     (window.addEventListener("resize", ra),
@@ -3310,32 +3670,38 @@
       ),
       ra());
     const na = new THREE.Clock(),
-      sa = 46,
-      ia = 55,
-      la = 2.4,
-      ha = 1.14,
-      ca = 21.2,
-      da = 0.9,
-      wa = 12.4;
+      sa = 0.12 * Math.PI;
     !(function e() {
       if ((requestAnimationFrame(e), document.hidden || !sceneVisible)) return;
-      const o = na.getElapsedTime(),
+      const n = Math.min(0.1, na.getDelta()),
+        o = na.elapsedTime;
+      const adaptiveProfile =
+        typeof qualityState.sample === "function" ? qualityState.sample(1e3 * n, 1e3 * o) : null;
+      adaptiveProfile &&
+        adaptiveProfile.tier !== i.profile.tier &&
+        applyActiveQualityProfile(adaptiveProfile, "adaptive");
+      const activeProfile = i.profile,
+        cameraProfile = compositionState.profile.camera || fallbackComposition.camera,
         r = reducedMotionMQ.matches ? 0.25 : 1;
       oa.scroll += 0.025 * (oa.scrollTarget - oa.scroll);
-      const n = i.lowPower ? 0.055 : 0.06,
-        s = o * (0.95 * n) * r,
-        l = 0.09 * Math.sin(3 * s) + 0.05 * Math.sin(2 * s),
-        h = 0.12 * Math.PI + s - l,
-        c = (window.innerWidth < 1100 ? ia : sa) - la * oa.scroll,
-        d =
-          ca + da * oa.scroll + 0.45 * Math.sin(0.28 * o) * r + 0.6 * Math.sin(0.13 * o) * r + 0.7,
-        w = wa + 2.1 * oa.scroll,
-        p = ha * (c - 0.18);
-      (R.position.set(Math.cos(h) * p, d, Math.sin(h) * p),
+      const s = activeProfile.isLow ? 0.055 : 0.06,
+        l = o * (0.95 * s) * r,
+        h = 0.09 * Math.sin(3 * l) + 0.05 * Math.sin(2 * l),
+        c = sa + l - h,
+        d = cameraProfile.orbitBase - cameraProfile.orbitScrollDelta * oa.scroll,
+        w =
+          cameraProfile.heightBase +
+          cameraProfile.heightScrollDelta * oa.scroll +
+          0.45 * Math.sin(0.28 * o) * r +
+          0.6 * Math.sin(0.13 * o) * r,
+        p = cameraProfile.lookAtBase + cameraProfile.lookAtScrollDelta * oa.scroll,
+        M = cameraProfile.orbitScale * (d - cameraProfile.orbitTrim);
+      (R.position.set(Math.cos(c) * M, w, Math.sin(c) * M),
         (cloudAnchor.position.x = R.position.x),
         (cloudAnchor.position.z = R.position.z),
-        cloudLookTarget.set(0, w, 0),
-        R.lookAt(0, w, 0),
+        cloudLookTarget.set(0, p, 0),
+        R.lookAt(0, p, 0),
+        updateDecorativeVisibility(),
         (lo.material.opacity = 0.12 + 0.02 * Math.sin(1.3 * o) * r),
         ho.forEach((e, t) => {
           ((e.rotation.z = o * (0.1 + 0.02 * t) * r),
@@ -3352,62 +3718,104 @@
         }),
         (Io.rotation.y = 0.02 * o * r),
         (Io.material.opacity = (i.lowPower ? 0.42 : 0.5) * aa),
-        driftClouds.forEach((e, t) => {
-          const a = Math.sin(o * e.speed * r + e.phase),
-            n = Math.cos(o * (0.56 * e.speed) * r + 0.8 * e.phase),
-            s = e.yaw + 0.05 * a,
-            l = e.radius + 0.18 * n;
-          ((e.mesh.position.x = Math.cos(s) * l + 0.14 * e.drift),
-            (e.mesh.position.z = Math.sin(s) * l + 0.14 * e.drift),
-            (e.mesh.position.y = e.baseY + a * e.ampY * 0.55 + 0.07 * Math.sin(0.9 * o + t)));
-          e.mesh.material.opacity =
-            (i.lowPower ? 0.14 : 0.19) * aa + (0.018 + 0.0016 * t) * Math.max(0, a);
-        }),
-        et.forEach((e, t) => {
-          const a = o * e.speed * r + e.phase,
-            n = e.yaw + 0.04 * Math.sin(a),
-            s = e.radius + 1.6 * Math.cos(0.8 * a);
-          ((e.mesh.position.x = Math.cos(n) * s),
-            (e.mesh.position.z = Math.sin(n) * s),
-            (e.mesh.position.y = e.baseY + 0.35 * Math.sin(0.6 * a + 0.3 * t)),
-            (e.mesh.material.opacity = (i.lowPower ? 0.16 : 0.26) + 0.02 * Math.sin(0.7 * a)));
-        }),
-        at.forEach((e, t) => {
-          const a = o * e.speed * r + e.phase,
-            n = e.yaw + 0.025 * Math.sin(0.7 * a),
-            s = e.radius + 2.5 * Math.cos(0.6 * a);
-          ((e.mesh.position.x = Math.cos(n) * s),
-            (e.mesh.position.z = Math.sin(n) * s),
-            (e.mesh.position.y = e.baseY + 0.5 * Math.sin(0.5 * a + 0.24 * t)));
-          const h = cloudViewFade(
-            e.mesh.position,
-            i.lowPower ? 32 : 38,
-            14,
-            i.lowPower ? 10 : 13,
-            i.lowPower ? 10 : 13,
-            0.95,
-            0.02,
-          );
-          e.mesh.material.opacity = e.baseOpacity * h;
-        }),
+        (driftCloudSystem.active
+          ? (() => {
+              const limit = getProfileCount("driftClouds", driftClouds.length);
+              driftClouds.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = Math.sin(o * e.speed * r + e.phase),
+                  n = Math.cos(o * (0.56 * e.speed) * r + 0.8 * e.phase),
+                  s = e.yaw + 0.05 * a,
+                  l = e.radius + 0.18 * n;
+                ((e.mesh.position.x = Math.cos(s) * l + 0.14 * e.drift),
+                  (e.mesh.position.z = Math.sin(s) * l + 0.14 * e.drift),
+                  (e.mesh.position.y =
+                    e.baseY + a * e.ampY * 0.55 + 0.07 * Math.sin(0.9 * o + t)));
+                e.mesh.material.opacity =
+                  (i.lowPower ? 0.14 : 0.19) * aa + (0.018 + 0.0016 * t) * Math.max(0, a);
+              });
+            })()
+          : setRecordVisibility(driftClouds, !1)),
+        (upperGlowSystem.active
+          ? (() => {
+              const limit = getProfileCount("upperGlowSprites", et.length);
+              et.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = o * e.speed * r + e.phase,
+                  n = e.yaw + 0.04 * Math.sin(a),
+                  s = e.radius + 1.6 * Math.cos(0.8 * a);
+                ((e.mesh.position.x = Math.cos(n) * s),
+                  (e.mesh.position.z = Math.sin(n) * s),
+                  (e.mesh.position.y = e.baseY + 0.35 * Math.sin(0.6 * a + 0.3 * t)),
+                  (e.mesh.material.opacity =
+                    (i.lowPower ? 0.16 : 0.26) + 0.02 * Math.sin(0.7 * a)));
+              });
+            })()
+          : setRecordVisibility(et, !1)),
+        (midCloudSystem.active
+          ? (() => {
+              const limit = getProfileCount("midCloudSprites", at.length);
+              at.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = o * e.speed * r + e.phase,
+                  n = e.yaw + 0.025 * Math.sin(0.7 * a),
+                  s = e.radius + 2.5 * Math.cos(0.6 * a);
+                ((e.mesh.position.x = Math.cos(n) * s),
+                  (e.mesh.position.z = Math.sin(n) * s),
+                  (e.mesh.position.y = e.baseY + 0.5 * Math.sin(0.5 * a + 0.24 * t)));
+                const h = cloudViewFade(
+                  e.mesh.position,
+                  i.lowPower ? 32 : 38,
+                  14,
+                  i.lowPower ? 10 : 13,
+                  i.lowPower ? 10 : 13,
+                  0.95,
+                  0.02,
+                );
+                e.mesh.material.opacity = e.baseOpacity * h;
+              });
+            })()
+          : setRecordVisibility(at, !1)),
         ht.forEach((e, t) => {
           const a = o * (0.9 + (t % 7) * 0.05) * r + e.phase;
           ((e.mesh.position.y = e.baseY + Math.sin(a) * e.amp),
             (e.mesh.material.opacity = (i.lowPower ? 0.26 : 0.33) + 0.03 * Math.sin(0.7 * a)));
         }),
-        emberClouds.forEach((e, t) => {
-          const a = o * e.speed * r + e.phase,
-            n = e.yaw + 0.06 * Math.sin(0.42 * a),
-            s = e.radius + 0.35 * Math.cos(0.35 * a);
-          ((e.mesh.position.x = Math.cos(n) * s + e.drift),
-            (e.mesh.position.z = Math.sin(n) * s + e.drift),
-            (e.mesh.position.y =
-              e.baseY + Math.sin(1.1 * a) * e.ampY + 0.18 * Math.max(0, Math.sin(0.9 * a))),
-            (e.mesh.material.opacity =
-              (i.lowPower ? 0.08 : 0.11) * aa +
-              0.03 +
-              0.035 * Math.max(0, Math.sin(1.8 * a + 0.2 * t))));
-        }),
+        (emberCloudSystem.active
+          ? (() => {
+              const limit = getProfileCount("emberClouds", emberClouds.length);
+              emberClouds.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = o * e.speed * r + e.phase,
+                  n = e.yaw + 0.06 * Math.sin(0.42 * a),
+                  s = e.radius + 0.35 * Math.cos(0.35 * a);
+                ((e.mesh.position.x = Math.cos(n) * s + e.drift),
+                  (e.mesh.position.z = Math.sin(n) * s + e.drift),
+                  (e.mesh.position.y =
+                    e.baseY + Math.sin(1.1 * a) * e.ampY + 0.18 * Math.max(0, Math.sin(0.9 * a))),
+                  (e.mesh.material.opacity =
+                    (i.lowPower ? 0.08 : 0.11) * aa +
+                    0.03 +
+                    0.035 * Math.max(0, Math.sin(1.8 * a + 0.2 * t))));
+              });
+            })()
+          : setRecordVisibility(emberClouds, !1)),
         Nt.forEach((e) => {
           const t = e.phase,
             a = Math.sin(6 * o + t),
@@ -3474,140 +3882,214 @@
               e.light.color.setHSL((20 + 12 * f) / 360, 0.82, 0.52 + 0.06 * f));
           }
         }),
-        Yt.forEach((e) => {
-          const t = o * e.driftSpeed * r + e.phase,
-            a = (o * e.riseSpeed * 0.12) % e.cycleHeight;
-          e.mesh.position.y = e.baseY + a;
-          const swayScale = e.haze ? 0.18 : 0.35,
-            n = swayScale * Math.sin(0.6 * t);
-          ((e.mesh.position.x = Math.cos(e.angle) * e.radius + n),
-            (e.mesh.position.z =
-              Math.sin(e.angle) * e.radius + (e.haze ? 0.12 : 0.22) * Math.cos(0.4 * t)));
-          const s = a / e.cycleHeight;
-          if (e.haze) {
-            e.mesh.material.color.setRGB(
-              0.42 + 0.22 * s,
-              0.39 + 0.21 * s,
-              0.35 + 0.19 * s,
-            );
-          } else {
-            e.mesh.material.color.setRGB(
-              0.28 + 0.5 * s,
-              0.25 + 0.48 * s,
-              0.22 + 0.44 * s,
-            );
-          }
-          const growth = e.haze ? 1 + 0.25 * s : 1 + 0.6 * s;
-          e.mesh.scale.set(e.baseScaleX * growth, e.baseScaleY * growth, 1);
-          const d = e.haze ? 0.85 - 0.35 * s : 1 - s * s;
-          e.mesh.material.opacity = e.baseOpacity * d * (0.82 + 0.18 * Math.sin(0.8 * t));
-        }),
-        hazeClouds.forEach((e) => {
-          const t = o * e.speed * r + e.phase,
-            a = (o * e.speed * 0.15) % e.cycleHeight;
-          ((e.mesh.position.y = e.baseY + a),
-            (e.mesh.position.x = Math.cos(e.yaw + 0.06 * Math.sin(0.4 * t)) * e.radius),
-            (e.mesh.position.z = Math.sin(e.yaw + 0.06 * Math.sin(0.4 * t)) * e.radius));
-          e.mesh.material.opacity = (i.lowPower ? 0.08 : 0.12) * aa + 0.02 * Math.sin(0.5 * t);
-        }),
-        pulseClouds.forEach((e, t) => {
-          const a = ((o + e.cycleOffset) % e.cyclePeriod) / e.cyclePeriod,
-            n = e.fadeInDuration / e.cyclePeriod,
-            s = n + e.holdDuration / e.cyclePeriod,
-            iEnd = s + e.fadeOutDuration / e.cyclePeriod;
-          let l = 0;
-          (a < n
-            ? (l = a / n)
-            : a < s
-              ? (l = 1)
-              : a < iEnd && (l = 1 - (a - s) / (iEnd - s)),
-            (l = l * l * (3 - 2 * l)));
-          const h = 0.02 * o + 2.8 * t,
-            c = e.baseAngle + Math.sin(h) * e.angleDriftAmp,
-            d = e.baseDist + Math.cos(0.7 * h) * e.distDriftAmp,
-            baseVis = l * r * (i.lowPower ? 0.4 : 0.55);
-          for (let p = 0; p < e.puffs.length; p++) {
-            const puff = e.puffs[p],
-              localAngle = c + puff.aOff,
-              localDist = d + puff.rOff,
-              breathe = 1 + 0.04 * Math.sin(0.3 * o + 1.9 * t + 0.7 * p);
-            (puff.sprite.position.x = Math.cos(localAngle) * localDist),
-              (puff.sprite.position.z = Math.sin(localAngle) * localDist),
-              (puff.sprite.position.y = e.baseY + puff.hOff),
-              (puff.sprite.material.opacity =
-                baseVis * (0.75 + 0.25 * Math.sin(0.25 * o + 1.3 * p + t)) * breathe);
-          }
-        }));
-      var M = 1 + 0.012 * Math.sin(1.3 * o) + 0.006 * Math.sin(2.9 * o);
-      (F.scale.set(6.5 * M, 6.5 * M, 1),
-        (A.rotation = 0.07 * o),
-        B.scale.set(13 * M, 13 * M, 1),
-        (B.material.opacity = 0.55 + 0.06 * Math.sin(2.1 * o)),
-        (B.material.rotation = 0.06 * -o),
-        G.scale.set(20 * M, 20 * M, 1),
-        (G.material.opacity = 0.32 + 0.05 * Math.sin(0.7 * o)),
-        (I.rotation.z = 0.02 * o),
-        R.matrixWorld.extractBasis(Q, J, K));
-      for (var E = 0; E < D.length; E++) {
-        var m = D[E],
-          u =
-            m.theta +
-            o * m.orbitSpeed +
-            0.25 * Math.sin(o * m.wobbleFreq * 0.4 + m.phase) +
-            0.15 * Math.sin(o * m.wobble2Freq * 0.3 + 2.3 * m.phase),
-          g = m.phi + 0.15 * Math.sin(0.3 * o + m.phase),
-          f =
-            m.orbitRadius +
-            Math.sin(o * m.wobbleFreq * 0.5 + m.phase) * m.wobbleAmp +
-            Math.sin(o * m.wobble2Freq * 0.3 + 1.7 * m.phase) * m.wobble2Amp,
-          P = o * m.violenceFreq + m.violencePhase,
-          S = Math.pow(Math.max(0, Math.sin(P)), 12) * m.violenceAmp;
-        f += S;
-        var H = Math.cos(u) * Math.sin(g) * f,
-          y = Math.cos(g) * f;
-        m.sprite.position.set(Q.x * H + J.x * y, Q.y * H + J.y * y, Q.z * H + J.z * y);
-        var v = m.baseScale * (0.85 + 0.15 * Math.sin(1.5 * o + m.phase)),
-          C = S > 0.5 ? 0.15 : 0;
-        (m.sprite.scale.set(v + C, v + C, 1),
-          (m.sprite.material.opacity =
-            (0 === m.layer ? 0.28 : 1 === m.layer ? 0.18 : 0.1) +
-            0.06 * Math.sin(1.8 * o + m.phase) +
-            0.5 * C));
-        var z = (o * m.colorSpeed + m.colorPhase) % 1,
-          W = 0.5 * Math.sin(z * Math.PI * 2) + 0.5,
-          k = 0.45 + 0.55 * W,
-          $ = 0.1 + W * W * 0.6;
-        m.sprite.material.color.setRGB(1, k, $);
-      }
-      for (var Y = 0; Y < te.length; Y++) {
-        var O = te[Y],
-          q = O.growTime,
-          L = O.holdTime,
-          V = O.noReturn ? 2.5 * O.shrinkTime : O.shrinkTime,
-          X = q + L + V + O.pauseTime,
-          N = (o + O.phase) % X,
-          U = 0;
-        if ((O.mesh.scale.set(1, 1, 1), N < q)) {
-          var Z = N / q;
-          U = 1 - Math.pow(1 - Z, 3);
-        } else if (N < q + L) U = 1;
-        else {
-          if (!(N < q + L + V)) {
-            O.mesh.material.opacity = 0;
+        (plumeSystem.active
+          ? (() => {
+              const limit = getProfileCount("plumeColumns", Yt.length);
+              Yt.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = o * e.driftSpeed * r + e.phase,
+                  n = (o * e.riseSpeed * 0.12) % e.cycleHeight;
+                e.mesh.position.y = e.baseY + n;
+                const s = e.haze ? 0.18 : 0.35,
+                  i2 = s * Math.sin(0.6 * a);
+                ((e.mesh.position.x = Math.cos(e.angle) * e.radius + i2),
+                  (e.mesh.position.z =
+                    Math.sin(e.angle) * e.radius + (e.haze ? 0.12 : 0.22) * Math.cos(0.4 * a)));
+                const l = n / e.cycleHeight;
+                if (e.haze) {
+                  e.mesh.material.color.setRGB(
+                    0.42 + 0.22 * l,
+                    0.39 + 0.21 * l,
+                    0.35 + 0.19 * l,
+                  );
+                } else {
+                  e.mesh.material.color.setRGB(
+                    0.28 + 0.5 * l,
+                    0.25 + 0.48 * l,
+                    0.22 + 0.44 * l,
+                  );
+                }
+                const h = e.haze ? 1 + 0.25 * l : 1 + 0.6 * l;
+                e.mesh.scale.set(e.baseScaleX * h, e.baseScaleY * h, 1);
+                const c = e.haze ? 0.85 - 0.35 * l : 1 - l * l;
+                e.mesh.material.opacity = e.baseOpacity * c * (0.82 + 0.18 * Math.sin(0.8 * a));
+              });
+            })()
+          : setRecordVisibility(Yt, !1)),
+        (hazeCloudSystem.active
+          ? (() => {
+              const limit = getProfileCount("hazeClouds", hazeClouds.length);
+              hazeClouds.forEach((e, t) => {
+                if (t >= limit) {
+                  e.mesh.visible = !1;
+                  return;
+                }
+                e.mesh.visible = !0;
+                const a = o * e.speed * r + e.phase,
+                  n = (o * e.speed * 0.15) % e.cycleHeight;
+                ((e.mesh.position.y = e.baseY + n),
+                  (e.mesh.position.x = Math.cos(e.yaw + 0.06 * Math.sin(0.4 * a)) * e.radius),
+                  (e.mesh.position.z = Math.sin(e.yaw + 0.06 * Math.sin(0.4 * a)) * e.radius));
+                e.mesh.material.opacity =
+                  (i.lowPower ? 0.08 : 0.12) * aa + 0.02 * Math.sin(0.5 * a);
+              });
+            })()
+          : setRecordVisibility(hazeClouds, !1)),
+        (pulseCloudSystem.active
+          ? (() => {
+              const limit = getProfileCount("pulseClouds", pulseClouds.length);
+              pulseClouds.forEach((e, t) => {
+                if (t >= limit) {
+                  e.puffs.forEach((puff) => {
+                    puff.sprite.visible = !1;
+                  });
+                  return;
+                }
+                const a = ((o + e.cycleOffset) % e.cyclePeriod) / e.cyclePeriod,
+                  n = e.fadeInDuration / e.cyclePeriod,
+                  s = n + e.holdDuration / e.cyclePeriod,
+                  iEnd = s + e.fadeOutDuration / e.cyclePeriod;
+                let l = 0;
+                (a < n
+                  ? (l = a / n)
+                  : a < s
+                    ? (l = 1)
+                    : a < iEnd && (l = 1 - (a - s) / (iEnd - s)),
+                  (l = l * l * (3 - 2 * l)));
+                const h = 0.02 * o + 2.8 * t,
+                  c = e.baseAngle + Math.sin(h) * e.angleDriftAmp,
+                  d = e.baseDist + Math.cos(0.7 * h) * e.distDriftAmp,
+                  baseVis = l * r * (i.lowPower ? 0.4 : 0.55);
+                for (let p = 0; p < e.puffs.length; p++) {
+                  const puff = e.puffs[p],
+                    localAngle = c + puff.aOff,
+                    localDist = d + puff.rOff,
+                    breathe = 1 + 0.04 * Math.sin(0.3 * o + 1.9 * t + 0.7 * p);
+                  puff.sprite.visible = !0;
+                  (puff.sprite.position.x = Math.cos(localAngle) * localDist),
+                    (puff.sprite.position.z = Math.sin(localAngle) * localDist),
+                    (puff.sprite.position.y = e.baseY + puff.hOff),
+                    (puff.sprite.material.opacity =
+                      baseVis * (0.75 + 0.25 * Math.sin(0.25 * o + 1.3 * p + t)) * breathe);
+                }
+              });
+            })()
+          : (() => {
+              pulseClouds.forEach((e) => {
+                e.puffs.forEach((puff) => {
+                  puff.sprite.visible = !1;
+                });
+              });
+            })()));
+      if (haloSystem.active) {
+        const haloPulse = 1 + 0.012 * Math.sin(1.3 * o) + 0.006 * Math.sin(2.9 * o);
+        const haloLimit =
+            getProfileCount("haloSprites", 0) +
+            getProfileCount("haloBands", 0) +
+            getProfileCount("haloTwisters", 0),
+          orbitalLimit = getProfileCount("orbitalGlowLayers", te.length);
+        (F.scale.set(6.5 * haloPulse, 6.5 * haloPulse, 1),
+          (A.rotation = 0.07 * o),
+          B.scale.set(13 * haloPulse, 13 * haloPulse, 1),
+          (B.material.opacity = 0.55 + 0.06 * Math.sin(2.1 * o)),
+          (B.material.rotation = 0.06 * -o),
+          G.scale.set(20 * haloPulse, 20 * haloPulse, 1),
+          (G.material.opacity = 0.32 + 0.05 * Math.sin(0.7 * o)),
+          (I.rotation.z = 0.02 * o),
+          R.matrixWorld.extractBasis(Q, J, K));
+        for (let haloIndex = 0; haloIndex < D.length; haloIndex += 1) {
+          const haloRecord = D[haloIndex];
+          if (haloIndex >= haloLimit) {
+            haloRecord.sprite.visible = !1;
             continue;
           }
-          U = 1 - (N - q - L) / V;
+          haloRecord.sprite.visible = !0;
+          const orbitTheta =
+              haloRecord.theta +
+              o * haloRecord.orbitSpeed +
+              0.25 * Math.sin(o * haloRecord.wobbleFreq * 0.4 + haloRecord.phase) +
+              0.15 * Math.sin(o * haloRecord.wobble2Freq * 0.3 + 2.3 * haloRecord.phase),
+            orbitPhi = haloRecord.phi + 0.15 * Math.sin(0.3 * o + haloRecord.phase);
+          let orbitRadius =
+            haloRecord.orbitRadius +
+            Math.sin(o * haloRecord.wobbleFreq * 0.5 + haloRecord.phase) * haloRecord.wobbleAmp +
+            Math.sin(o * haloRecord.wobble2Freq * 0.3 + 1.7 * haloRecord.phase) * haloRecord.wobble2Amp;
+          const violencePhase = o * haloRecord.violenceFreq + haloRecord.violencePhase,
+            violenceBoost =
+              Math.pow(Math.max(0, Math.sin(violencePhase)), 12) * haloRecord.violenceAmp;
+          orbitRadius += violenceBoost;
+          const orbitX = Math.cos(orbitTheta) * Math.sin(orbitPhi) * orbitRadius,
+            orbitY = Math.cos(orbitPhi) * orbitRadius;
+          haloRecord.sprite.position.set(
+            Q.x * orbitX + J.x * orbitY,
+            Q.y * orbitX + J.y * orbitY,
+            Q.z * orbitX + J.z * orbitY,
+          );
+          const haloScale =
+              haloRecord.baseScale * (0.85 + 0.15 * Math.sin(1.5 * o + haloRecord.phase)),
+            violenceScale = violenceBoost > 0.5 ? 0.15 : 0;
+          (haloRecord.sprite.scale.set(
+            haloScale + violenceScale,
+            haloScale + violenceScale,
+            1,
+          ),
+            (haloRecord.sprite.material.opacity =
+              (0 === haloRecord.layer ? 0.28 : 1 === haloRecord.layer ? 0.18 : 0.1) +
+              0.06 * Math.sin(1.8 * o + haloRecord.phase) +
+              0.5 * violenceScale));
+          const colorPhase = (o * haloRecord.colorSpeed + haloRecord.colorPhase) % 1,
+            colorWave = 0.5 * Math.sin(colorPhase * Math.PI * 2) + 0.5,
+            colorGreen = 0.45 + 0.55 * colorWave,
+            colorBlue = 0.1 + colorWave * colorWave * 0.6;
+          haloRecord.sprite.material.color.setRGB(1, colorGreen, colorBlue);
         }
-        O.mesh.material.opacity = 0.55;
-        for (var j = O.geo.attributes.color.array, _ = 0; _ < O.heightFracs.length; _++) {
-          var ee = O.heightFracs[_],
-            oe = Math.max(0, Math.min(1, (U - ee) / 0.15 + 0.5));
-          ((oe = oe * oe * (3 - 2 * oe)),
-            (j[3 * _ + 0] = O.baseColors[3 * _ + 0] * oe),
-            (j[3 * _ + 1] = O.baseColors[3 * _ + 1] * oe),
-            (j[3 * _ + 2] = O.baseColors[3 * _ + 2] * oe));
+        for (let orbitalIndex = 0; orbitalIndex < te.length; orbitalIndex += 1) {
+          const orbitalRecord = te[orbitalIndex];
+          if (orbitalIndex >= orbitalLimit) {
+            orbitalRecord.mesh.visible = !1;
+            continue;
+          }
+          orbitalRecord.mesh.visible = !0;
+          const growTime = orbitalRecord.growTime,
+            holdTime = orbitalRecord.holdTime,
+            shrinkTime = orbitalRecord.noReturn
+              ? 2.5 * orbitalRecord.shrinkTime
+              : orbitalRecord.shrinkTime,
+            cycleTime = growTime + holdTime + shrinkTime + orbitalRecord.pauseTime,
+            cyclePhase = (o + orbitalRecord.phase) % cycleTime;
+          let glowAmount = 0;
+          if ((orbitalRecord.mesh.scale.set(1, 1, 1), cyclePhase < growTime)) {
+            const growProgress = cyclePhase / growTime;
+            glowAmount = 1 - Math.pow(1 - growProgress, 3);
+          } else if (cyclePhase < growTime + holdTime) glowAmount = 1;
+          else {
+            if (!(cyclePhase < growTime + holdTime + shrinkTime)) {
+              orbitalRecord.mesh.material.opacity = 0;
+              continue;
+            }
+            glowAmount = 1 - (cyclePhase - growTime - holdTime) / shrinkTime;
+          }
+          orbitalRecord.mesh.material.opacity = 0.55;
+          const colorArray = orbitalRecord.geo.attributes.color.array;
+          for (let colorIndex = 0; colorIndex < orbitalRecord.heightFracs.length; colorIndex += 1) {
+            const heightFrac = orbitalRecord.heightFracs[colorIndex];
+            let colorFade = Math.max(0, Math.min(1, (glowAmount - heightFrac) / 0.15 + 0.5));
+            colorFade = colorFade * colorFade * (3 - 2 * colorFade);
+            (colorArray[3 * colorIndex + 0] = orbitalRecord.baseColors[3 * colorIndex + 0] * colorFade),
+              (colorArray[3 * colorIndex + 1] = orbitalRecord.baseColors[3 * colorIndex + 1] * colorFade),
+              (colorArray[3 * colorIndex + 2] = orbitalRecord.baseColors[3 * colorIndex + 2] * colorFade);
+          }
+          orbitalRecord.geo.attributes.color.needsUpdate = !0;
         }
-        O.geo.attributes.color.needsUpdate = !0;
+      } else {
+        setRecordVisibility(te, !1);
+        D.forEach((e) => {
+          e.sprite.visible = !1;
+        });
       }
       ((x.material.uniforms.uTime.value = o), b.render(T, R));
     })();

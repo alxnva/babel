@@ -24,7 +24,7 @@
     <meta name="theme-color" content="#0b1020" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://alexnava.me/" />
-    <link rel="stylesheet" href="/styles.css?v=646" />
+    <link rel="stylesheet" href="/styles.css?v=648" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
@@ -34,6 +34,39 @@
       <div class="scene-vignette"></div>
     </div>
     <div class="site-shell" aria-hidden="true"></div>
+    <div class="scene-tuner" id="scene-tuner" hidden>
+      <div class="scene-tuner__card">
+        <button
+          class="scene-tuner__toggle"
+          id="scene-tuner-toggle"
+          type="button"
+          aria-controls="scene-tuner-panel"
+          aria-expanded="true"
+        >
+          <span class="scene-tuner__title">Scene zoom</span>
+          <span class="scene-tuner__meta" id="scene-tuner-action">Hide</span>
+        </button>
+        <div class="scene-tuner__panel" id="scene-tuner-panel">
+          <label class="scene-tuner__label" for="scene-zoom-slider">
+            <span>Framing</span>
+            <span id="scene-tuner-value">Wide</span>
+          </label>
+          <input
+            class="scene-tuner__slider"
+            id="scene-zoom-slider"
+            type="range"
+            min="-12"
+            max="18"
+            step="1"
+            value="12"
+          />
+          <div class="scene-tuner__scale" aria-hidden="true">
+            <span>Closer</span>
+            <span>Wider</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <main id="main" tabindex="-1">
       <section id="home" class="hero section">
@@ -95,7 +128,7 @@
       aria-labelledby="panel-about-title"
       hidden
     >
-      <div class="panel-card">
+      <div class="panel-card" tabindex="-1">
         <button class="panel-close" aria-label="Close">&times;</button>
         <p class="eyebrow">About</p>
         <h2 id="panel-about-title">What I make.</h2>
@@ -120,7 +153,7 @@
       aria-labelledby="panel-contact-title"
       hidden
     >
-      <div class="panel-card">
+      <div class="panel-card" tabindex="-1">
         <button class="panel-close" aria-label="Close">&times;</button>
         <p class="eyebrow">Contact</p>
         <h2 id="panel-contact-title">Email works best.</h2>
@@ -130,14 +163,17 @@
       </div>
     </div>
 
-    <script defer src="/vendor/three.min.js?v=646"></script>
-    <script defer src="/scripts/scene/helpers.js?v=646"></script>
-    <script defer src="/scripts/scene/palette.js?v=646"></script>
-    <script defer src="/scripts/scene/textures.js?v=646"></script>
-    <script defer src="/scripts/scene/index.js?v=646"></script>
-    <script defer src="/scripts/ui/hero.js?v=646"></script>
-    <script defer src="/scripts/ui/icons.js?v=646"></script>
-    <script defer src="/scripts/ui/panels.js?v=646"></script>
-    <script defer src="/scripts/main.js?v=646"></script>
+    <script defer src="/vendor/three.min.js?v=648"></script>
+    <script defer src="/scripts/scene/helpers.js?v=648"></script>
+    <script defer src="/scripts/scene/palette.js?v=648"></script>
+    <script defer src="/scripts/scene/quality.js?v=648"></script>
+    <script defer src="/scripts/scene/visibility.js?v=648"></script>
+    <script defer src="/scripts/scene/textures.js?v=648"></script>
+    <script defer src="/scripts/scene/index.js?v=648"></script>
+    <script defer src="/scripts/ui/hero.js?v=648"></script>
+    <script defer src="/scripts/ui/icons.js?v=648"></script>
+    <script defer src="/scripts/ui/panels.js?v=648"></script>
+    <script defer src="/scripts/ui/scene-tuner.js?v=648"></script>
+    <script defer src="/scripts/main.js?v=648"></script>
   </body>
 </html>
