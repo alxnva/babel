@@ -5,6 +5,7 @@ Desktop.ini
 # Workspace/editor state
 .vscode/
 .vs/
+.claude/
 *.code-workspace
 *.swp
 *.swo

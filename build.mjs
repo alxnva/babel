@@ -1,12 +1,13 @@
 import { build, context } from "esbuild";
-import { copyFile, cp, mkdir, rm } from "node:fs/promises";
+import { copyFile, cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Order matters: each IIFE attaches to window.BabelSite and may read from
+// entries that ran before it. main.js must run last (it reads ui + scene).
 const ENTRIES = [
-  "main.js",
   "scene/helpers.js",
   "scene/palette.js",
   "scene/quality.js",
@@ -17,6 +18,7 @@ const ENTRIES = [
   "ui/icons.js",
   "ui/panels.js",
   "ui/scene-tuner.js",
+  "main.js",
 ];
 
 const args = new Set(process.argv.slice(2));
@@ -37,6 +39,7 @@ const STATIC_FILES = [
 const STATIC_DIRS = ["fonts"];
 const DIST_DIR = join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = join(DIST_DIR, "scripts");
+const APP_BUNDLE = join(DIST_SCRIPTS_DIR, "app.js");
 const THREE_VENDOR_SOURCE = join(__dirname, "node_modules", "three", "build", "three.min.js");
 const THREE_VENDOR_DEST = join(DIST_DIR, "vendor", "three.min.js");
 
@@ -44,27 +47,34 @@ if ((watch && check) || (watch && dist) || (check && dist)) {
   throw new Error("Use only one of --watch, --check, or --dist.");
 }
 
-const baseOptions = (entry, outRoot = DIST_SCRIPTS_DIR) => ({
+const entryOptions = (entry) => ({
   entryPoints: [join(__dirname, "src", entry)],
-  outfile: join(outRoot, entry),
   bundle: false,
   minify: true,
   target: "es2019",
   format: "iife",
   legalComments: "none",
-  logLevel: "info",
+  write: false,
 });
 
-async function buildAllEntries(outRoot = DIST_SCRIPTS_DIR, write = true) {
-  await Promise.all(
-    ENTRIES.map((entry) =>
-      build({
-        ...baseOptions(entry, outRoot),
-        logLevel: write ? "info" : "silent",
-        write,
-      }),
-    ),
+async function buildAppBundle({ write = true } = {}) {
+  const results = await Promise.all(
+    ENTRIES.map((entry) => build(entryOptions(entry))),
   );
+  const chunks = results.map((res, ix) => {
+    const out = res.outputFiles?.[0];
+    if (!out) throw new Error(`esbuild produced no output for ${ENTRIES[ix]}`);
+    return out.text;
+  });
+  // Concatenated IIFEs with a newline between so minifier-free joins stay safe.
+  const bundled = chunks.join("\n");
+  if (write) {
+    await mkdir(DIST_SCRIPTS_DIR, { recursive: true });
+    await writeFile(APP_BUNDLE, bundled);
+    const sizeKb = (Buffer.byteLength(bundled) / 1024).toFixed(1);
+    console.log(`bundled ${ENTRIES.length} entries -> dist/scripts/app.js (${sizeKb} kB)`);
+  }
+  return bundled;
 }
 
 async function copyStaticAssets() {
@@ -89,19 +99,21 @@ async function copyStaticAssets() {
 async function buildDist() {
   await rm(DIST_DIR, { recursive: true, force: true });
   await mkdir(DIST_SCRIPTS_DIR, { recursive: true });
-  await buildAllEntries();
+  await buildAppBundle();
   await copyStaticAssets();
 }
 
 if (watch) {
   await buildDist();
   const contexts = await Promise.all(
-    ENTRIES.map((entry) => context(baseOptions(entry))),
+    ENTRIES.map((entry) =>
+      context({ ...entryOptions(entry), write: false }),
+    ),
   );
   await Promise.all(contexts.map((ctx) => ctx.watch()));
-  console.log("watching src/ -> dist/scripts/ (rerun build:dist after static asset changes)");
+  console.log("watching src/ (rerun build:dist after static asset changes)");
 } else if (check) {
-  await buildAllEntries(DIST_SCRIPTS_DIR, false);
+  await buildAppBundle({ write: false });
   console.log(`verified ${ENTRIES.length} entry points`);
 } else if (dist) {
   await buildDist();
