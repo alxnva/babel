@@ -92,11 +92,11 @@
   }
 
   function drawNotebook(ctx, width, height, active) {
-    const x = width * 0.31;
-    const y = height * 0.2;
-    const w = width * 0.38;
-    const h = height * 0.58;
-    const spineW = w * 0.24;
+    const x = width * 0.16;
+    const y = height * 0.11;
+    const w = width * 0.66;
+    const h = height * 0.72;
+    const spineW = w * 0.2;
     const palette = [
       "#857d73",
       "#726f66",
@@ -116,80 +116,128 @@
       0,
       width * 0.5,
       height * 0.5,
-      width * 0.3,
+      width * 0.42,
     );
     glow.addColorStop(0, active ? "rgba(134, 129, 120, 0.34)" : "rgba(118, 112, 103, 0.2)");
     glow.addColorStop(1, "rgba(92, 84, 70, 0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
-    roundedRectPath(ctx, x, y, w, h, width * 0.05);
+    roundedRectPath(ctx, x, y, w, h, width * 0.045);
     ctx.fillStyle = "#453d2a";
     ctx.fill();
 
     ctx.fillStyle = "#342e20";
-    roundedRectPath(ctx, x, y, spineW, h, width * 0.04);
+    roundedRectPath(ctx, x, y, spineW, h, width * 0.035);
     ctx.fill();
 
-    ctx.fillStyle = "rgba(130, 124, 113, 0.22)";
-    roundedRectPath(
-      ctx,
-      x + spineW,
-      y + height * 0.01,
-      w - spineW - width * 0.01,
-      h * 0.28,
-      width * 0.03,
+    const pageX = x + spineW;
+    const pageW = w - spineW - width * 0.012;
+    const pageY = y + height * 0.012;
+    const pageH = h - height * 0.024;
+
+    ctx.fillStyle = "rgba(138, 132, 121, 0.28)";
+    roundedRectPath(ctx, pageX, pageY, pageW, pageH, width * 0.025);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(60, 52, 40, 0.36)";
+    ctx.fillRect(pageX + pageW * 0.04, pageY + pageH * 0.55, pageW * 0.9, pageH * 0.42);
+
+    ctx.fillStyle = "rgba(88, 78, 60, 0.44)";
+    ctx.beginPath();
+    ctx.moveTo(pageX + pageW * 0.82, pageY);
+    ctx.lineTo(pageX + pageW, pageY);
+    ctx.lineTo(pageX + pageW, pageY + pageH * 0.18);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = active ? "rgba(224, 210, 178, 0.8)" : "rgba(196, 180, 150, 0.62)";
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    const dropX = pageX + pageW * 0.14;
+    const dropY = pageY + pageH * 0.22;
+    const dropSize = pageW * 0.16;
+    ctx.moveTo(dropX, dropY + dropSize * 0.25);
+    ctx.bezierCurveTo(
+      dropX - dropSize * 0.2,
+      dropY - dropSize * 0.55,
+      dropX + dropSize * 0.85,
+      dropY - dropSize * 0.75,
+      dropX + dropSize * 0.95,
+      dropY - dropSize * 0.05,
     );
-    ctx.fill();
-
-    ctx.fillStyle = "rgba(60, 52, 40, 0.52)";
-    ctx.fillRect(x + spineW + width * 0.02, y + h * 0.53, w - spineW - width * 0.07, h * 0.42);
-
-    ctx.fillStyle = "rgba(80, 69, 52, 0.45)";
-    for (let idx = 0; idx < 5; idx += 1) {
-      const bandY = y + h * (0.15 + idx * 0.16);
-      ctx.fillRect(x + spineW + width * 0.01, bandY, w - spineW - width * 0.03, height * 0.015);
-    }
-
-    ctx.strokeStyle = active ? "rgba(152, 145, 134, 0.82)" : "rgba(129, 123, 112, 0.58)";
-    ctx.lineWidth = 1.1;
-    roundedRectPath(ctx, x, y, w, h, width * 0.05);
+    ctx.bezierCurveTo(
+      dropX + dropSize * 1.05,
+      dropY + dropSize * 0.5,
+      dropX + dropSize * 0.4,
+      dropY + dropSize * 0.95,
+      dropX + dropSize * 0.12,
+      dropY + dropSize * 0.55,
+    );
     ctx.stroke();
 
-    ctx.strokeStyle = "rgba(88, 74, 55, 0.68)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(206, 188, 150, 0.56)";
+    ctx.lineWidth = 1.05;
     for (let idx = 0; idx < 4; idx += 1) {
-      const yy = y + h * (0.2 + idx * 0.18);
+      const baseY = pageY + pageH * (0.26 + idx * 0.14);
+      const amp = pageH * (0.012 + idx * 0.004);
       ctx.beginPath();
-      ctx.moveTo(x + spineW + width * 0.03, yy);
-      ctx.lineTo(x + w - width * 0.04, yy - height * 0.03);
+      ctx.moveTo(pageX + pageW * 0.32, baseY);
+      ctx.bezierCurveTo(
+        pageX + pageW * 0.44,
+        baseY - amp,
+        pageX + pageW * 0.58,
+        baseY + amp,
+        pageX + pageW * 0.7,
+        baseY - amp * 0.5,
+      );
+      ctx.bezierCurveTo(
+        pageX + pageW * 0.8,
+        baseY - amp * 1.1,
+        pageX + pageW * 0.88,
+        baseY + amp * 0.3,
+        pageX + pageW * 0.94,
+        baseY - amp * 0.1,
+      );
+      ctx.stroke();
+    }
+    ctx.lineCap = "butt";
+
+    ctx.fillStyle = "rgba(196, 180, 150, 0.7)";
+    ctx.beginPath();
+    ctx.arc(pageX + pageW * 0.94, pageY + pageH * 0.82, width * 0.012, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = active ? "rgba(168, 158, 143, 0.86)" : "rgba(141, 133, 120, 0.62)";
+    ctx.lineWidth = 1.2;
+    roundedRectPath(ctx, x, y, w, h, width * 0.045);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(160, 148, 130, 0.9)";
+    ctx.strokeStyle = "rgba(52, 44, 32, 0.8)";
+    ctx.lineWidth = 0.8;
+    for (let idx = 0; idx < 5; idx += 1) {
+      const ringY = y + h * (0.14 + idx * 0.18);
+      ctx.beginPath();
+      ctx.arc(x + spineW * 0.5, ringY, width * 0.018, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
     }
 
-    ctx.fillStyle = "rgba(129, 123, 112, 0.9)";
-    for (let idx = 0; idx < 4; idx += 1) {
-      const ringY = y + h * (0.17 + idx * 0.19);
-      ctx.beginPath();
-      ctx.arc(x + spineW * 0.48, ringY, width * 0.012, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.strokeStyle = "rgba(136, 128, 116, 0.48)";
+    ctx.strokeStyle = "rgba(160, 148, 130, 0.5)";
     ctx.lineWidth = 0.9;
     ctx.beginPath();
-    ctx.moveTo(x + spineW + width * 0.02, y + h - height * 0.03);
-    ctx.lineTo(x + w - width * 0.02, y + h - height * 0.06);
+    ctx.moveTo(pageX + pageW * 0.04, y + h - height * 0.02);
+    ctx.lineTo(pageX + pageW * 0.96, y + h - height * 0.055);
     ctx.stroke();
-
-    ctx.fillStyle = "#726f66";
-    ctx.fillRect(width * 0.49, y + h + height * 0.02, width * 0.02, height * 0.12);
 
     applyPsxDither(
       ctx,
-      x - width * 0.02,
-      y - height * 0.02,
-      w + width * 0.05,
-      h + height * 0.18,
+      x - width * 0.03,
+      y - height * 0.03,
+      w + width * 0.07,
+      h + height * 0.08,
       palette,
       active ? 34 : 30,
       2,
@@ -197,102 +245,171 @@
   }
 
   function drawLetter(ctx, width, height, active) {
-    const x = width * 0.29;
-    const y = height * 0.23;
-    const w = width * 0.42;
-    const h = height * 0.52;
+    const x = width * 0.14;
+    const y = height * 0.16;
+    const w = width * 0.72;
+    const h = height * 0.66;
     const palette = [
-      "#939393",
-      "#726f66",
+      "#d6cfc3",
+      "#b6ab9c",
+      "#8f8577",
+      "#6f6558",
       "#5f5a55",
-      "#584b39",
       "#544836",
       "#4d4131",
-      "#493e30",
       "#45392a",
       "#3c3224",
       "#352a1c",
     ].map(hexToRgb);
 
     const glow = ctx.createRadialGradient(
-      width * 0.52,
-      height * 0.46,
+      width * 0.5,
+      height * 0.5,
       0,
-      width * 0.52,
-      height * 0.46,
-      width * 0.34,
+      width * 0.5,
+      height * 0.5,
+      width * 0.44,
     );
-    glow.addColorStop(0, active ? "rgba(118, 112, 100, 0.34)" : "rgba(102, 96, 86, 0.2)");
-    glow.addColorStop(1, "rgba(84, 74, 60, 0)");
+    glow.addColorStop(0, active ? "rgba(134, 126, 112, 0.34)" : "rgba(112, 104, 92, 0.2)");
+    glow.addColorStop(1, "rgba(86, 76, 62, 0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
     roundedRectPath(ctx, x, y, w, h, width * 0.03);
-    ctx.fillStyle = "#5f5a55";
+    ctx.fillStyle = "#c7bdab";
     ctx.fill();
 
-    ctx.fillStyle = "rgba(62, 51, 37, 0.3)";
-    ctx.fillRect(x + w * 0.04, y + h * 0.5, w * 0.92, h * 0.45);
+    ctx.fillStyle = "rgba(96, 80, 56, 0.14)";
+    ctx.fillRect(x + w * 0.04, y + h * 0.48, w * 0.92, h * 0.48);
 
-    ctx.fillStyle = "rgba(145, 145, 145, 0.5)";
+    ctx.fillStyle = "rgba(208, 196, 176, 0.72)";
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.74, y);
+    ctx.moveTo(x + w * 0.7, y);
     ctx.lineTo(x + w, y);
-    ctx.lineTo(x + w, y + h * 0.26);
+    ctx.lineTo(x + w, y + h * 0.28);
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = "rgba(83, 70, 53, 0.24)";
+    ctx.fillStyle = "rgba(96, 80, 56, 0.22)";
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.74, y);
-    ctx.lineTo(x + w * 0.74, y + h * 0.26);
-    ctx.lineTo(x + w, y + h * 0.26);
+    ctx.moveTo(x + w * 0.7, y);
+    ctx.lineTo(x + w * 0.7, y + h * 0.28);
+    ctx.lineTo(x + w, y + h * 0.28);
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = active ? "rgba(151, 151, 151, 0.9)" : "rgba(121, 119, 112, 0.66)";
-    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = active ? "rgba(188, 172, 142, 0.92)" : "rgba(156, 144, 122, 0.7)";
+    ctx.lineWidth = 1.25;
     roundedRectPath(ctx, x, y, w, h, width * 0.03);
     ctx.stroke();
 
-    ctx.strokeStyle = "rgba(67, 55, 42, 0.78)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = active ? "rgba(74, 58, 40, 0.88)" : "rgba(84, 68, 48, 0.78)";
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = "round";
+    const monoX = x + w * 0.18;
+    const monoY = y + h * 0.26;
+    const monoSize = w * 0.13;
+    ctx.beginPath();
+    ctx.moveTo(monoX + monoSize * 0.95, monoY - monoSize * 0.1);
+    ctx.bezierCurveTo(
+      monoX + monoSize * 0.55,
+      monoY - monoSize * 0.5,
+      monoX + monoSize * 0.05,
+      monoY - monoSize * 0.2,
+      monoX,
+      monoY + monoSize * 0.35,
+    );
+    ctx.bezierCurveTo(
+      monoX - monoSize * 0.05,
+      monoY + monoSize * 0.8,
+      monoX + monoSize * 0.45,
+      monoY + monoSize * 0.95,
+      monoX + monoSize * 0.95,
+      monoY + monoSize * 0.6,
+    );
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(74, 58, 40, 0.74)";
+    ctx.lineWidth = 1.15;
     for (let idx = 0; idx < 4; idx += 1) {
-      const yy = y + h * (0.24 + idx * 0.15);
+      const yy = y + h * (0.42 + idx * 0.12);
+      const amp = h * (0.018 + idx * 0.004);
+      const startX = x + w * (0.14 + (idx % 2) * 0.04);
+      const endX = x + w * (0.82 - (idx % 2) * 0.04);
       ctx.beginPath();
-      ctx.moveTo(x + w * 0.14, yy);
+      ctx.moveTo(startX, yy);
       ctx.bezierCurveTo(
-        x + w * 0.3,
-        yy - height * 0.03,
-        x + w * 0.56,
-        yy + height * 0.02,
-        x + w * 0.82,
-        yy - height * 0.01,
+        startX + (endX - startX) * 0.3,
+        yy - amp,
+        startX + (endX - startX) * 0.55,
+        yy + amp,
+        startX + (endX - startX) * 0.82,
+        yy - amp * 0.4,
+      );
+      ctx.bezierCurveTo(
+        startX + (endX - startX) * 0.93,
+        yy - amp * 0.9,
+        endX - amp * 0.1,
+        yy + amp * 0.2,
+        endX,
+        yy - amp * 0.2,
       );
       ctx.stroke();
     }
 
-    ctx.strokeStyle = "rgba(72, 58, 44, 0.72)";
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(68, 52, 36, 0.86)";
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.18, y + h * 0.78);
-    ctx.lineTo(x + w * 0.48, y + h * 0.9);
-    ctx.lineTo(x + w * 0.84, y + h * 0.8);
+    ctx.moveTo(x + w * 0.14, y + h * 0.9);
+    ctx.bezierCurveTo(
+      x + w * 0.26,
+      y + h * 0.96,
+      x + w * 0.42,
+      y + h * 0.82,
+      x + w * 0.52,
+      y + h * 0.9,
+    );
+    ctx.bezierCurveTo(
+      x + w * 0.62,
+      y + h * 0.98,
+      x + w * 0.74,
+      y + h * 0.84,
+      x + w * 0.86,
+      y + h * 0.9,
+    );
     ctx.stroke();
 
-    ctx.fillStyle = active ? "rgba(92, 72, 52, 0.66)" : "rgba(78, 60, 44, 0.54)";
+    ctx.strokeStyle = "rgba(68, 52, 36, 0.72)";
+    ctx.lineWidth = 0.9;
     ctx.beginPath();
-    ctx.arc(x + w * 0.72, y + h * 0.82, width * 0.028, 0, Math.PI * 2);
+    ctx.moveTo(x + w * 0.86, y + h * 0.9);
+    ctx.bezierCurveTo(
+      x + w * 0.94,
+      y + h * 0.88,
+      x + w * 0.98,
+      y + h * 0.78,
+      x + w * 0.92,
+      y + h * 0.72,
+    );
+    ctx.stroke();
+    ctx.lineCap = "butt";
+
+    ctx.fillStyle = active ? "rgba(168, 92, 58, 0.88)" : "rgba(146, 78, 50, 0.78)";
+    ctx.beginPath();
+    ctx.arc(x + w * 0.78, y + h * 0.32, width * 0.035, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(142, 130, 116, 0.5)";
-    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = "rgba(48, 30, 20, 0.68)";
+    ctx.lineWidth = 0.9;
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(74, 62, 48, 0.34)";
-    for (let idx = 0; idx < 3; idx += 1) {
-      const barY = y + h * (0.16 + idx * 0.28);
-      ctx.fillRect(x + w * 0.08, barY, w * 0.84, height * 0.012);
-    }
+    ctx.strokeStyle = "rgba(242, 224, 190, 0.5)";
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.78 - width * 0.014, y + h * 0.32 - width * 0.004);
+    ctx.lineTo(x + w * 0.78 + width * 0.014, y + h * 0.32 + width * 0.004);
+    ctx.moveTo(x + w * 0.78, y + h * 0.32 - width * 0.014);
+    ctx.lineTo(x + w * 0.78, y + h * 0.32 + width * 0.014);
+    ctx.stroke();
 
     applyPsxDither(
       ctx,
