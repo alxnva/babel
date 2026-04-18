@@ -1,7 +1,8 @@
 (() => {
-  const o = (window.BabelSite = window.BabelSite || {}),
-    a = (o.scene = o.scene || {});
-  ((a.GROUND_TEXTURE_PALETTE = {
+  const site = (window.BabelSite = window.BabelSite || {});
+  const scene = (site.scene = site.scene || {});
+
+  scene.GROUND_TEXTURE_PALETTE = {
     baseColor: "#d9ccb8",
     bumpBase: "#c3b6a6",
     shadowColor: "rgba(16, 20, 30, 0.09)",
@@ -17,41 +18,45 @@
     mossColor: "rgba(66, 84, 44, 0.14)",
     mossCore: "rgba(86, 104, 54, 0.18)",
     dampColor: "rgba(64, 82, 110, 0.10)",
-  }),
-    (a.PLANT_PALETTE = {
-      leafDeep: "#2c3c18",
-      leafMid: "#4a6028",
-      leafTip: "#8aa653",
-      leafVein: "rgba(30, 40, 18, 0.45)",
-      leafHighlight: "rgba(220, 230, 180, 0.3)",
-      leafShadow: "rgba(14, 20, 8, 0.35)",
-      grassRoot: "#3d5020",
-      grassTip: "#8ba85a",
-      grassShadow: "rgba(12, 18, 6, 0.35)",
-    }),
-    (a.TOWER_TEXTURE_PALETTE = {
-      mapBase: "#e4d7c3",
-      bumpBase: "#cabeb0",
-      mortarShadow: "rgba(6, 10, 18, 0.22)",
-      mortarHighlight: "rgba(252, 244, 234, 0.22)",
-      warmStain: "rgba(160, 104, 60, 0.17)",
-      coolStain: "rgba(84, 104, 148, 0.15)",
-      sootStain: "rgba(14, 16, 24, 0.18)",
-      limeWash: "rgba(244, 234, 220, 0.18)",
-      mossStain: "rgba(76, 92, 58, 0.13)",
-      collapseShadow: "rgba(8, 12, 20, 0.2)",
-    }),
-    (a.GROUND_SURFACE_MATERIAL = {
-      color: 7431518,
-      roughness: 0.98,
-      metalness: 0.02,
-      bumpScale: { lowPower: 0.1, default: 0.28 },
-    }),
-    (a.TOWER_SURFACE_MATERIALS = {
-      plinthColor: 7694689,
-      ringColor: 5589316,
-      shellColor: 12956087,
-      shellInnerColor: 5129014,
-      shellBumpScale: { lowPower: 0.09, default: 0.24 },
-    }));
+  };
+
+  scene.PLANT_PALETTE = {
+    leafDeep: "#2c3c18",
+    leafMid: "#4a6028",
+    leafTip: "#8aa653",
+    leafVein: "rgba(30, 40, 18, 0.45)",
+    leafHighlight: "rgba(220, 230, 180, 0.3)",
+    leafShadow: "rgba(14, 20, 8, 0.35)",
+    grassRoot: "#3d5020",
+    grassTip: "#8ba85a",
+    grassShadow: "rgba(12, 18, 6, 0.35)",
+  };
+
+  scene.TOWER_TEXTURE_PALETTE = {
+    mapBase: "#e4d7c3",
+    bumpBase: "#cabeb0",
+    mortarShadow: "rgba(6, 10, 18, 0.22)",
+    mortarHighlight: "rgba(252, 244, 234, 0.22)",
+    warmStain: "rgba(160, 104, 60, 0.17)",
+    coolStain: "rgba(84, 104, 148, 0.15)",
+    sootStain: "rgba(14, 16, 24, 0.18)",
+    limeWash: "rgba(244, 234, 220, 0.18)",
+    mossStain: "rgba(76, 92, 58, 0.13)",
+    collapseShadow: "rgba(8, 12, 20, 0.2)",
+  };
+
+  scene.GROUND_SURFACE_MATERIAL = {
+    color: 7431518,
+    roughness: 0.98,
+    metalness: 0.02,
+    bumpScale: { lowPower: 0.1, default: 0.28 },
+  };
+
+  scene.TOWER_SURFACE_MATERIALS = {
+    plinthColor: 7694689,
+    ringColor: 5589316,
+    shellColor: 12956087,
+    shellInnerColor: 5129014,
+    shellBumpScale: { lowPower: 0.09, default: 0.24 },
+  };
 })();

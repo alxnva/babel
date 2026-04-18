@@ -13,13 +13,13 @@
     let rafId = 0;
 
     function computeTarget() {
-      const y = window.scrollY || 0;
-      return Math.min(y / (0.58 * window.innerHeight), 1);
+      const scrollY = window.scrollY || 0;
+      return Math.min(scrollY / (0.58 * window.innerHeight), 1);
     }
 
-    function apply(t) {
-      hero.style.opacity = String(Math.max(0, 1 - 1.14 * t));
-      hero.style.transform = `translate3d(0, ${22 * t}px, 0) scale(${1 - 0.025 * t})`;
+    function apply(progress) {
+      hero.style.opacity = String(Math.max(0, 1 - 1.14 * progress));
+      hero.style.transform = `translate3d(0, ${22 * progress}px, 0) scale(${1 - 0.025 * progress})`;
     }
 
     function tick() {

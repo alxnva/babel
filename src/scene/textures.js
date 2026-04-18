@@ -1,380 +1,446 @@
 (() => {
-  const t = (window.BabelSite = window.BabelSite || {}),
-    l = (t.scene = t.scene || {}),
-    { clamp01: e, smoothstep01: a, wrappedDistance: o, wrap01: r } = l,
-    { GROUND_TEXTURE_PALETTE: i, TOWER_TEXTURE_PALETTE: n } = l;
-  function c(t, l, e = 0) {
-    const a = 43758.5453123 * Math.sin(12.9898 * t + 78.233 * l + 37.719 * e);
-    return a - Math.floor(a);
+  const site = (window.BabelSite = window.BabelSite || {});
+  const scene = (site.scene = site.scene || {});
+  const {
+    clamp01,
+    smoothstep01,
+    wrappedDistance,
+    wrap01,
+  } = scene;
+  const {
+    GROUND_TEXTURE_PALETTE: groundPalette,
+    TOWER_TEXTURE_PALETTE: towerPalette,
+  } = scene;
+
+  function hashNoise(xx, yy, zz = 0) {
+    const val = 43758.5453123 * Math.sin(12.9898 * xx + 78.233 * yy + 37.719 * zz);
+    return val - Math.floor(val);
   }
-  function s(t, l, e) {
-    const a = new t.CanvasTexture(l);
-    return (e(a), a);
+
+  function makeTexture(THREE, canvas, configure) {
+    const tex = new THREE.CanvasTexture(canvas);
+    configure(tex);
+    return tex;
   }
-  function h(t, e) {
-    if (t) return t;
-    if (typeof l.getSceneQualityProfile === "function") {
-      return l.getSceneQualityProfile(e ? "low" : "high");
+
+  function resolveProfile(profile, lowPower) {
+    if (profile) return profile;
+    if (typeof scene.getSceneQualityProfile === "function") {
+      return scene.getSceneQualityProfile(lowPower ? "low" : "high");
     }
     return {
-      anisotropy: { min: 1, max: e ? 4 : 8 },
+      anisotropy: { min: 1, max: lowPower ? 4 : 8 },
       textures: {
-        groundSize: e ? 512 : 1024,
-        overlaySize: e ? 256 : 512,
-        towerWidth: e ? 320 : 1280,
+        groundSize: lowPower ? 512 : 1024,
+        overlaySize: lowPower ? 256 : 512,
+        towerWidth: lowPower ? 320 : 1280,
       },
-      tier: e ? "low" : "high",
+      tier: lowPower ? "low" : "high",
     };
   }
-  ((l.createGroundTextures = function ({ THREE: t, lowPower: l, qualityProfile: p, chooseAnisotropy: e }) {
-    const n = h(p, l),
-      g = n.tier === "balanced",
-      a = n.textures.groundSize,
-      o = document.createElement("canvas"),
-      r = document.createElement("canvas");
-    ((o.width = a), (o.height = a), (r.width = a), (r.height = a));
-    const S = o.getContext("2d"),
-      T = r.getContext("2d");
-    if (!S || !T) return { colorMap: null, bumpMap: null };
-    ((S.fillStyle = i.baseColor),
-      S.fillRect(0, 0, a, a),
-      (T.fillStyle = i.bumpBase),
-      T.fillRect(0, 0, a, a));
-    const dirtBlotchCount = l ? 60 : g ? 90 : 120;
-    for (let t = 0; t < dirtBlotchCount; t += 1) {
-      const o = c(t, 601) * a,
-        r = c(t, 602) * a,
-        s = a * (0.025 + 0.07 * c(t, 603)),
-        h = c(t, 604),
-        b = S.createRadialGradient(o, r, 0, o, r, s);
-      (b.addColorStop(
+
+  scene.createGroundTextures = function ({ THREE, lowPower, qualityProfile, chooseAnisotropy }) {
+    const profile = resolveProfile(qualityProfile, lowPower);
+    const balanced = profile.tier === "balanced";
+    const size = profile.textures.groundSize;
+    const colorCanvas = document.createElement("canvas");
+    const bumpCanvas = document.createElement("canvas");
+    colorCanvas.width = size;
+    colorCanvas.height = size;
+    bumpCanvas.width = size;
+    bumpCanvas.height = size;
+
+    const colorCtx = colorCanvas.getContext("2d");
+    const bumpCtx = bumpCanvas.getContext("2d");
+    if (!colorCtx || !bumpCtx) return { colorMap: null, bumpMap: null };
+
+    colorCtx.fillStyle = groundPalette.baseColor;
+    colorCtx.fillRect(0, 0, size, size);
+    bumpCtx.fillStyle = groundPalette.bumpBase;
+    bumpCtx.fillRect(0, 0, size, size);
+
+    const dirtBlotchCount = lowPower ? 60 : balanced ? 90 : 120;
+    for (let idx = 0; idx < dirtBlotchCount; idx += 1) {
+      const cx = hashNoise(idx, 601) * size;
+      const cy = hashNoise(idx, 602) * size;
+      const radius = size * (0.025 + 0.07 * hashNoise(idx, 603));
+      const tone = hashNoise(idx, 604);
+      const colorGrad = colorCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      colorGrad.addColorStop(
         0,
-        h > 0.58
-          ? `rgba(86, 70, 54, ${0.12 + 0.1 * c(t, 605)})`
-          : h < 0.32
-            ? `rgba(232, 218, 196, ${0.08 + 0.08 * c(t, 606)})`
-            : `rgba(168, 148, 124, ${0.06 + 0.08 * c(t, 607)})`,
-      ),
-        b.addColorStop(1, "rgba(120, 104, 84, 0)"),
-        (S.fillStyle = b),
-        S.beginPath(),
-        S.ellipse(o, r, s, s * (0.6 + 0.5 * c(t, 608)), c(t, 609) * Math.PI, 0, 2 * Math.PI),
-        S.fill());
-      const bg = T.createRadialGradient(o, r, 0, o, r, s);
-      (bg.addColorStop(0, h > 0.5 ? "#9b8e7e" : "#d3c8ba"),
-        bg.addColorStop(1, i.bumpBase),
-        (T.fillStyle = bg),
-        T.beginPath(),
-        T.ellipse(o, r, s, s * (0.6 + 0.5 * c(t, 608)), c(t, 609) * Math.PI, 0, 2 * Math.PI),
-        T.fill());
+        tone > 0.58
+          ? `rgba(86, 70, 54, ${0.12 + 0.1 * hashNoise(idx, 605)})`
+          : tone < 0.32
+            ? `rgba(232, 218, 196, ${0.08 + 0.08 * hashNoise(idx, 606)})`
+            : `rgba(168, 148, 124, ${0.06 + 0.08 * hashNoise(idx, 607)})`,
+      );
+      colorGrad.addColorStop(1, "rgba(120, 104, 84, 0)");
+      colorCtx.fillStyle = colorGrad;
+      colorCtx.beginPath();
+      colorCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 608)), hashNoise(idx, 609) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.fill();
+
+      const bumpGrad = bumpCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      bumpGrad.addColorStop(0, tone > 0.5 ? "#9b8e7e" : "#d3c8ba");
+      bumpGrad.addColorStop(1, groundPalette.bumpBase);
+      bumpCtx.fillStyle = bumpGrad;
+      bumpCtx.beginPath();
+      bumpCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 608)), hashNoise(idx, 609) * Math.PI, 0, 2 * Math.PI);
+      bumpCtx.fill();
     }
-    const H = l ? 2600 : g ? 3900 : 5200;
-    for (let t = 0; t < H; t += 1) {
-      const l = c(t, 21) * a,
-        e = c(t, 22) * a,
-        o = a * (8e-4 + 0.0038 * c(t, 23)),
-        r = c(t, 24);
-      ((S.fillStyle =
-        r > 0.68
-          ? i.emberDustColor
-          : r < 0.22
-            ? i.coolDustColor
-            : `rgba(118, 108, 102, ${0.04 + 0.08 * c(t, 25)})`),
-        S.beginPath(),
-        S.arc(l, e, o, 0, 2 * Math.PI),
-        S.fill());
-      const s = 135 + Math.floor(80 * c(t, 26));
-      ((T.fillStyle = `rgb(${s}, ${s}, ${s})`),
-        T.beginPath(),
-        T.arc(l, e, o, 0, 2 * Math.PI),
-        T.fill());
+
+    const dustCount = lowPower ? 2600 : balanced ? 3900 : 5200;
+    for (let idx = 0; idx < dustCount; idx += 1) {
+      const px = hashNoise(idx, 21) * size;
+      const py = hashNoise(idx, 22) * size;
+      const radius = size * (8e-4 + 0.0038 * hashNoise(idx, 23));
+      const tone = hashNoise(idx, 24);
+      colorCtx.fillStyle =
+        tone > 0.68
+          ? groundPalette.emberDustColor
+          : tone < 0.22
+            ? groundPalette.coolDustColor
+            : `rgba(118, 108, 102, ${0.04 + 0.08 * hashNoise(idx, 25)})`;
+      colorCtx.beginPath();
+      colorCtx.arc(px, py, radius, 0, 2 * Math.PI);
+      colorCtx.fill();
+
+      const gray = 135 + Math.floor(80 * hashNoise(idx, 26));
+      bumpCtx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+      bumpCtx.beginPath();
+      bumpCtx.arc(px, py, radius, 0, 2 * Math.PI);
+      bumpCtx.fill();
     }
-    const pebbleCount = l ? 260 : g ? 360 : 520;
-    for (let t = 0; t < pebbleCount; t += 1) {
-      const o = c(t, 301) * a,
-        r = c(t, 302) * a,
-        big = c(t, 310) > 0.86,
-        s = a * (big ? 0.006 + 0.012 * c(t, 303) : 0.0022 + 0.005 * c(t, 303)),
-        l = 44 + Math.floor(46 * c(t, 304)),
-        v = c(t, 305),
-        shadowOffset = s * 0.35;
-      (S.save(),
-        (S.fillStyle = `rgba(20, 14, 8, ${0.22 + 0.14 * c(t, 320)})`),
-        S.beginPath(),
-        S.ellipse(o + shadowOffset, r + shadowOffset, s * 1.05, s * 0.75, 0, 0, 2 * Math.PI),
-        S.fill(),
-        S.restore(),
-        (S.fillStyle =
-          v > 0.68
-            ? `rgba(${Math.min(240, l + 70)}, ${Math.min(230, l + 60)}, ${Math.min(210, l + 44)}, ${0.55 + 0.25 * c(t, 306)})`
-            : v > 0.36
-              ? `rgba(${l + 26}, ${l + 18}, ${l + 8}, ${0.48 + 0.25 * c(t, 307)})`
-              : `rgba(${Math.max(28, l - 18)}, ${Math.max(22, l - 24)}, ${Math.max(16, l - 30)}, ${0.5 + 0.25 * c(t, 308)})`),
-        S.beginPath(),
-        S.ellipse(o, r, s, s * (0.75 + 0.25 * c(t, 311)), c(t, 312) * Math.PI, 0, 2 * Math.PI),
-        S.fill());
+
+    const pebbleCount = lowPower ? 260 : balanced ? 360 : 520;
+    for (let idx = 0; idx < pebbleCount; idx += 1) {
+      const cx = hashNoise(idx, 301) * size;
+      const cy = hashNoise(idx, 302) * size;
+      const big = hashNoise(idx, 310) > 0.86;
+      const radius = size * (big ? 0.006 + 0.012 * hashNoise(idx, 303) : 0.0022 + 0.005 * hashNoise(idx, 303));
+      const base = 44 + Math.floor(46 * hashNoise(idx, 304));
+      const shade = hashNoise(idx, 305);
+      const shadowOffset = radius * 0.35;
+
+      colorCtx.save();
+      colorCtx.fillStyle = `rgba(20, 14, 8, ${0.22 + 0.14 * hashNoise(idx, 320)})`;
+      colorCtx.beginPath();
+      colorCtx.ellipse(cx + shadowOffset, cy + shadowOffset, radius * 1.05, radius * 0.75, 0, 0, 2 * Math.PI);
+      colorCtx.fill();
+      colorCtx.restore();
+
+      colorCtx.fillStyle =
+        shade > 0.68
+          ? `rgba(${Math.min(240, base + 70)}, ${Math.min(230, base + 60)}, ${Math.min(210, base + 44)}, ${0.55 + 0.25 * hashNoise(idx, 306)})`
+          : shade > 0.36
+            ? `rgba(${base + 26}, ${base + 18}, ${base + 8}, ${0.48 + 0.25 * hashNoise(idx, 307)})`
+            : `rgba(${Math.max(28, base - 18)}, ${Math.max(22, base - 24)}, ${Math.max(16, base - 30)}, ${0.5 + 0.25 * hashNoise(idx, 308)})`;
+      colorCtx.beginPath();
+      colorCtx.ellipse(cx, cy, radius, radius * (0.75 + 0.25 * hashNoise(idx, 311)), hashNoise(idx, 312) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.fill();
+
       if (big) {
-        const hi = S.createRadialGradient(
-          o - s * 0.3,
-          r - s * 0.3,
+        const hi = colorCtx.createRadialGradient(
+          cx - radius * 0.3,
+          cy - radius * 0.3,
           0,
-          o - s * 0.3,
-          r - s * 0.3,
-          s * 0.7,
+          cx - radius * 0.3,
+          cy - radius * 0.3,
+          radius * 0.7,
         );
-        (hi.addColorStop(0, "rgba(255, 246, 224, 0.35)"),
-          hi.addColorStop(1, "rgba(255, 246, 224, 0)"),
-          (S.fillStyle = hi),
-          S.beginPath(),
-          S.ellipse(o - s * 0.3, r - s * 0.3, s * 0.5, s * 0.35, 0, 0, 2 * Math.PI),
-          S.fill());
+        hi.addColorStop(0, "rgba(255, 246, 224, 0.35)");
+        hi.addColorStop(1, "rgba(255, 246, 224, 0)");
+        colorCtx.fillStyle = hi;
+        colorCtx.beginPath();
+        colorCtx.ellipse(cx - radius * 0.3, cy - radius * 0.3, radius * 0.5, radius * 0.35, 0, 0, 2 * Math.PI);
+        colorCtx.fill();
       }
-      const h = big ? 210 + Math.floor(40 * c(t, 309)) : 170 + Math.floor(60 * c(t, 309));
-      ((T.fillStyle = `rgb(${h}, ${h}, ${h})`),
-        T.beginPath(),
-        T.ellipse(o, r, s, s * (0.75 + 0.25 * c(t, 311)), c(t, 312) * Math.PI, 0, 2 * Math.PI),
-        T.fill(),
-        (T.fillStyle = "#7d7468"),
-        T.beginPath(),
-        T.ellipse(o + shadowOffset, r + shadowOffset, s * 1.05, s * 0.75, 0, 0, 2 * Math.PI),
-        T.fill());
+
+      const bumpGray = big ? 210 + Math.floor(40 * hashNoise(idx, 309)) : 170 + Math.floor(60 * hashNoise(idx, 309));
+      bumpCtx.fillStyle = `rgb(${bumpGray}, ${bumpGray}, ${bumpGray})`;
+      bumpCtx.beginPath();
+      bumpCtx.ellipse(cx, cy, radius, radius * (0.75 + 0.25 * hashNoise(idx, 311)), hashNoise(idx, 312) * Math.PI, 0, 2 * Math.PI);
+      bumpCtx.fill();
+      bumpCtx.fillStyle = "#7d7468";
+      bumpCtx.beginPath();
+      bumpCtx.ellipse(cx + shadowOffset, cy + shadowOffset, radius * 1.05, radius * 0.75, 0, 0, 2 * Math.PI);
+      bumpCtx.fill();
     }
-    const mossColor = i.mossColor || "rgba(66, 84, 44, 0.14)",
-      mossCore = i.mossCore || "rgba(86, 104, 54, 0.18)",
-      mossCount = l ? 3 : g ? 5 : 6;
-    for (let t = 0; t < mossCount; t += 1) {
-      const o = c(t, 401) * a,
-        r = c(t, 402) * a,
-        s = a * (0.03 + 0.05 * c(t, 403)),
-        l = S.createRadialGradient(o, r, 0, o, r, s);
-      (l.addColorStop(0, mossCore),
-        l.addColorStop(0.5, mossColor),
-        l.addColorStop(1, "rgba(66, 84, 44, 0)"),
-        (S.fillStyle = l),
-        S.beginPath(),
-        S.ellipse(o, r, s, s * (0.6 + 0.5 * c(t, 404)), c(t, 405) * Math.PI, 0, 2 * Math.PI),
-        S.fill());
-      for (let l = 0; l < 8; l += 1) {
-        const e = o + s * 0.6 * (c(t, 410 + l) - 0.5) * 2,
-          i = r + s * 0.6 * (c(t, 420 + l) - 0.5) * 2;
-        ((S.fillStyle = `rgba(86, 104, 54, ${0.12 + 0.14 * c(t, 430 + l)})`),
-          S.beginPath(),
-          S.arc(e, i, 0.9 + 1.4 * c(t, 440 + l), 0, 2 * Math.PI),
-          S.fill());
+
+    const mossColor = groundPalette.mossColor || "rgba(66, 84, 44, 0.14)";
+    const mossCore = groundPalette.mossCore || "rgba(86, 104, 54, 0.18)";
+    const mossCount = lowPower ? 3 : balanced ? 5 : 6;
+    for (let idx = 0; idx < mossCount; idx += 1) {
+      const cx = hashNoise(idx, 401) * size;
+      const cy = hashNoise(idx, 402) * size;
+      const radius = size * (0.03 + 0.05 * hashNoise(idx, 403));
+      const grad = colorCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      grad.addColorStop(0, mossCore);
+      grad.addColorStop(0.5, mossColor);
+      grad.addColorStop(1, "rgba(66, 84, 44, 0)");
+      colorCtx.fillStyle = grad;
+      colorCtx.beginPath();
+      colorCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 404)), hashNoise(idx, 405) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.fill();
+
+      for (let fleck = 0; fleck < 8; fleck += 1) {
+        const fx = cx + radius * 0.6 * (hashNoise(idx, 410 + fleck) - 0.5) * 2;
+        const fy = cy + radius * 0.6 * (hashNoise(idx, 420 + fleck) - 0.5) * 2;
+        colorCtx.fillStyle = `rgba(86, 104, 54, ${0.12 + 0.14 * hashNoise(idx, 430 + fleck)})`;
+        colorCtx.beginPath();
+        colorCtx.arc(fx, fy, 0.9 + 1.4 * hashNoise(idx, 440 + fleck), 0, 2 * Math.PI);
+        colorCtx.fill();
       }
     }
-    const breakupCount = l ? 40 : g ? 60 : 90;
-    for (let t = 0; t < breakupCount; t += 1) {
-      const o = c(t, 501) * a,
-        r = c(t, 502) * a,
-        s = a * (0.05 + 0.12 * c(t, 503)),
-        l = S.createRadialGradient(o, r, 0, o, r, s),
-        h = c(t, 504);
-      (l.addColorStop(
+
+    const breakupCount = lowPower ? 40 : balanced ? 60 : 90;
+    for (let idx = 0; idx < breakupCount; idx += 1) {
+      const cx = hashNoise(idx, 501) * size;
+      const cy = hashNoise(idx, 502) * size;
+      const radius = size * (0.05 + 0.12 * hashNoise(idx, 503));
+      const grad = colorCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      const tone = hashNoise(idx, 504);
+      grad.addColorStop(
         0,
-        h > 0.5
-          ? `rgba(40, 34, 28, ${0.03 + 0.04 * c(t, 505)})`
-          : `rgba(248, 236, 216, ${0.02 + 0.03 * c(t, 506)})`,
-      ),
-        l.addColorStop(1, "rgba(0, 0, 0, 0)"),
-        (S.fillStyle = l),
-        S.beginPath(),
-        S.arc(o, r, s, 0, 2 * Math.PI),
-        S.fill());
+        tone > 0.5
+          ? `rgba(40, 34, 28, ${0.03 + 0.04 * hashNoise(idx, 505)})`
+          : `rgba(248, 236, 216, ${0.02 + 0.03 * hashNoise(idx, 506)})`,
+      );
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      colorCtx.fillStyle = grad;
+      colorCtx.beginPath();
+      colorCtx.arc(cx, cy, radius, 0, 2 * Math.PI);
+      colorCtx.fill();
     }
-    const b = e(n.anisotropy.min, n.anisotropy.max);
+
+    const aniso = chooseAnisotropy(profile.anisotropy.min, profile.anisotropy.max);
     return {
-      colorMap: s(t, o, (l) => {
-        ((l.wrapS = t.MirroredRepeatWrapping),
-          (l.wrapT = t.MirroredRepeatWrapping),
-          l.repeat.set(4, 4),
-          (l.anisotropy = b),
-          (l.encoding = t.sRGBEncoding));
+      colorMap: makeTexture(THREE, colorCanvas, (tex) => {
+        tex.wrapS = THREE.MirroredRepeatWrapping;
+        tex.wrapT = THREE.MirroredRepeatWrapping;
+        tex.repeat.set(4, 4);
+        tex.anisotropy = aniso;
+        tex.encoding = THREE.sRGBEncoding;
       }),
-      bumpMap: s(t, r, (l) => {
-        ((l.wrapS = t.MirroredRepeatWrapping),
-          (l.wrapT = t.MirroredRepeatWrapping),
-          l.repeat.set(4, 4),
-          (l.anisotropy = b));
+      bumpMap: makeTexture(THREE, bumpCanvas, (tex) => {
+        tex.wrapS = THREE.MirroredRepeatWrapping;
+        tex.wrapT = THREE.MirroredRepeatWrapping;
+        tex.repeat.set(4, 4);
+        tex.anisotropy = aniso;
       }),
     };
-  }),
-    (l.createGroundOverlayTexture = function ({ THREE: t, lowPower: l, qualityProfile: a }) {
-      const r = h(a, l),
-        e = r.textures.overlaySize,
-        n = document.createElement("canvas");
-      ((n.width = e), (n.height = e));
-      const o = n.getContext("2d");
-      if (!o) return null;
-      o.clearRect(0, 0, e, e);
-      const s = e / 2,
-        p = i.dampColor || "rgba(64, 82, 110, 0.10)",
-        f = o.createRadialGradient(s, s, 0, s, s, 0.22 * e);
-      (f.addColorStop(0, p),
-        f.addColorStop(0.5, "rgba(64, 82, 110, 0.04)"),
-        f.addColorStop(1, "rgba(64, 82, 110, 0)"),
-        (o.fillStyle = f),
-        o.fillRect(0, 0, e, e));
-      const d = o.createRadialGradient(s, s, 0.06 * e, s, s, 0.36 * e);
-      (d.addColorStop(0, "rgba(174, 120, 72, 0.13)"),
-        d.addColorStop(0.55, "rgba(174, 120, 72, 0.05)"),
-        d.addColorStop(1, "rgba(174, 120, 72, 0)"),
-        (o.fillStyle = d),
-        o.fillRect(0, 0, e, e));
-      const g = o.createRadialGradient(s, s, 0, s, s, 0.12 * e);
-      (g.addColorStop(0, "rgba(12, 16, 24, 0.22)"),
-        g.addColorStop(0.7, "rgba(12, 16, 24, 0.06)"),
-        g.addColorStop(1, "rgba(12, 16, 24, 0)"),
-        (o.fillStyle = g),
-        o.fillRect(0, 0, e, e));
-      const b = o.createRadialGradient(s, s, 0.38 * e, s, s, 0.5 * e);
-      (b.addColorStop(0, "rgba(10, 12, 22, 0)"),
-        b.addColorStop(1, "rgba(10, 12, 22, 0.22)"),
-        (o.fillStyle = b),
-        o.fillRect(0, 0, e, e));
-      const m = new t.CanvasTexture(n);
-      return (
-        (m.wrapS = t.ClampToEdgeWrapping),
-        (m.wrapT = t.ClampToEdgeWrapping),
-        (m.encoding = t.sRGBEncoding),
-        m
-      );
-    }),
-    (l.createTowerTextures = function ({
-      THREE: t,
-      lowPower: l,
-      qualityProfile: qualityProfile,
-      chooseAnisotropy: chooseAnisotropy,
-      collapseYaw: collapseYaw,
-      collapseSpread: collapseSpread,
-    }) {
-      const E = h(qualityProfile, l),
-        P = E.tier === "balanced",
-        d = E.textures.towerWidth,
-        S = 2 * d,
-        rowCount = l ? 20 : P ? 32 : 48,
-        columnCount = l ? 20 : P ? 28 : 34,
-        b = document.createElement("canvas"),
-        m = document.createElement("canvas");
-      ((b.width = d), (b.height = S), (m.width = d), (m.height = S));
-      const R = b.getContext("2d"),
-        y = m.getContext("2d");
-      if (!R || !y) return { colorMap: null, bumpMap: null };
-      const u = r(collapseYaw / (2 * Math.PI)),
-        w = Math.max(0.08, collapseSpread / (2 * Math.PI)),
-        M = S / rowCount,
-        C = d / columnCount,
-        T = l ? 1 : P ? 1.2 : 1.4;
-      ((R.imageSmoothingEnabled = !1),
-        (y.imageSmoothingEnabled = !1),
-        (R.fillStyle = n.mapBase),
-        R.fillRect(0, 0, d, S),
-        (y.fillStyle = n.bumpBase),
-        y.fillRect(0, 0, d, S));
-      for (let t = 0; t < rowCount; t += 1) {
-        const l = t * M,
-          i = t / Math.max(1, rowCount - 1),
-          s = Math.pow(i, 1.55),
-          p = t % 2 == 0 ? 0 : C / 2;
-        ((R.fillStyle = t % 5 == 0 ? "rgba(0, 0, 0, 0.018)" : "rgba(255, 255, 255, 0.012)"),
-          R.fillRect(0, l, d, M));
-        for (let f = -1; f <= columnCount + 1; f += 1) {
-          const S = f * C + p,
-            h = r((S + 0.5 * C) / d),
-            g = e(1 - o(h, u) / w) * a(Math.max(0, (i - 0.42) / 0.58)),
-            b = T * (0.62 + 0.48 * c(t, f, 1) * (1 + s)),
-            m = T * (0.72 + 0.44 * c(t, f, 2) * (1 + s)),
-            E = Math.max(C - 2 * b, 0.58 * C),
-            P = Math.max(M - 1.6 * m, 0.52 * M),
-            x = S + b,
-            W = l + m,
-            v = (c(t, f, 3) - 0.5) * (0.16 + 0.12 * s),
-            G = c(t, f, 4);
-          if (
-            ((R.fillStyle = v >= 0 ? `rgba(255, 255, 255, ${v})` : `rgba(0, 0, 0, ${Math.abs(v)})`),
-            R.fillRect(x, W, E, P),
-            G > 0.72
-              ? ((R.fillStyle = n.warmStain), R.fillRect(x, W, E, P))
-              : G > 0.48
-                ? ((R.fillStyle = n.coolStain), R.fillRect(x, W, E, P))
-                : G < 0.16 && ((R.fillStyle = n.mossStain), R.fillRect(x, W, E, P)),
-            (R.fillStyle = n.mortarShadow),
-            R.fillRect(x, W + P - 1, E, 1),
-            (R.fillStyle = n.mortarHighlight),
-            R.fillRect(x, W, E, 1),
-            g > 0.02 &&
-              ((R.fillStyle = `rgba(0, 0, 0, ${0.01 + 0.06 * g})`),
-              R.fillRect(x, W, E, P),
-              c(t, f, 5) > 0.58))
-          ) {
-            const l = T * (1.2 + 2.8 * c(t, f, 6) + 1.8 * g),
-              e = M * (0.08 + 0.18 * c(t, f, 7)),
-              a = c(t, f, 8) > 0.5 ? x : x + E - l,
-              o = W + c(t, f, 9) * Math.max(1, P - e);
-            ((R.fillStyle = n.sootStain),
-              R.fillRect(a, o, l, e),
-              (y.fillStyle = "#98a3b8"),
-              y.fillRect(a, o, l, e));
-          }
-          const I = S - T / 2 + (c(t, f, 10) - 0.5) * T * (0.7 + s),
-            $ = l + 0.8 * T,
-            B = Math.max(0.38 * M, M - T * (1.8 + c(t, f, 11) * (1 + s)));
-          if (
-            ((R.fillStyle = n.mortarShadow),
-            R.fillRect(I, $, T, B),
-            (y.fillStyle = "#98a3b8"),
-            y.fillRect(I, $, T, B),
-            i > 0.52 && c(t, f, 12) > 0.64 - 0.2 * g)
-          ) {
-            const e = M * (0.32 + 0.58 * c(t, f, 13)),
-              a = C * (0.02 + 0.04 * c(t, f, 14)),
-              o = R.createLinearGradient(0, l, 0, l + e);
-            (o.addColorStop(0, n.sootStain),
-              o.addColorStop(1, "rgba(0, 0, 0, 0)"),
-              (R.fillStyle = o),
-              R.fillRect(x + E * c(t, f, 15), l, a, e));
+  };
+
+  scene.createGroundOverlayTexture = function ({ THREE, lowPower, qualityProfile }) {
+    const profile = resolveProfile(qualityProfile, lowPower);
+    const size = profile.textures.overlaySize;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.clearRect(0, 0, size, size);
+
+    const center = size / 2;
+    const dampColor = groundPalette.dampColor || "rgba(64, 82, 110, 0.10)";
+
+    const dampGrad = ctx.createRadialGradient(center, center, 0, center, center, 0.22 * size);
+    dampGrad.addColorStop(0, dampColor);
+    dampGrad.addColorStop(0.5, "rgba(64, 82, 110, 0.04)");
+    dampGrad.addColorStop(1, "rgba(64, 82, 110, 0)");
+    ctx.fillStyle = dampGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    const warmGrad = ctx.createRadialGradient(center, center, 0.06 * size, center, center, 0.36 * size);
+    warmGrad.addColorStop(0, "rgba(174, 120, 72, 0.13)");
+    warmGrad.addColorStop(0.55, "rgba(174, 120, 72, 0.05)");
+    warmGrad.addColorStop(1, "rgba(174, 120, 72, 0)");
+    ctx.fillStyle = warmGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    const shadowGrad = ctx.createRadialGradient(center, center, 0, center, center, 0.12 * size);
+    shadowGrad.addColorStop(0, "rgba(12, 16, 24, 0.22)");
+    shadowGrad.addColorStop(0.7, "rgba(12, 16, 24, 0.06)");
+    shadowGrad.addColorStop(1, "rgba(12, 16, 24, 0)");
+    ctx.fillStyle = shadowGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    const vignette = ctx.createRadialGradient(center, center, 0.38 * size, center, center, 0.5 * size);
+    vignette.addColorStop(0, "rgba(10, 12, 22, 0)");
+    vignette.addColorStop(1, "rgba(10, 12, 22, 0.22)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, size, size);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  };
+
+  scene.createTowerTextures = function ({
+    THREE,
+    lowPower,
+    qualityProfile,
+    chooseAnisotropy,
+    collapseYaw,
+    collapseSpread,
+  }) {
+    const profile = resolveProfile(qualityProfile, lowPower);
+    const balanced = profile.tier === "balanced";
+    const width = profile.textures.towerWidth;
+    const height = 2 * width;
+    const rowCount = lowPower ? 20 : balanced ? 32 : 48;
+    const columnCount = lowPower ? 20 : balanced ? 28 : 34;
+    const colorCanvas = document.createElement("canvas");
+    const bumpCanvas = document.createElement("canvas");
+    colorCanvas.width = width;
+    colorCanvas.height = height;
+    bumpCanvas.width = width;
+    bumpCanvas.height = height;
+
+    const colorCtx = colorCanvas.getContext("2d");
+    const bumpCtx = bumpCanvas.getContext("2d");
+    if (!colorCtx || !bumpCtx) return { colorMap: null, bumpMap: null };
+
+    const yawWrap = wrap01(collapseYaw / (2 * Math.PI));
+    const spreadWrap = Math.max(0.08, collapseSpread / (2 * Math.PI));
+    const rowHeight = height / rowCount;
+    const columnWidth = width / columnCount;
+    const mortarThickness = lowPower ? 1 : balanced ? 1.2 : 1.4;
+
+    colorCtx.imageSmoothingEnabled = false;
+    bumpCtx.imageSmoothingEnabled = false;
+    colorCtx.fillStyle = towerPalette.mapBase;
+    colorCtx.fillRect(0, 0, width, height);
+    bumpCtx.fillStyle = towerPalette.bumpBase;
+    bumpCtx.fillRect(0, 0, width, height);
+
+    for (let row = 0; row < rowCount; row += 1) {
+      const rowY = row * rowHeight;
+      const rowFrac = row / Math.max(1, rowCount - 1);
+      const rowCurve = Math.pow(rowFrac, 1.55);
+      const colOffset = row % 2 == 0 ? 0 : columnWidth / 2;
+
+      colorCtx.fillStyle = row % 5 == 0 ? "rgba(0, 0, 0, 0.018)" : "rgba(255, 255, 255, 0.012)";
+      colorCtx.fillRect(0, rowY, width, rowHeight);
+
+      for (let col = -1; col <= columnCount + 1; col += 1) {
+        const colX = col * columnWidth + colOffset;
+        const brickWrap = wrap01((colX + 0.5 * columnWidth) / width);
+        const collapseWeight =
+          clamp01(1 - wrappedDistance(brickWrap, yawWrap) / spreadWrap) *
+          smoothstep01(Math.max(0, (rowFrac - 0.42) / 0.58));
+        const brickInsetX = mortarThickness * (0.62 + 0.48 * hashNoise(row, col, 1) * (1 + rowCurve));
+        const brickInsetY = mortarThickness * (0.72 + 0.44 * hashNoise(row, col, 2) * (1 + rowCurve));
+        const brickW = Math.max(columnWidth - 2 * brickInsetX, 0.58 * columnWidth);
+        const brickH = Math.max(rowHeight - 1.6 * brickInsetY, 0.52 * rowHeight);
+        const brickX = colX + brickInsetX;
+        const brickY = rowY + brickInsetY;
+        const shadeOffset = (hashNoise(row, col, 3) - 0.5) * (0.16 + 0.12 * rowCurve);
+        const stainPick = hashNoise(row, col, 4);
+
+        colorCtx.fillStyle = shadeOffset >= 0 ? `rgba(255, 255, 255, ${shadeOffset})` : `rgba(0, 0, 0, ${Math.abs(shadeOffset)})`;
+        colorCtx.fillRect(brickX, brickY, brickW, brickH);
+
+        if (stainPick > 0.72) {
+          colorCtx.fillStyle = towerPalette.warmStain;
+          colorCtx.fillRect(brickX, brickY, brickW, brickH);
+        } else if (stainPick > 0.48) {
+          colorCtx.fillStyle = towerPalette.coolStain;
+          colorCtx.fillRect(brickX, brickY, brickW, brickH);
+        } else if (stainPick < 0.16) {
+          colorCtx.fillStyle = towerPalette.mossStain;
+          colorCtx.fillRect(brickX, brickY, brickW, brickH);
+        }
+
+        colorCtx.fillStyle = towerPalette.mortarShadow;
+        colorCtx.fillRect(brickX, brickY + brickH - 1, brickW, 1);
+        colorCtx.fillStyle = towerPalette.mortarHighlight;
+        colorCtx.fillRect(brickX, brickY, brickW, 1);
+
+        if (collapseWeight > 0.02) {
+          colorCtx.fillStyle = `rgba(0, 0, 0, ${0.01 + 0.06 * collapseWeight})`;
+          colorCtx.fillRect(brickX, brickY, brickW, brickH);
+
+          if (hashNoise(row, col, 5) > 0.58) {
+            const crackW = mortarThickness * (1.2 + 2.8 * hashNoise(row, col, 6) + 1.8 * collapseWeight);
+            const crackH = rowHeight * (0.08 + 0.18 * hashNoise(row, col, 7));
+            const crackX = hashNoise(row, col, 8) > 0.5 ? brickX : brickX + brickW - crackW;
+            const crackY = brickY + hashNoise(row, col, 9) * Math.max(1, brickH - crackH);
+            colorCtx.fillStyle = towerPalette.sootStain;
+            colorCtx.fillRect(crackX, crackY, crackW, crackH);
+            bumpCtx.fillStyle = "#98a3b8";
+            bumpCtx.fillRect(crackX, crackY, crackW, crackH);
           }
         }
+
+        const mortarX = colX - mortarThickness / 2 + (hashNoise(row, col, 10) - 0.5) * mortarThickness * (0.7 + rowCurve);
+        const mortarY = rowY + 0.8 * mortarThickness;
+        const mortarH = Math.max(0.38 * rowHeight, rowHeight - mortarThickness * (1.8 + hashNoise(row, col, 11) * (1 + rowCurve)));
+
+        colorCtx.fillStyle = towerPalette.mortarShadow;
+        colorCtx.fillRect(mortarX, mortarY, mortarThickness, mortarH);
+        bumpCtx.fillStyle = "#98a3b8";
+        bumpCtx.fillRect(mortarX, mortarY, mortarThickness, mortarH);
+
+        if (rowFrac > 0.52 && hashNoise(row, col, 12) > 0.64 - 0.2 * collapseWeight) {
+          const streakH = rowHeight * (0.32 + 0.58 * hashNoise(row, col, 13));
+          const streakW = columnWidth * (0.02 + 0.04 * hashNoise(row, col, 14));
+          const streakGrad = colorCtx.createLinearGradient(0, rowY, 0, rowY + streakH);
+          streakGrad.addColorStop(0, towerPalette.sootStain);
+          streakGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          colorCtx.fillStyle = streakGrad;
+          colorCtx.fillRect(brickX + brickW * hashNoise(row, col, 15), rowY, streakW, streakH);
+        }
       }
-      const collapseGradient = R.createLinearGradient(u * d - 0.24 * d, 0, u * d + 0.18 * d, 0);
-      (collapseGradient.addColorStop(0, "rgba(0, 0, 0, 0)"),
-        collapseGradient.addColorStop(0.36, "rgba(0, 0, 0, 0.05)"),
-        collapseGradient.addColorStop(0.5, n.collapseShadow),
-        collapseGradient.addColorStop(0.68, "rgba(0, 0, 0, 0.04)"),
-        collapseGradient.addColorStop(1, "rgba(0, 0, 0, 0)"),
-        (R.fillStyle = collapseGradient),
-        R.fillRect(0, 0, d, S));
-      const weatheringCount = l ? 48 : 150;
-      for (let t = 0; t < weatheringCount; t += 1) {
-        const l = c(t, 101) * d,
-          e = S * (0.06 + 0.88 * c(t, 102)),
-          a = d * (0.0014 + 0.0038 * c(t, 103)),
-          o = S * (0.001 + 0.0028 * c(t, 104));
-        ((R.fillStyle = `rgba(0, 0, 0, ${0.01 + 0.012 * c(t, 105)})`),
-          R.beginPath(),
-          R.ellipse(l, e, a, o, c(t, 106) * Math.PI, 0, 2 * Math.PI),
-          R.fill(),
-          (y.fillStyle = "#aca59d"),
-          y.beginPath(),
-          y.ellipse(l, e, a, o, c(t, 107) * Math.PI, 0, 2 * Math.PI),
-          y.fill());
-      }
-      const x = R.createLinearGradient(0, 0.56 * S, 0, S);
-      (x.addColorStop(0, "rgba(0, 0, 0, 0)"),
-        x.addColorStop(1, "rgba(0, 0, 0, 0.05)"),
-        (R.fillStyle = x),
-        R.fillRect(0, 0.56 * S, d, 0.44 * S));
-      const W = chooseAnisotropy(3, 8);
-      return {
-        colorMap: s(t, b, (l) => {
-          ((l.wrapS = t.RepeatWrapping),
-            (l.wrapT = t.ClampToEdgeWrapping),
-            (l.encoding = t.sRGBEncoding),
-            (l.anisotropy = W));
-        }),
-        bumpMap: s(t, m, (l) => {
-          ((l.wrapS = t.RepeatWrapping), (l.wrapT = t.ClampToEdgeWrapping), (l.anisotropy = W));
-        }),
-      };
-    }));
+    }
+
+    const collapseGradient = colorCtx.createLinearGradient(yawWrap * width - 0.24 * width, 0, yawWrap * width + 0.18 * width, 0);
+    collapseGradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    collapseGradient.addColorStop(0.36, "rgba(0, 0, 0, 0.05)");
+    collapseGradient.addColorStop(0.5, towerPalette.collapseShadow);
+    collapseGradient.addColorStop(0.68, "rgba(0, 0, 0, 0.04)");
+    collapseGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    colorCtx.fillStyle = collapseGradient;
+    colorCtx.fillRect(0, 0, width, height);
+
+    const weatheringCount = lowPower ? 48 : 150;
+    for (let idx = 0; idx < weatheringCount; idx += 1) {
+      const wx = hashNoise(idx, 101) * width;
+      const wy = height * (0.06 + 0.88 * hashNoise(idx, 102));
+      const wrx = width * (0.0014 + 0.0038 * hashNoise(idx, 103));
+      const wry = height * (0.001 + 0.0028 * hashNoise(idx, 104));
+      colorCtx.fillStyle = `rgba(0, 0, 0, ${0.01 + 0.012 * hashNoise(idx, 105)})`;
+      colorCtx.beginPath();
+      colorCtx.ellipse(wx, wy, wrx, wry, hashNoise(idx, 106) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.fill();
+      bumpCtx.fillStyle = "#aca59d";
+      bumpCtx.beginPath();
+      bumpCtx.ellipse(wx, wy, wrx, wry, hashNoise(idx, 107) * Math.PI, 0, 2 * Math.PI);
+      bumpCtx.fill();
+    }
+
+    const baseFade = colorCtx.createLinearGradient(0, 0.56 * height, 0, height);
+    baseFade.addColorStop(0, "rgba(0, 0, 0, 0)");
+    baseFade.addColorStop(1, "rgba(0, 0, 0, 0.05)");
+    colorCtx.fillStyle = baseFade;
+    colorCtx.fillRect(0, 0.56 * height, width, 0.44 * height);
+
+    const aniso = chooseAnisotropy(3, 8);
+    return {
+      colorMap: makeTexture(THREE, colorCanvas, (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.encoding = THREE.sRGBEncoding;
+        tex.anisotropy = aniso;
+      }),
+      bumpMap: makeTexture(THREE, bumpCanvas, (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.anisotropy = aniso;
+      }),
+    };
+  };
 })();
