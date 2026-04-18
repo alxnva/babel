@@ -43,8 +43,8 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Cloudflare deploy secrets are not configured; skipping deploy."
           elif ! npx wrangler pages project list >/dev/null 2>&1; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare deploy credentials are not valid; skipping deploy."
+            echo "::error::Cloudflare deploy credentials are set but invalid. Regenerate CLOUDFLARE_API_TOKEN and update the repo secret."
+            exit 1
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
