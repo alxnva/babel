@@ -281,6 +281,12 @@ main:focus {
 
 .hero h1 .hero-word {
   display: inline-block;
+  /* The parent line-height of 0.98 is tight for display-size Cormorant.
+     Combined with `background-clip: text` on the inline-block, a narrower
+     box clips descenders (the `g` in "design"). A small bottom padding
+     expands the background box below the baseline without altering the
+     visual line spacing, so the full glyph gets its background painted. */
+  padding-bottom: 0.12em;
   color: var(--parchment-300);
   animation: hero-rise 820ms both;
   animation-delay: 200ms;
@@ -302,7 +308,6 @@ main:focus {
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      color: transparent;
     }
   }
 }
