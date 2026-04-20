@@ -13,7 +13,8 @@
       PLANT_PALETTE: plantPalette,
       createGroundTextures: createGroundTextures,
       createTowerTextures: createTowerTextures,
-      createGroundOverlayTexture: createGroundOverlayTexture
+      createGroundOverlayTexture: createGroundOverlayTexture,
+      WORLD: WORLD
     } = scene;
   scene.initHomeScene = function () {
     const container = document.getElementById("home-scene");
@@ -213,7 +214,7 @@
         skyTopColor: 2500953,
         skyBottomColor: 794687,
         skyGlowColor: 14927322,
-        sunDirection: new THREE.Vector3(18, 15, 33).normalize(),
+        sunDirection: new THREE.Vector3(...WORLD.SUN_DIRECTION).normalize(),
         sunColor: 16638446,
         shellOpacity: 0.472
       },
@@ -222,7 +223,7 @@
       return state.profile.isLow;
     }
     homeScene.fog = new THREE.Fog(lightingConfig.fogColor, lightingConfig.fogNear, lightingConfig.fogFar);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 240),
+    const camera = new THREE.PerspectiveCamera(WORLD.CAMERA_FOV, window.innerWidth / window.innerHeight, WORLD.CAMERA_NEAR, WORLD.CAMERA_FAR),
       renderer = new THREE.WebGLRenderer({
         alpha: !0,
         antialias: state.profile.antialias,
@@ -305,8 +306,20 @@
       hemisphereLight = new THREE.HemisphereLight(lightingConfig.hemisphereSkyColor, lightingConfig.hemisphereGroundColor, lightingConfig.hemisphereIntensity),
       sunLight = new THREE.DirectionalLight(lightingConfig.directionalColor, lightingConfig.directionalIntensity),
       fillLight = new THREE.DirectionalLight(9086928, 0.6);
-    sunLight.position.set(lightingConfig.directionalPosition.x, lightingConfig.directionalPosition.y, lightingConfig.directionalPosition.z), sunLight.shadow.camera.left = -60, sunLight.shadow.camera.right = 60, sunLight.shadow.camera.top = 60, sunLight.shadow.camera.bottom = -60, sunLight.shadow.camera.near = 1, sunLight.shadow.camera.far = 120, sunLight.shadow.bias = -0.00045, sunLight.shadow.normalBias = 0.028, sunLight.shadow.radius = 2.6, fillLight.position.set(-18, 22, -14), homeScene.add(ambientLight, hemisphereLight, sunLight, fillLight), applyActiveQualityProfile(typeof qualityState.getProfile === "function" ? qualityState.getProfile() : fallbackProfile, "initial");
-    const skyShell = new THREE.Mesh(new THREE.SphereGeometry(130, skyWidthSegments, skyHeightSegments), new THREE.ShaderMaterial({
+    sunLight.position.set(lightingConfig.directionalPosition.x, lightingConfig.directionalPosition.y, lightingConfig.directionalPosition.z);
+    sunLight.shadow.camera.left = -WORLD.SHADOW_CAMERA_HALF_EXTENT;
+    sunLight.shadow.camera.right = WORLD.SHADOW_CAMERA_HALF_EXTENT;
+    sunLight.shadow.camera.top = WORLD.SHADOW_CAMERA_HALF_EXTENT;
+    sunLight.shadow.camera.bottom = -WORLD.SHADOW_CAMERA_HALF_EXTENT;
+    sunLight.shadow.camera.near = WORLD.SHADOW_CAMERA_NEAR;
+    sunLight.shadow.camera.far = WORLD.SHADOW_CAMERA_FAR;
+    sunLight.shadow.bias = -0.00045;
+    sunLight.shadow.normalBias = 0.028;
+    sunLight.shadow.radius = 2.6;
+    fillLight.position.set(...WORLD.FILL_LIGHT_POSITION);
+    homeScene.add(ambientLight, hemisphereLight, sunLight, fillLight);
+    applyActiveQualityProfile(typeof qualityState.getProfile === "function" ? qualityState.getProfile() : fallbackProfile, "initial");
+    const skyShell = new THREE.Mesh(new THREE.SphereGeometry(WORLD.SKY_DOME_RADIUS, skyWidthSegments, skyHeightSegments), new THREE.ShaderMaterial({
       side: THREE.BackSide,
       transparent: !0,
       uniforms: {
@@ -333,7 +346,7 @@
       fragmentShader: ["uniform vec3 topColor;", "uniform vec3 bottomColor;", "uniform vec3 glowColor;", "uniform vec3 sunDirection;", "uniform vec3 sunColor;", "uniform float uTime;", "varying vec3 vWorldPosition;", "void main() {", "  float h = normalize(vWorldPosition + vec3(0.0, 40.0, 0.0)).y;", "  float t = smoothstep(-0.2, 0.7, h);", "  vec3 col = mix(bottomColor, topColor, t);", "  float glow = smoothstep(0.02, 0.7, 1.0 - distance(normalize(vWorldPosition).xz, vec2(0.0)));", "  col += glowColor * glow * 0.031;", "  float sunDot = max(0.0, dot(normalize(vWorldPosition), sunDirection));", "  float sunGlow = pow(sunDot, 8.0) * 0.225 + pow(sunDot, 32.0) * 0.152;", "  col += sunColor * sunGlow;", "  vec3 nDir = normalize(vWorldPosition);", "  vec2 starUV = nDir.xz / (abs(nDir.y) + 0.5) * 90.0;", "  vec2 cell = floor(starUV);", "  vec2 fr = fract(starUV) - 0.5;", "  float starHash = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);", "  float starBright = step(0.965, starHash) * smoothstep(0.14, 0.0, length(fr));", "  starBright *= smoothstep(0.0, 0.4, h);", "  float twinkleHash = fract(sin(dot(cell, vec2(269.5, 183.3))) * 61537.17);", "  float twinkle = step(0.7, twinkleHash);", "  float twinkleSpeed = 1.5 + twinkleHash * 3.0;", "  float twinklePhase = twinkleHash * 6.2832;", "  float twinkleAmt = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * twinkleSpeed + twinklePhase));", "  starBright *= mix(1.0, twinkleAmt, twinkle);", "  col += vec3(1.0, 0.95, 0.88) * starBright * 0.73;", `  gl_FragColor = vec4(col, ${skyConfig.shellOpacity});`, "}"].join("\n")
     }));
     skyShell.renderOrder = -1, skyShell.material.depthWrite = !1, homeScene.add(skyShell);
-    var moonPosition = new THREE.Vector3(-75, 50, -60),
+    var moonPosition = new THREE.Vector3(...WORLD.MOON_POSITION),
       orbitalGlowGroup = new THREE.Group();
     function createOrbitalGlowTexture(arg55, arg56, arg57, arg58) {
       var canvas = document.createElement("canvas");
@@ -519,7 +532,7 @@
     setShadowParticipation(orbitalGlowGroup);
     const group4 = new THREE.Group();
     sceneRoot.add(group4);
-    const circleGeometry = new THREE.CircleGeometry(88, circleSegments, 0, 2 * Math.PI),
+    const circleGeometry = new THREE.CircleGeometry(WORLD.GROUND_RADIUS, circleSegments, 0, 2 * Math.PI),
       position9 = circleGeometry.attributes.position;
     for (let num425 = 0; num425 < position9.count; num425 += 1) {
       const result56 = position9.getX(num425),
@@ -549,7 +562,7 @@
         qualityProfile: state.profile
       });
       if (createGroundOverlayTextureResult) {
-        const overlayGeom = new THREE.CircleGeometry(70, state.profile.geometry.overlaySegments),
+        const overlayGeom = new THREE.CircleGeometry(WORLD.GROUND_OVERLAY_RADIUS, state.profile.geometry.overlaySegments),
           overlayPos = overlayGeom.attributes.position;
         for (let num47 = 0; num47 < overlayPos.count; num47 += 1) {
           const result = overlayPos.getX(num47),

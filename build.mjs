@@ -10,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENTRIES = [
   "scene/helpers.js",
   "scene/palette.js",
+  "scene/world.js",
   "scene/quality.js",
   "scene/visibility.js",
   "scene/textures.js",
