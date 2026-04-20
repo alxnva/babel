@@ -2,19 +2,18 @@
   const site = (window.BabelSite = window.BabelSite || {});
   const ui = (site.ui = site.ui || {});
 
-  function roundedRectPath(ctx, x, y, w, h, r) {
-    const radius = Math.min(r, w * 0.5, h * 0.5);
+  // Fills a closed polygon defined by an array of [x, y] points. Coordinates
+  // are pixel-snapped so edges stay crisp — part of the PS1/PS2 low-poly look
+  // (hard edges, no sub-pixel shimmer).
+  function fillPoly(ctx, color, points) {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + w - radius, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-    ctx.lineTo(x + w, y + h - radius);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-    ctx.lineTo(x + radius, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.moveTo(Math.round(points[0][0]), Math.round(points[0][1]));
+    for (let idx = 1; idx < points.length; idx += 1) {
+      ctx.lineTo(Math.round(points[idx][0]), Math.round(points[idx][1]));
+    }
     ctx.closePath();
+    ctx.fill();
   }
 
   const DITHER_4X4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -91,334 +90,190 @@
     ctx.putImageData(image, px, py);
   }
 
+  // Low-poly closed book viewed from a slight 3/4 angle above.
+  // Four visible faces: top cover (largest), right page-edge, front
+  // page-edge, and a title band — flat-shaded, pixel-snapped, PS-era.
   function drawNotebook(ctx, width, height, active) {
-    const x = width * 0.16;
-    const y = height * 0.11;
-    const w = width * 0.66;
-    const h = height * 0.72;
-    const spineW = w * 0.2;
+    const scale = width / 88;
+    const px = (nn) => nn * scale;
+
     const palette = [
-      "#857d73",
-      "#726f66",
-      "#5f5a55",
-      "#534936",
-      "#4c4534",
-      "#48402d",
-      "#453d2a",
-      "#3b3524",
-      "#342e20",
-      "#322b1d",
+      "#d3cab8", "#b89c7a", "#6d685f", "#4a4540",
+      "#36322b", "#2e2a24", "#211e19",
     ].map(hexToRgb);
 
-    const glow = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.5,
-      0,
-      width * 0.5,
-      height * 0.5,
-      width * 0.42,
-    );
-    glow.addColorStop(0, active ? "rgba(134, 129, 120, 0.34)" : "rgba(118, 112, 103, 0.2)");
-    glow.addColorStop(1, "rgba(92, 84, 70, 0)");
+    const cover = active ? "#524c45" : "#46413c";
+    const coverTop = active ? "#5d574f" : "#504a44";
+    const pages = active ? "#dfd5c2" : "#d3cab8";
+    const pagesShade = active ? "#baae9a" : "#a89d8a";
+    const spine = active ? "#33302c" : "#2a2724";
+    const title = active ? "#c8ae8b" : "#b89c7a";
+    const titleShade = active ? "#8f785a" : "#7d684d";
+
+    // Ambient glow beneath — keeps the icon seated in the bar.
+    const glow = ctx.createRadialGradient(px(44), px(48), 0, px(44), px(48), px(40));
+    glow.addColorStop(0, active ? "rgba(128,122,110,0.28)" : "rgba(108,102,92,0.16)");
+    glow.addColorStop(1, "rgba(70,64,56,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
-    roundedRectPath(ctx, x, y, w, h, width * 0.045);
-    ctx.fillStyle = "#453d2a";
-    ctx.fill();
+    // Front page-edge (thin strip visible below the cover).
+    fillPoly(ctx, pages, [
+      [px(24), px(58)], [px(64), px(52)],
+      [px(70), px(56)], [px(30), px(62)],
+    ]);
+    // A darker sliver on the underside of the page stack so the
+    // thickness reads as a 3D wedge, not a flat line.
+    fillPoly(ctx, pagesShade, [
+      [px(30), px(62)], [px(70), px(56)],
+      [px(68), px(60)], [px(32), px(65)],
+    ]);
 
-    ctx.fillStyle = "#342e20";
-    roundedRectPath(ctx, x, y, spineW, h, width * 0.035);
-    ctx.fill();
+    // Right page-edge (thin strip visible beside the cover).
+    fillPoly(ctx, pages, [
+      [px(58), px(18)], [px(62), px(22)],
+      [px(70), px(56)], [px(64), px(52)],
+    ]);
 
-    const pageX = x + spineW;
-    const pageW = w - spineW - width * 0.012;
-    const pageY = y + height * 0.012;
-    const pageH = h - height * 0.024;
+    // Top cover — primary face.
+    fillPoly(ctx, cover, [
+      [px(20), px(22)], [px(58), px(18)],
+      [px(64), px(52)], [px(24), px(58)],
+    ]);
+    // Upper sliver of the cover catches a little more light — gives
+    // the flat face a hint of form without a gradient.
+    fillPoly(ctx, coverTop, [
+      [px(20), px(22)], [px(58), px(18)],
+      [px(60), px(26)], [px(22), px(30)],
+    ]);
 
-    ctx.fillStyle = "rgba(138, 132, 121, 0.28)";
-    roundedRectPath(ctx, pageX, pageY, pageW, pageH, width * 0.025);
-    ctx.fill();
+    // Spine-side dark edge where the binding rolls over.
+    fillPoly(ctx, spine, [
+      [px(20), px(22)], [px(24), px(58)],
+      [px(27), px(58)], [px(23), px(22)],
+    ]);
 
-    ctx.fillStyle = "rgba(60, 52, 40, 0.36)";
-    ctx.fillRect(pageX + pageW * 0.04, pageY + pageH * 0.55, pageW * 0.9, pageH * 0.42);
+    // Title band — the icon's single accent element.
+    fillPoly(ctx, title, [
+      [px(28), px(34)], [px(50), px(30)],
+      [px(52), px(40)], [px(30), px(44)],
+    ]);
+    // Shaded underside of the title band, same trick as the cover.
+    fillPoly(ctx, titleShade, [
+      [px(30), px(44)], [px(52), px(40)],
+      [px(52), px(42)], [px(30), px(46)],
+    ]);
 
-    ctx.fillStyle = "rgba(88, 78, 60, 0.44)";
-    ctx.beginPath();
-    ctx.moveTo(pageX + pageW * 0.82, pageY);
-    ctx.lineTo(pageX + pageW, pageY);
-    ctx.lineTo(pageX + pageW, pageY + pageH * 0.18);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = active ? "rgba(224, 210, 178, 0.8)" : "rgba(196, 180, 150, 0.62)";
-    ctx.lineWidth = 1.6;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    const dropX = pageX + pageW * 0.14;
-    const dropY = pageY + pageH * 0.22;
-    const dropSize = pageW * 0.16;
-    ctx.moveTo(dropX, dropY + dropSize * 0.25);
-    ctx.bezierCurveTo(
-      dropX - dropSize * 0.2,
-      dropY - dropSize * 0.55,
-      dropX + dropSize * 0.85,
-      dropY - dropSize * 0.75,
-      dropX + dropSize * 0.95,
-      dropY - dropSize * 0.05,
-    );
-    ctx.bezierCurveTo(
-      dropX + dropSize * 1.05,
-      dropY + dropSize * 0.5,
-      dropX + dropSize * 0.4,
-      dropY + dropSize * 0.95,
-      dropX + dropSize * 0.12,
-      dropY + dropSize * 0.55,
-    );
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(206, 188, 150, 0.56)";
-    ctx.lineWidth = 1.05;
-    for (let idx = 0; idx < 4; idx += 1) {
-      const baseY = pageY + pageH * (0.26 + idx * 0.14);
-      const amp = pageH * (0.012 + idx * 0.004);
-      ctx.beginPath();
-      ctx.moveTo(pageX + pageW * 0.32, baseY);
-      ctx.bezierCurveTo(
-        pageX + pageW * 0.44,
-        baseY - amp,
-        pageX + pageW * 0.58,
-        baseY + amp,
-        pageX + pageW * 0.7,
-        baseY - amp * 0.5,
-      );
-      ctx.bezierCurveTo(
-        pageX + pageW * 0.8,
-        baseY - amp * 1.1,
-        pageX + pageW * 0.88,
-        baseY + amp * 0.3,
-        pageX + pageW * 0.94,
-        baseY - amp * 0.1,
-      );
-      ctx.stroke();
-    }
-    ctx.lineCap = "butt";
-
-    ctx.fillStyle = "rgba(196, 180, 150, 0.7)";
-    ctx.beginPath();
-    ctx.arc(pageX + pageW * 0.94, pageY + pageH * 0.82, width * 0.012, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = active ? "rgba(168, 158, 143, 0.86)" : "rgba(141, 133, 120, 0.62)";
-    ctx.lineWidth = 1.2;
-    roundedRectPath(ctx, x, y, w, h, width * 0.045);
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(160, 148, 130, 0.9)";
-    ctx.strokeStyle = "rgba(52, 44, 32, 0.8)";
-    ctx.lineWidth = 0.8;
-    for (let idx = 0; idx < 5; idx += 1) {
-      const ringY = y + h * (0.14 + idx * 0.18);
-      ctx.beginPath();
-      ctx.arc(x + spineW * 0.5, ringY, width * 0.018, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = "rgba(160, 148, 130, 0.5)";
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(pageX + pageW * 0.04, y + h - height * 0.02);
-    ctx.lineTo(pageX + pageW * 0.96, y + h - height * 0.055);
-    ctx.stroke();
+    // Gold-tooled decorative band across the lower cover — classic
+    // hardcover embellishment. Two pixel-thin parallelograms sloped to
+    // match the cover's tilt.
+    fillPoly(ctx, titleShade, [
+      [px(26), px(50)], [px(60), px(46)],
+      [px(60), px(48)], [px(26), px(52)],
+    ]);
+    fillPoly(ctx, titleShade, [
+      [px(26), px(54)], [px(60), px(50)],
+      [px(60), px(51)], [px(26), px(55)],
+    ]);
 
     applyPsxDither(
       ctx,
-      x - width * 0.03,
-      y - height * 0.03,
-      w + width * 0.07,
-      h + height * 0.08,
+      px(14), px(14),
+      px(62), px(56),
       palette,
-      active ? 34 : 30,
+      active ? 10 : 7,
       2,
     );
   }
 
-  function drawLetter(ctx, width, height, active) {
-    const x = width * 0.14;
-    const y = height * 0.16;
-    const w = width * 0.72;
-    const h = height * 0.66;
+  // Low-poly envelope, front view. A single rectangular body with the flap
+  // crease drawn inside as a V (two color-contrasted triangles), plus a
+  // small stamp in the corner. Same polygon vocabulary as the notebook so
+  // the pair reads as one icon family.
+  function drawEnvelope(ctx, width, height, active) {
+    const scale = width / 88;
+    const px = (nn) => nn * scale;
+
     const palette = [
-      "#d6cfc3",
-      "#b6ab9c",
-      "#8f8577",
-      "#6f6558",
-      "#5f5a55",
-      "#544836",
-      "#4d4131",
-      "#45392a",
-      "#3c3224",
-      "#352a1c",
+      "#e4dccf", "#c9c1b2", "#a89f91", "#807868",
+      "#b89c7a", "#6d655a", "#3a342e",
     ].map(hexToRgb);
 
-    const glow = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.5,
-      0,
-      width * 0.5,
-      height * 0.5,
-      width * 0.44,
-    );
-    glow.addColorStop(0, active ? "rgba(134, 126, 112, 0.34)" : "rgba(112, 104, 92, 0.2)");
-    glow.addColorStop(1, "rgba(86, 76, 62, 0)");
+    const bodyLight = active ? "#e4dccf" : "#d9d1c3";
+    const bodyShade = active ? "#c9c1b2" : "#bdb5a6";
+    const flapLight = active ? "#e8e0d2" : "#dcd3c4";
+    const flapShade = active ? "#b6aea0" : "#a89f91";
+    const creaseLine = active ? "rgba(64,58,50,0.7)" : "rgba(64,58,50,0.55)";
+    const edgeLine = active ? "rgba(64,58,50,0.5)" : "rgba(64,58,50,0.38)";
+    const stampFill = active ? "#c8ae8b" : "#b89c7a";
+    const stampShade = active ? "#8f785a" : "#7d684d";
+
+    // Ambient glow — consistent with the notebook.
+    const glow = ctx.createRadialGradient(px(44), px(46), 0, px(44), px(46), px(40));
+    glow.addColorStop(0, active ? "rgba(128,122,110,0.26)" : "rgba(108,102,92,0.14)");
+    glow.addColorStop(1, "rgba(70,64,56,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
-    roundedRectPath(ctx, x, y, w, h, width * 0.03);
-    ctx.fillStyle = "#c7bdab";
-    ctx.fill();
+    // BODY — the full envelope rectangle. Everything else sits on top.
+    fillPoly(ctx, bodyLight, [
+      [px(14), px(30)], [px(74), px(30)],
+      [px(74), px(62)], [px(14), px(62)],
+    ]);
+    // Bottom shade band so the flat body has a subtle ground plane.
+    fillPoly(ctx, bodyShade, [
+      [px(14), px(58)], [px(74), px(58)],
+      [px(74), px(62)], [px(14), px(62)],
+    ]);
 
-    ctx.fillStyle = "rgba(96, 80, 56, 0.14)";
-    ctx.fillRect(x + w * 0.04, y + h * 0.48, w * 0.92, h * 0.48);
+    // FLAP CREASE — two triangles meeting at a point below center that
+    // together form the classic "V" you see on the front of a sealed
+    // envelope. Left is lit; right is the shaded back-of-fold.
+    fillPoly(ctx, flapLight, [
+      [px(14), px(30)], [px(44), px(30)],
+      [px(44), px(48)],
+    ]);
+    fillPoly(ctx, flapShade, [
+      [px(44), px(30)], [px(74), px(30)],
+      [px(44), px(48)],
+    ]);
 
-    ctx.fillStyle = "rgba(208, 196, 176, 0.72)";
+    // Crease stroke down the center fold.
+    ctx.strokeStyle = creaseLine;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.7, y);
-    ctx.lineTo(x + w, y);
-    ctx.lineTo(x + w, y + h * 0.28);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "rgba(96, 80, 56, 0.22)";
-    ctx.beginPath();
-    ctx.moveTo(x + w * 0.7, y);
-    ctx.lineTo(x + w * 0.7, y + h * 0.28);
-    ctx.lineTo(x + w, y + h * 0.28);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = active ? "rgba(188, 172, 142, 0.92)" : "rgba(156, 144, 122, 0.7)";
-    ctx.lineWidth = 1.25;
-    roundedRectPath(ctx, x, y, w, h, width * 0.03);
+    ctx.moveTo(Math.round(px(44)), Math.round(px(30)));
+    ctx.lineTo(Math.round(px(44)), Math.round(px(48)));
     ctx.stroke();
 
-    ctx.strokeStyle = active ? "rgba(74, 58, 40, 0.88)" : "rgba(84, 68, 48, 0.78)";
-    ctx.lineWidth = 1.6;
-    ctx.lineCap = "round";
-    const monoX = x + w * 0.18;
-    const monoY = y + h * 0.26;
-    const monoSize = w * 0.13;
-    ctx.beginPath();
-    ctx.moveTo(monoX + monoSize * 0.95, monoY - monoSize * 0.1);
-    ctx.bezierCurveTo(
-      monoX + monoSize * 0.55,
-      monoY - monoSize * 0.5,
-      monoX + monoSize * 0.05,
-      monoY - monoSize * 0.2,
-      monoX,
-      monoY + monoSize * 0.35,
+    // Envelope outline — a pixel-thin border around the rectangle so the
+    // body edge doesn't dissolve into the glow at a glance.
+    ctx.strokeStyle = edgeLine;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
+      Math.round(px(14)) + 0.5,
+      Math.round(px(30)) + 0.5,
+      Math.round(px(60)),
+      Math.round(px(32)),
     );
-    ctx.bezierCurveTo(
-      monoX - monoSize * 0.05,
-      monoY + monoSize * 0.8,
-      monoX + monoSize * 0.45,
-      monoY + monoSize * 0.95,
-      monoX + monoSize * 0.95,
-      monoY + monoSize * 0.6,
-    );
-    ctx.stroke();
 
-    ctx.strokeStyle = "rgba(74, 58, 40, 0.74)";
-    ctx.lineWidth = 1.15;
-    for (let idx = 0; idx < 4; idx += 1) {
-      const yy = y + h * (0.42 + idx * 0.12);
-      const amp = h * (0.018 + idx * 0.004);
-      const startX = x + w * (0.14 + (idx % 2) * 0.04);
-      const endX = x + w * (0.82 - (idx % 2) * 0.04);
-      ctx.beginPath();
-      ctx.moveTo(startX, yy);
-      ctx.bezierCurveTo(
-        startX + (endX - startX) * 0.3,
-        yy - amp,
-        startX + (endX - startX) * 0.55,
-        yy + amp,
-        startX + (endX - startX) * 0.82,
-        yy - amp * 0.4,
-      );
-      ctx.bezierCurveTo(
-        startX + (endX - startX) * 0.93,
-        yy - amp * 0.9,
-        endX - amp * 0.1,
-        yy + amp * 0.2,
-        endX,
-        yy - amp * 0.2,
-      );
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = "rgba(68, 52, 36, 0.86)";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(x + w * 0.14, y + h * 0.9);
-    ctx.bezierCurveTo(
-      x + w * 0.26,
-      y + h * 0.96,
-      x + w * 0.42,
-      y + h * 0.82,
-      x + w * 0.52,
-      y + h * 0.9,
-    );
-    ctx.bezierCurveTo(
-      x + w * 0.62,
-      y + h * 0.98,
-      x + w * 0.74,
-      y + h * 0.84,
-      x + w * 0.86,
-      y + h * 0.9,
-    );
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(68, 52, 36, 0.72)";
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(x + w * 0.86, y + h * 0.9);
-    ctx.bezierCurveTo(
-      x + w * 0.94,
-      y + h * 0.88,
-      x + w * 0.98,
-      y + h * 0.78,
-      x + w * 0.92,
-      y + h * 0.72,
-    );
-    ctx.stroke();
-    ctx.lineCap = "butt";
-
-    ctx.fillStyle = active ? "rgba(168, 92, 58, 0.88)" : "rgba(146, 78, 50, 0.78)";
-    ctx.beginPath();
-    ctx.arc(x + w * 0.78, y + h * 0.32, width * 0.035, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(48, 30, 20, 0.68)";
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(242, 224, 190, 0.5)";
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(x + w * 0.78 - width * 0.014, y + h * 0.32 - width * 0.004);
-    ctx.lineTo(x + w * 0.78 + width * 0.014, y + h * 0.32 + width * 0.004);
-    ctx.moveTo(x + w * 0.78, y + h * 0.32 - width * 0.014);
-    ctx.lineTo(x + w * 0.78, y + h * 0.32 + width * 0.014);
-    ctx.stroke();
+    // STAMP — small brass square tucked into the top-right corner of
+    // the body. Two-tone bevel matches the notebook's title-band style.
+    fillPoly(ctx, stampFill, [
+      [px(62), px(34)], [px(70), px(34)],
+      [px(70), px(42)], [px(62), px(42)],
+    ]);
+    fillPoly(ctx, stampShade, [
+      [px(66), px(38)], [px(70), px(38)],
+      [px(70), px(42)], [px(66), px(42)],
+    ]);
 
     applyPsxDither(
       ctx,
-      x - width * 0.02,
-      y - height * 0.02,
-      w + width * 0.04,
-      h + height * 0.06,
+      px(12), px(26),
+      px(64), px(40),
       palette,
-      active ? 32 : 28,
+      active ? 10 : 7,
       2,
     );
   }
@@ -710,7 +565,7 @@
 
     const renderers = [
       bindCanvas(aboutCanvas, drawNotebook),
-      bindCanvas(contactCanvas, drawLetter),
+      bindCanvas(contactCanvas, drawEnvelope),
     ];
 
     [aboutCanvas, contactCanvas].forEach((canvas) => {

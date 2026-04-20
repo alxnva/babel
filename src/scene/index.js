@@ -2750,7 +2750,9 @@
         }));
       sprite12.position.set(Math.cos(num380) * num381, num382, Math.sin(num380) * num381);
       const num383 = (state.lowPower ? 1.8 : 2.2) + qeResult95 * (state.lowPower ? 1.6 : 2.4);
-      sprite12.scale.set(num383, num383 * (0.68 + 0.42 * qeResult93), 1), driftCloudGroup.add(sprite12), driftClouds.push({
+      // Cumulus-like: always wider than tall. Prior range (0.68–1.10) let
+      // some clouds render taller than wide, reading as "sideways".
+      sprite12.scale.set(num383, num383 * (0.42 + 0.3 * qeResult93), 1), driftCloudGroup.add(sprite12), driftClouds.push({
         mesh: sprite12,
         yaw: num380,
         radius: num381,
@@ -2831,7 +2833,9 @@
           depthWrite: !1
         })),
         num394 = (state.lowPower ? 0.36 : 0.42) + qeResult99 * (state.lowPower ? 0.42 : 0.6);
-      sprite13.position.set(num391, num393, num392), sprite13.scale.set(0.75 * num394, 1.45 * num394, 1), emberCloudGroup.add(sprite13), emberClouds.push({
+      // Was (0.75 × 1.45) — stacked vertically like a column of smoke.
+      // Flipped so ember puffs read as wide horizontal cloud shapes.
+      sprite13.position.set(num391, num393, num392), sprite13.scale.set(1.45 * num394, 0.75 * num394, 1), emberCloudGroup.add(sprite13), emberClouds.push({
         mesh: sprite13,
         yaw: num389,
         radius: num390,
