@@ -1,0 +1,101 @@
+name: Preview Pages
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pages-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build deployable site
+        run: npm run build:dist
+
+      - name: Check deploy secrets
+        id: cloudflare
+        shell: bash
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deploy secrets are not configured; skipping preview deploy."
+          elif ! npx wrangler pages project list >/dev/null 2>&1; then
+            echo "::error::Cloudflare deploy credentials are set but invalid. Regenerate CLOUDFLARE_API_TOKEN and update the repo secret."
+            exit 1
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy preview to Cloudflare Pages
+        if: steps.cloudflare.outputs.ready == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          raw_branch="${{ github.head_ref || github.ref_name }}"
+          sanitized="$(printf '%s' "$raw_branch" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed -E 's/-+/-/g; s/^-//; s/-$//')"
+          # Cloudflare Pages limits subdomains to 28 chars.
+          short_branch="$(printf '%s' "$sanitized" | cut -c1-28 | sed -E 's/-$//')"
+          echo "Raw branch:        $raw_branch"
+          echo "Sanitized branch:  $short_branch"
+          output=$(npx wrangler pages deploy dist --project-name=alexnava-me --branch="$short_branch" 2>&1)
+          echo "$output"
+          url=$(printf '%s' "$output" | grep -oE 'https://[a-z0-9.-]+\.pages\.dev' | tail -1)
+          if [ -z "$url" ]; then
+            echo "::error::Could not parse preview URL from wrangler output."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "## Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview URL on PR
+        if: steps.cloudflare.outputs.ready == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const marker = '<!-- preview-pages-comment -->';
+            const body = [
+              marker,
+              '### Cloudflare Pages preview',
+              '',
+              `${process.env.PREVIEW_URL}`,
+              '',
+              `Latest commit: \`${process.env.COMMIT_SHA.slice(0, 7)}\` · built by [Preview Pages](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
