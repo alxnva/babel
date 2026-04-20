@@ -70,7 +70,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 2. Reuse the current structure before inventing a new one.
 3. JS edits go in `src/`. Run `npm run verify` before committing. `dist/` is generated — never hand-edit, never commit.
 4. Keep `file://` and HTTP preview both viable when possible; `dist/` served via `python -m http.server` is the honest preview (honors `_headers` layout and script paths).
-5. When bumping visible assets, bump the `?v=NNN` query strings in `index.html` and `404.html` together so cached HTML revalidates styles and scripts in lockstep.
+5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`, `vendor/three.min.HASH.js`); don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
 6. Update docs when file roles, preview assumptions, or deploy reality change. If a deploy detail matters, confirm it instead of trusting historical notes blindly.
 
 ## Ask before

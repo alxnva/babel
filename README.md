@@ -33,7 +33,7 @@ npm run watch       # watch src/ and rebuild dist/scripts
 npm run format      # prettier-format src/, *.html, *.css, *.md
 ```
 
-When bumping visible assets, bump the `?v=NNN` query strings in `index.html` and `404.html` together so cached HTML revalidates styles and scripts in lockstep.
+Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`, `vendor/three.min.HASH.js`); rerun `npm run build:dist` after changes — the hash moves automatically and cached HTML revalidates against the new path.
 
 ## Repository layout
 
