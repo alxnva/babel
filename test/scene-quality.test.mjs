@@ -347,6 +347,52 @@ test("portraitPhone composition profile trims active particle counts", async () 
   assert.equal(desktop.countScale, 1);
 });
 
+test("getSceneCompositionProfile picks the right profile across device classes", async () => {
+  const scene = await loadQuality(createContext());
+
+  // Phone portrait (iPhone 14): 390x844.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 }).name,
+    "portraitPhone",
+  );
+  // Phone landscape (iPhone 14 rotated): 844x390.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 844, height: 390, zoom: 0 }).name,
+    "landscapePhone",
+  );
+  // Tablet portrait (iPad): 810x1080.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 810, height: 1080, zoom: 0 }).name,
+    "tabletPortrait",
+  );
+  // Tablet landscape (iPad rotated): 1080x810 — wider than compact threshold only
+  // for very large tablets, so this falls into compact framing.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 1080, height: 810, zoom: 0 }).name,
+    "compact",
+  );
+  // Small laptop: 1280x800.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 1280, height: 800, zoom: 0 }).name,
+    "desktop",
+  );
+  // Desktop: 1920x1080.
+  assert.equal(
+    scene.getSceneCompositionProfile({ width: 1920, height: 1080, zoom: 0 }).name,
+    "desktop",
+  );
+});
+
+test("landscapePhone and tabletPortrait profiles carry touch-friendly count trims", async () => {
+  const scene = await loadQuality(createContext());
+  const landscape = scene.getSceneCompositionProfile({ width: 844, height: 390, zoom: 0 });
+  const tablet = scene.getSceneCompositionProfile({ width: 810, height: 1080, zoom: 0 });
+
+  assert.ok(landscape.countScale < 1, "landscape phone trims counts for rotated phone fragment load");
+  assert.ok(tablet.countScale < 1, "tablet portrait trims counts for thermal headroom");
+  assert.ok(tablet.countScale > landscape.countScale, "tablet keeps more detail than phone");
+});
+
 test("createSceneQualityState exposes profile, governor, and live sample handoff", async () => {
   const context = createContext({ search: "?quality=auto", innerWidth: 1440, innerHeight: 900 });
   const scene = await loadQuality(context);

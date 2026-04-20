@@ -71,6 +71,48 @@
       sceneOffsetY: -6.8,
       towerScale: 1,
     },
+    // Phone rotated to landscape (~844x390). Viewport is very short, so the
+    // camera pulls up and the look-at target lowers to keep the tower in the
+    // frame. Phone-class countScale still applies.
+    landscapePhone: {
+      camera: {
+        fov: 52,
+        heightBase: 18.6,
+        heightScrollDelta: 0.4,
+        lookAtBase: 10.8,
+        lookAtScrollDelta: 1.3,
+        orbitBase: 52,
+        orbitScale: 1.1,
+        orbitScrollDelta: 1.9,
+        orbitTrim: 0.18,
+      },
+      cloudAnchorY: -7.2,
+      countScale: 0.7,
+      name: "landscapePhone",
+      sceneOffsetY: -7.2,
+      towerScale: 1,
+    },
+    // Tablet in portrait (iPad-class, ~810x1080). Wider than a phone but still
+    // touch-primary; framing sits between portraitPhone and compact with a
+    // modest count trim for thermal headroom.
+    tabletPortrait: {
+      camera: {
+        fov: 46,
+        heightBase: 21.2,
+        heightScrollDelta: 0.7,
+        lookAtBase: 13.1,
+        lookAtScrollDelta: 1.85,
+        orbitBase: 52,
+        orbitScale: 1.12,
+        orbitScrollDelta: 2.1,
+        orbitTrim: 0.17,
+      },
+      cloudAnchorY: -7.2,
+      countScale: 0.85,
+      name: "tabletPortrait",
+      sceneOffsetY: -7.2,
+      towerScale: 1,
+    },
   };
   const SCENE_QUALITY_PROFILES = {
     high: {
@@ -578,9 +620,19 @@
   } = {}) {
     const safeWidth = Math.max(1, width || 0);
     const safeHeight = Math.max(1, height || 0);
-    const isPortraitPhone = safeWidth <= 760 && safeHeight > safeWidth && safeHeight / safeWidth >= 1.15;
+    const isPortrait = safeHeight > safeWidth;
+    const isPortraitPhone = safeWidth <= 760 && isPortrait && safeHeight / safeWidth >= 1.15;
+    // Short-height landscape viewports are dominated by rotated phones. Cap
+    // at 1000px wide to keep small laptops out of this bucket.
+    const isLandscapePhone = !isPortrait && safeHeight <= 500 && safeWidth <= 1000;
+    // Tablet portrait: wider than a phone but still narrower than a small
+    // laptop, held in portrait. Uses a touch-friendly frame without the
+    // compact-desktop camera pullback.
+    const isTabletPortrait = isPortrait && safeWidth > 760 && safeWidth <= 1024;
 
     if (isPortraitPhone) return applySceneTunerZoom(cloneCompositionProfile("portraitPhone"), zoom);
+    if (isLandscapePhone) return applySceneTunerZoom(cloneCompositionProfile("landscapePhone"), zoom);
+    if (isTabletPortrait) return applySceneTunerZoom(cloneCompositionProfile("tabletPortrait"), zoom);
     if (safeWidth < 1100) return applySceneTunerZoom(cloneCompositionProfile("compact"), zoom);
     return applySceneTunerZoom(cloneCompositionProfile("desktop"), zoom);
   }
