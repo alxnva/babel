@@ -242,7 +242,6 @@ main:focus {
   max-width: 720px;
 }
 
-.hero-kicker,
 .eyebrow {
   margin: 0 0 18px;
   color: var(--text-accent);
@@ -251,26 +250,6 @@ main:focus {
   font-size: 12px;
   font-weight: 600;
   opacity: 0.88;
-}
-
-.hero-kicker {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.hero-kicker::before {
-  content: "";
-  display: inline-block;
-  width: 36px;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(217, 164, 109, 0) 0%,
-    rgba(217, 164, 109, 0.82) 30%,
-    rgba(217, 164, 109, 0.82) 100%
-  );
-  flex: 0 0 auto;
 }
 
 .hero h1,
@@ -313,11 +292,6 @@ main:focus {
      there stroke nudges contrast up without reading as an outline. */
   -webkit-text-stroke: 0.3px rgba(30, 26, 22, 0.28);
   animation-delay: 380ms;
-}
-
-.hero-kicker {
-  animation: hero-rise 820ms both;
-  animation-delay: 60ms;
 }
 
 @keyframes hero-rise {
@@ -1247,7 +1221,6 @@ main:focus {
     transition: none;
   }
 
-  .hero-kicker,
   .hero h1,
   .hero h1 .hero-word,
   .hero h1 .hero-word--accent,
