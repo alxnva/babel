@@ -129,7 +129,8 @@ test("quality overrides and governor transitions are deterministic", async () =>
     viewport: { width: 390, height: 844 },
     caps: { maxTextureSize: 8192, maxAnisotropy: 8 },
   });
-  const governor = scene.createSceneQualityGovernor({ initialTier: "high" });
+  // Disable the warmup window for this legacy deterministic trace.
+  const governor = scene.createSceneQualityGovernor({ initialTier: "high", warmupFrames: 0 });
 
   assert.equal(forced, "low");
 

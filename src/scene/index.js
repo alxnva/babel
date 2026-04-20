@@ -255,7 +255,20 @@
     }
     function getProfileCount(key, fallback) {
       const value = state.profile.counts?.[key];
-      return typeof value === "number" ? value : fallback;
+      const base = typeof value === "number" ? value : fallback;
+      if (typeof base !== "number") return base;
+      // Composition profile can trim active counts on small viewports where
+      // fog already hides most of the affected particles.
+      const scale = getCompositionCountScale();
+      return Math.max(0, Math.floor(base * scale));
+    }
+    function getCompositionCountScale() {
+      try {
+        const candidate = compositionState?.profile?.countScale;
+        return typeof candidate === "number" ? candidate : 1;
+      } catch (_err) {
+        return 1;
+      }
     }
     function setRecordVisibility(records, active, limit = records.length) {
       for (let index = 0; index < records.length; index += 1) {
@@ -293,7 +306,15 @@
       if (state.profile.shadows.enabled && state.profile.shadows.mapSize > 0) {
         sunLight.shadow.mapSize.width = state.profile.shadows.mapSize, sunLight.shadow.mapSize.height = state.profile.shadows.mapSize, sunLight.shadow.needsUpdate = !0;
       }
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, state.profile.dprCap || 1);
+      const effectiveCap = typeof qualityState.resolveDprCap === "function"
+        ? qualityState.resolveDprCap(state.profile)
+        : (typeof scene.resolveEffectiveDprCap === "function"
+          ? scene.resolveEffectiveDprCap(state.profile, {
+              touchPrimary: qualityState.touchPrimary,
+              navigatorInfo: qualityState.navigatorInfo || navigator,
+            })
+          : (state.profile.dprCap || 1));
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, effectiveCap || 1);
       renderer.setPixelRatio(pixelRatio);
       updateSceneDebug({
         reason,
@@ -3109,6 +3130,7 @@
       }
     })();
     let frameTick = 0;
+    let sceneReadyMarked = false;
     !function tmpV54() {
       if (requestAnimationFrame(tmpV54), document.hidden || !sceneVisible) return;
       if (halveMobileFrames && (++frameTick & 1)) return;
@@ -3377,6 +3399,10 @@
         });
       }
       skyShell.material.uniforms.uTime.value = elapsedTime, renderer.render(homeScene, camera);
+      if (!sceneReadyMarked) {
+        sceneReadyMarked = true;
+        if (container && container.classList) container.classList.add("is-ready");
+      }
     }();
   };
 })();

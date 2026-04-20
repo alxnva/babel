@@ -259,6 +259,94 @@ test("fixed-tier governor ignores samples entirely", async () => {
   assert.equal(governor.getTier(), "low", "a fixed tier never upgrades");
 });
 
+test("governor warmup window skips early over-budget frames before arming the streak", async () => {
+  const scene = await loadQuality(createContext());
+  const governor = scene.createSceneQualityGovernor({
+    initialTier: "high",
+    downsampleFrames: 10,
+    warmupFrames: 20,
+  });
+
+  // First 30 samples (10 downsample + 20 warmup) stay in the warmup window and
+  // must not count toward the downgrade streak even though every frame is slow.
+  for (let frame = 0; frame < 30; frame += 1) {
+    assert.equal(governor.sample(40, frame * 40), null, `warmup frame ${frame} should not trigger a tier change`);
+  }
+  assert.equal(governor.getTier(), "high", "tier stays pinned to initial during warmup");
+});
+
+test("detectSaveData honors Save-Data header and prefers-reduced-data media query", async () => {
+  const scene = await loadQuality(createContext());
+
+  assert.equal(scene.detectSaveData({ navigatorInfo: {} }), false);
+  assert.equal(
+    scene.detectSaveData({ navigatorInfo: { connection: { saveData: true } } }),
+    true,
+    "connection.saveData === true flips the flag",
+  );
+
+  const prefersReduced = await loadQuality(
+    createContext({
+      matchMedia: (query) => ({
+        matches: query === "(prefers-reduced-data: reduce)",
+        addEventListener() {},
+      }),
+    }),
+  );
+  assert.equal(prefersReduced.detectSaveData({ navigatorInfo: {} }), true);
+});
+
+test("selectSceneQualityTier forces low when saveData is set", async () => {
+  const scene = await loadQuality(createContext());
+  const tier = scene.selectSceneQualityTier({
+    controls: { overrideTier: null, requestedTier: "auto", debug: false },
+    navigatorInfo: { deviceMemory: 8, hardwareConcurrency: 8 },
+    viewport: { width: 1440, height: 900 },
+    caps: { maxTextureSize: 8192, maxAnisotropy: 8 },
+    saveData: true,
+  });
+  assert.equal(tier, "low");
+});
+
+test("resolveEffectiveDprCap caps touch-primary devices with hidden deviceMemory", async () => {
+  const scene = await loadQuality(createContext());
+  const profile = { dprCap: 2 };
+
+  assert.equal(
+    scene.resolveEffectiveDprCap(profile, { touchPrimary: true, navigatorInfo: {} }),
+    1.25,
+    "unknown deviceMemory + touch primary is capped at 1.25",
+  );
+  assert.equal(
+    scene.resolveEffectiveDprCap(profile, {
+      touchPrimary: true,
+      navigatorInfo: { deviceMemory: 8 },
+    }),
+    2,
+    "known deviceMemory keeps the base cap",
+  );
+  assert.equal(
+    scene.resolveEffectiveDprCap(profile, { touchPrimary: false, navigatorInfo: {} }),
+    2,
+    "desktop devices keep the base cap",
+  );
+  assert.equal(
+    scene.resolveEffectiveDprCap({ dprCap: 1 }, { touchPrimary: true, navigatorInfo: {} }),
+    1,
+    "base cap below 1.25 wins",
+  );
+});
+
+test("portraitPhone composition profile trims active particle counts", async () => {
+  const scene = await loadQuality(createContext());
+  const portrait = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 });
+  const desktop = scene.getSceneCompositionProfile({ width: 1440, height: 900, zoom: 0 });
+
+  assert.equal(typeof portrait.countScale, "number");
+  assert.ok(portrait.countScale < 1, "portrait phone trims counts below desktop");
+  assert.equal(desktop.countScale, 1);
+});
+
 test("createSceneQualityState exposes profile, governor, and live sample handoff", async () => {
   const context = createContext({ search: "?quality=auto", innerWidth: 1440, innerHeight: 900 });
   const scene = await loadQuality(context);

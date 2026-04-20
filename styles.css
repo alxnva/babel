@@ -183,6 +183,21 @@ main:focus {
   height: 100%;
 }
 
+.scene-canvas {
+  opacity: 0;
+  transition: opacity 480ms ease-out;
+}
+
+.scene-canvas.is-ready {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-canvas {
+    transition: none;
+  }
+}
+
 .scene-vignette {
   position: absolute;
   inset: 0;
