@@ -27,6 +27,7 @@
         orbitTrim: 0.18,
       },
       cloudAnchorY: -7.5,
+      countScale: 1,
       name: "compact",
       sceneOffsetY: -7.5,
       towerScale: 1,
@@ -44,6 +45,7 @@
         orbitTrim: 0.18,
       },
       cloudAnchorY: -7.5,
+      countScale: 1,
       name: "desktop",
       sceneOffsetY: -7.5,
       towerScale: 1,
@@ -61,6 +63,10 @@
         orbitTrim: 0.16,
       },
       cloudAnchorY: -6.8,
+      // Fog already hides most of the backside on portrait framing, so we trim
+      // active particle counts by 30% — fragment-shading win with no visible
+      // loss at phone viewport sizes.
+      countScale: 0.7,
       name: "portraitPhone",
       sceneOffsetY: -6.8,
       towerScale: 1,
@@ -253,6 +259,7 @@
     return {
       camera: { ...profile.camera },
       cloudAnchorY: profile.cloudAnchorY,
+      countScale: typeof profile.countScale === "number" ? profile.countScale : 1,
       name: profile.name,
       sceneOffsetY: profile.sceneOffsetY,
       towerScale: profile.towerScale,
@@ -355,8 +362,13 @@
     viewport = {},
     caps = {},
     touchPrimary = false,
+    saveData = false,
   }) {
     if (controls?.overrideTier) return controls.overrideTier;
+
+    // Respect metered connections and explicit data-saver settings before
+    // spending on the full asset load.
+    if (saveData) return "low";
 
     const memoryLimited =
       typeof navigatorInfo.deviceMemory === "number" && navigatorInfo.deviceMemory <= 2;
@@ -389,6 +401,31 @@
     }
   }
 
+  function detectSaveData({ navigatorInfo = typeof navigator !== "undefined" ? navigator : {} } = {}) {
+    const connection = navigatorInfo && navigatorInfo.connection;
+    if (connection && connection.saveData === true) return true;
+    if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+      try {
+        if (window.matchMedia("(prefers-reduced-data: reduce)").matches) return true;
+      } catch (_err) {
+        // Older engines without the media feature — ignore.
+      }
+    }
+    return false;
+  }
+
+  // Small phones with a high devicePixelRatio render the same pixel count as
+  // mid-range laptops while shipping ~4x the fragment work. Apple hides
+  // deviceMemory for privacy, so we can't classify those phones as "low" via
+  // the normal path. Drop their effective DPR ceiling a notch instead — at
+  // phone physical sizes it's invisible but the fragment-count win is real.
+  function resolveEffectiveDprCap(profile, { touchPrimary = false, navigatorInfo = {} } = {}) {
+    const baseCap = profile && typeof profile.dprCap === "number" ? profile.dprCap : 1;
+    const unknownMemory = typeof navigatorInfo.deviceMemory !== "number";
+    if (touchPrimary && unknownMemory) return Math.min(baseCap, 1.25);
+    return baseCap;
+  }
+
   function indexForTier(tier) {
     return Math.max(0, TIER_ORDER.indexOf(normalizeTier(tier, "high")));
   }
@@ -407,6 +444,7 @@
     initialTier = "high",
     overrideTier = null,
     downsampleFrames = 60,
+    warmupFrames = 60,
   } = {}) {
     const stableInitialTier = normalizeTier(initialTier, "high");
     const fixedTier = normalizeTier(overrideTier, null);
@@ -414,6 +452,7 @@
     let highFrameStreak = 0;
     let recoveryFrameStreak = 0;
     let lastChangeMs = 0;
+    let sampleCount = 0;
     const samples = [];
     let sampleSum = 0;
 
@@ -440,11 +479,20 @@
 
         samples.push(frameTimeMs);
         sampleSum += frameTimeMs;
+        sampleCount += 1;
         if (samples.length > downsampleFrames) {
           sampleSum -= samples.shift();
         }
 
         if (fixedTier || samples.length < downsampleFrames) {
+          return null;
+        }
+
+        // Skip streak accumulation during warmup: three.js startup, texture
+        // uploads, and first-frame shader compilation all front-load frame
+        // cost. Counting that window against the tier causes a visible
+        // cold-start downgrade within the first second on phones.
+        if (sampleCount <= downsampleFrames + warmupFrames) {
           return null;
         }
 
@@ -482,6 +530,7 @@
     viewport = { width: window.innerWidth, height: window.innerHeight },
     caps = null,
     touchPrimary = detectTouchPrimary(),
+    saveData = detectSaveData({ navigatorInfo }),
   } = {}) {
     const controls = readSceneQualityControls(search);
     const resolvedCaps = caps || readWebGLQualityCaps();
@@ -491,6 +540,7 @@
       viewport,
       caps: resolvedCaps,
       touchPrimary,
+      saveData,
     });
     const governor = createSceneQualityGovernor({
       initialTier,
@@ -502,11 +552,17 @@
       controls,
       governor,
       initialTier,
+      navigatorInfo,
+      saveData,
+      touchPrimary,
       getProfile(tier = governor.getTier()) {
         return cloneProfile(tier);
       },
       getTier() {
         return governor.getTier();
+      },
+      resolveDprCap(profile) {
+        return resolveEffectiveDprCap(profile, { touchPrimary, navigatorInfo });
       },
       sample(frameTimeMs, nowMs) {
         const nextTier = governor.sample(frameTimeMs, nowMs);
@@ -536,7 +592,10 @@
   scene.clampSceneTunerZoom = clampSceneTunerZoom;
   scene.createSceneQualityGovernor = createSceneQualityGovernor;
   scene.createSceneQualityState = createSceneQualityState;
+  scene.detectSaveData = detectSaveData;
+  scene.detectTouchPrimary = detectTouchPrimary;
   scene.getSceneCompositionProfile = getSceneCompositionProfile;
+  scene.resolveEffectiveDprCap = resolveEffectiveDprCap;
   scene.getSceneQualityProfile = function getSceneQualityProfile(tier) {
     return cloneProfile(normalizeTier(tier, "high"));
   };
