@@ -9,7 +9,7 @@ Read these files before starting a task:
 
 ## Project
 
-Static portfolio site for `alexnava.me`. JS source lives in `src/`; generated publish output lives in `dist/` and is gitignored. npm is used only for local build/format/deploy tooling. There is no automated test suite in this repo.
+Authoritative working source for `alexnava.me`. JS source lives in `src/`; generated publish output lives in `dist/` and is gitignored. npm is used for local build, preview, verification, deployment, and formatting. Lightweight automated tests live under `test/`.
 
 ## Key files
 
@@ -27,9 +27,10 @@ Static portfolio site for `alexnava.me`. JS source lives in `src/`; generated pu
 
 - Install: `npm install`
 - Build to `dist/`: `npm run build`
+- Preview locally: `npm run preview`
 - Verify source entry points: `npm run verify`
+- Run tests: `npm test`
 - Watch: `npm run watch`
-- Local preview: `npm run build:dist && cd dist && python -m http.server 4173`
 - Format: `npm run format`
 
 ## Rules

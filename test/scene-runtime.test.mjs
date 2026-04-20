@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import * as THREE from "three";
 
-const projectRoot = "C:\\Users\\nava\\Downloads\\GitHub\\Projects\\babel";
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(testDir, "..");
 const qualitySourcePath = path.join(projectRoot, "src", "scene", "quality.js");
 const sceneTunerSourcePath = path.join(projectRoot, "src", "ui", "scene-tuner.js");
 const visibilitySourcePath = path.join(projectRoot, "src", "scene", "visibility.js");
@@ -92,7 +94,7 @@ async function loadUiScript(scriptPath, context) {
   return context.window.BabelSite.ui;
 }
 
-test("quality controls keep capable iPhones on high and expose balanced profile values", async () => {
+test("quality controls keep capable auto-tier devices on high and expose current balanced defaults", async () => {
   const context = createSceneContext({ search: "?quality=auto&sceneDebug=1" });
   const scene = await loadSceneScript(qualitySourcePath, context);
 
@@ -113,7 +115,7 @@ test("quality controls keep capable iPhones on high and expose balanced profile 
   assert.equal(balanced.textures.groundSize, 768);
   assert.equal(balanced.textures.overlaySize, 384);
   assert.equal(balanced.textures.towerWidth, 768);
-  assert.equal(balanced.shadows.mapSize, 1024);
+  assert.equal(balanced.shadows.mapSize, 0);
 });
 
 test("quality overrides and governor transitions are deterministic", async () => {
@@ -161,7 +163,7 @@ test("composition profiles reframe portrait phones toward the tower", async () =
   assert.ok(portrait.sceneOffsetY > compact.sceneOffsetY);
 });
 
-test("manual scene zoom widens portrait framing and clamps to supported bounds", async () => {
+test("scene tuner defaults stay hidden while manual zoom widens portrait framing and clamps bounds", async () => {
   const context = createSceneContext();
   const scene = await loadSceneScript(qualitySourcePath, context);
 
@@ -174,7 +176,7 @@ test("manual scene zoom widens portrait framing and clamps to supported bounds",
   });
   const clamped = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 999 });
 
-  assert.equal(defaults.defaultVisible, true);
+  assert.equal(defaults.defaultVisible, false);
   assert.ok(defaults.defaultZoom > 0);
   assert.ok(widened.camera.orbitBase > portrait.camera.orbitBase);
   assert.ok(widened.camera.fov >= portrait.camera.fov);

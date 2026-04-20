@@ -29,7 +29,7 @@ const check = args.has("--check");
 const dist = args.has("--dist");
 
 // Files copied verbatim (no URL rewriting).
-const STATIC_FILES = ["LICENSE", "favicon.svg", "_headers", "_redirects"];
+const STATIC_FILES = ["LICENSE", "favicon.svg", "og.png", "_headers", "_redirects"];
 const STATIC_DIRS = ["fonts"];
 const DIST_DIR = join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = join(DIST_DIR, "scripts");

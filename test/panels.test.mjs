@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
-const projectRoot = "C:\\Users\\nava\\Downloads\\GitHub\\Projects\\babel";
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(testDir, "..");
 const panelsSourcePath = path.join(projectRoot, "src", "ui", "panels.js");
 const stylesPath = path.join(projectRoot, "styles.css");
 
