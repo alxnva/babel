@@ -86,7 +86,7 @@
       },
       shadows: {
         enabled: true,
-        mapSize: 1536,
+        mapSize: 1024,
       },
       lighting: {
         fogNear: 62,
@@ -135,9 +135,12 @@
         overlaySegments: 64,
         pointFieldCount: 160,
       },
+      // Mobile and slow-CPU desktops land here. Shadows are a full extra
+      // render pass of every shadow-casting object each frame — big win on
+      // phones to skip it entirely rather than render a low-res shadow map.
       shadows: {
-        enabled: true,
-        mapSize: 1024,
+        enabled: false,
+        mapSize: 0,
       },
       lighting: {
         fogNear: 60,
@@ -346,7 +349,13 @@
     };
   }
 
-  function selectSceneQualityTier({ controls, navigatorInfo = {}, viewport = {}, caps = {} }) {
+  function selectSceneQualityTier({
+    controls,
+    navigatorInfo = {},
+    viewport = {},
+    caps = {},
+    touchPrimary = false,
+  }) {
     if (controls?.overrideTier) return controls.overrideTier;
 
     const memoryLimited =
@@ -357,10 +366,27 @@
     if (memoryLimited || weakCaps) return "low";
     if (cpuLimited) return "balanced";
 
+    // iOS Safari hides deviceMemory for privacy and modern phones have high
+    // core counts, so the checks above don't catch them. `pointer: coarse`
+    // reliably flags touch-primary devices (phones, tablets) — cap them at
+    // balanced to avoid cooking the GPU with the full high-tier asset load.
+    if (touchPrimary) return "balanced";
+
     const shortSide = Math.min(viewport.width || 0, viewport.height || 0);
     if (shortSide > 0 && shortSide < 340) return "balanced";
 
     return "high";
+  }
+
+  function detectTouchPrimary() {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+    try {
+      return window.matchMedia("(pointer: coarse)").matches === true;
+    } catch (_err) {
+      return false;
+    }
   }
 
   function indexForTier(tier) {
@@ -455,6 +481,7 @@
     search = window.location?.search || "",
     viewport = { width: window.innerWidth, height: window.innerHeight },
     caps = null,
+    touchPrimary = detectTouchPrimary(),
   } = {}) {
     const controls = readSceneQualityControls(search);
     const resolvedCaps = caps || readWebGLQualityCaps();
@@ -463,6 +490,7 @@
       navigatorInfo,
       viewport,
       caps: resolvedCaps,
+      touchPrimary,
     });
     const governor = createSceneQualityGovernor({
       initialTier,

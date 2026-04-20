@@ -3,18 +3,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("fonts/cormorant-garamond-500.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
-    U+2212, U+2215;
-}
-
-@font-face {
-  font-family: "Cormorant Garamond";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("fonts/cormorant-garamond-600.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-500.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
     U+2212, U+2215;
@@ -25,7 +14,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("fonts/instrument-sans-400.woff2") format("woff2");
+  src: url("/fonts/instrument-sans-400.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
     U+2212, U+2215;
@@ -36,7 +25,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("fonts/instrument-sans-600.woff2") format("woff2");
+  src: url("/fonts/instrument-sans-600.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2122,
     U+2212, U+2215;
@@ -61,13 +50,27 @@
   --brass-500: #bf8a59;
   --brass-400: #d9a46d;
   --torch-300: #ffd2a0;
+  /* Muted antique-brass used for the hero anchor ("design."). Sits between
+     the saturated torch/brass palette and the tower-stone neutrals so
+     accents read as warm but quiet — modern, flat, in-scene. */
+  --accent-muted: #b89c7a;
+  /* One tier below the anchor. Ambient meta text (hero kicker, copyright,
+     hover labels, scene tuner) uses this so it whispers rather than
+     competing with the hero word. Warm off-white — reads as legible white
+     against the blue-black scene without clashing with the warm scene. */
+  --text-muted-accent: #b9b2a3;
+  /* Prefix companion to the anchor. Used for "Calm by" so it reads as
+     legible white against the twilight scene while still letting "design."
+     be the clear focal word. One notch brighter than --text-muted-accent
+     so it holds hero-level presence. */
+  --calm-prefix: #ebe4d4;
   --text: #f7f1ea;
   --muted: #d0c4ba;
   --text-primary: var(--text);
   --text-secondary: var(--muted);
   --text-meta: #cbc0b3;
-  --text-accent: var(--torch-300);
-  --text-meta-shadow: 0 2px 8px rgba(6, 9, 20, 0.42), 0 0 10px rgba(255, 176, 94, 0.08);
+  --text-accent: var(--text-muted-accent);
+  --text-meta-shadow: 0 2px 8px rgba(6, 9, 20, 0.42), 0 0 10px rgba(184, 156, 122, 0.08);
   --shadow-deep: 0 30px 84px rgba(0, 0, 0, 0.38);
   --shadow-panel: 0 18px 48px rgba(7, 10, 20, 0.24);
   --border-soft: rgba(241, 229, 212, 0.16);
@@ -156,7 +159,7 @@ main:focus {
 }
 
 :focus-visible {
-  outline: 3px solid rgba(240, 191, 127, 0.96);
+  outline: 3px solid rgba(184, 156, 122, 0.9);
   outline-offset: 4px;
 }
 
@@ -281,41 +284,35 @@ main:focus {
 }
 
 .hero h1 {
-  font-size: clamp(54px, 9vw, 120px);
+  font-size: clamp(48px, 8vw, 104px);
   max-width: 8ch;
   overflow-wrap: anywhere;
-  text-shadow:
-    0 6px 26px rgba(6, 9, 20, 0.3),
-    0 2px 6px rgba(6, 9, 20, 0.18),
-    0 0 60px rgba(217, 164, 109, 0.08);
+  /* Whisper of warm halo only — enough to feel lit-from-within without
+     announcing itself. The muted palette does the work of keeping the
+     type inside the scene. */
+  text-shadow: 0 0 44px rgba(184, 156, 122, 0.1);
 }
 
 .hero h1 .hero-word {
   display: inline-block;
-  color: var(--parchment-300);
+  /* The parent line-height of 0.98 is tight for display-size Cormorant.
+     Combined with `background-clip: text` on the inline-block, a narrower
+     box clips descenders (e.g. the `g` in "design", `y` in "by"). A small
+     bottom padding expands the background box below the baseline without
+     altering the visual line spacing, so the full glyph gets its
+     background painted. */
+  padding-bottom: 0.12em;
+  color: var(--calm-prefix);
   animation: hero-rise 820ms both;
   animation-delay: 200ms;
 }
 
 .hero h1 .hero-word--accent {
-  color: var(--brass-400);
+  color: var(--accent-muted);
+  /* Muted brass on the twilight scene can lose edge definition. A barely-
+     there stroke nudges contrast up without reading as an outline. */
+  -webkit-text-stroke: 0.3px rgba(30, 26, 22, 0.28);
   animation-delay: 380ms;
-}
-
-@supports (background-clip: text) or (-webkit-background-clip: text) {
-  @media (prefers-reduced-transparency: no-preference) {
-    .hero h1 .hero-word {
-      background-image:
-        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),
-        linear-gradient(currentColor, currentColor);
-      background-blend-mode: overlay, normal;
-      background-size: 160px 160px, auto;
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      color: transparent;
-    }
-  }
 }
 
 .hero-kicker {
@@ -426,12 +423,12 @@ main:focus {
 .story-text a,
 .panel-body a {
   color: var(--parchment-200);
-  text-decoration-color: rgba(240, 191, 127, 0.4);
+  text-decoration-color: rgba(184, 156, 122, 0.5);
 }
 
 .panel-footnote a {
   color: inherit;
-  text-decoration-color: rgba(240, 191, 127, 0.32);
+  text-decoration-color: rgba(184, 156, 122, 0.4);
 }
 
 .error-cta {
@@ -445,7 +442,7 @@ main:focus {
   padding: 12px 18px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(191, 128, 69, 0.18) 0%, rgba(54, 39, 29, 0.4) 100%);
+  background: linear-gradient(180deg, rgba(140, 122, 96, 0.16) 0%, rgba(40, 36, 32, 0.38) 100%);
   color: var(--text);
   text-decoration: none;
   transition:
@@ -454,8 +451,8 @@ main:focus {
 }
 
 .back-link:hover {
-  border-color: rgba(240, 191, 127, 0.42);
-  background: linear-gradient(180deg, rgba(191, 128, 69, 0.24) 0%, rgba(54, 39, 29, 0.52) 100%);
+  border-color: rgba(184, 156, 122, 0.42);
+  background: linear-gradient(180deg, rgba(140, 122, 96, 0.22) 0%, rgba(40, 36, 32, 0.5) 100%);
 }
 
 .bottom-bar {
@@ -564,7 +561,7 @@ main:focus {
   bottom: max(30px, calc(22px + env(safe-area-inset-bottom)));
   z-index: 10;
   margin: 0;
-  color: var(--text-meta);
+  color: var(--text-accent);
   font-size: 11px;
   letter-spacing: 0.08em;
   pointer-events: none;
@@ -777,11 +774,13 @@ main:focus {
   min-height: clamp(320px, 58vh, 540px);
   padding: clamp(18px, 2.8vw, 30px);
   border-radius: 12px;
-  background: linear-gradient(160deg, #3b3524 0%, #2a2418 78%, #201b10 100%);
+  /* Cover pulled off warm-leather browns into the tower-stone family so
+     it reads as muted binding rather than a saturated object. */
+  background: linear-gradient(160deg, #3a3633 0%, #2a2724 78%, #1f1d1b 100%);
   box-shadow:
-    0 32px 80px rgba(10, 8, 2, 0.55),
-    inset 0 1px 0 rgba(230, 212, 176, 0.08),
-    inset 0 0 0 1px rgba(30, 24, 14, 0.8);
+    0 32px 80px rgba(6, 6, 8, 0.5),
+    inset 0 1px 0 rgba(220, 210, 196, 0.07),
+    inset 0 0 0 1px rgba(20, 18, 16, 0.8);
 }
 
 .panel-notebook__spread {
@@ -799,19 +798,21 @@ main:focus {
 .panel-notebook__page {
   position: relative;
   padding: clamp(32px, 4vw, 56px) clamp(28px, 3.4vw, 48px);
-  background-color: #c7bdab;
+  /* Cooler aged-paper cream — complements the muted brass accents
+     instead of the previous honeyed warmth. */
+  background-color: #d3cab8;
   background-image:
     repeating-linear-gradient(
       180deg,
       transparent 0,
       transparent calc(1.7em - 1px),
-      rgba(78, 62, 40, 0.22) calc(1.7em - 1px),
-      rgba(78, 62, 40, 0.22) 1.7em
+      rgba(68, 62, 52, 0.18) calc(1.7em - 1px),
+      rgba(68, 62, 52, 0.18) 1.7em
     ),
-    radial-gradient(circle at 22% 18%, rgba(255, 240, 210, 0.22) 0%, rgba(255, 240, 210, 0) 60%),
-    linear-gradient(180deg, #c7bdab 0%, #b7ac98 100%);
+    radial-gradient(circle at 22% 18%, rgba(246, 238, 222, 0.18) 0%, rgba(246, 238, 222, 0) 60%),
+    linear-gradient(180deg, #d3cab8 0%, #bfb6a3 100%);
   background-position: 0 1.1em, 0 0, 0 0;
-  color: #3c2e1c;
+  color: #35302a;
   font-family: var(--font-body);
   min-height: inherit;
   display: flex;
@@ -820,19 +821,19 @@ main:focus {
 }
 
 .panel-notebook__page--left {
-  border-right: 1px solid rgba(78, 62, 40, 0.28);
-  box-shadow: inset -12px 0 22px rgba(24, 16, 4, 0.14);
+  border-right: 1px solid rgba(68, 62, 52, 0.24);
+  box-shadow: inset -12px 0 22px rgba(16, 14, 10, 0.12);
   align-items: flex-start;
   justify-content: center;
 }
 
 .panel-notebook__page--right {
-  border-left: 1px solid rgba(78, 62, 40, 0.2);
-  box-shadow: inset 12px 0 22px rgba(24, 16, 4, 0.12);
+  border-left: 1px solid rgba(68, 62, 52, 0.18);
+  box-shadow: inset 12px 0 22px rgba(16, 14, 10, 0.1);
 }
 
 .panel-notebook__page .eyebrow {
-  color: rgba(120, 82, 38, 0.86);
+  color: var(--accent-muted);
   margin-bottom: 14px;
 }
 
@@ -841,12 +842,12 @@ main:focus {
   font-size: clamp(34px, 5.6vw, 56px);
   line-height: 1;
   margin: 0;
-  color: #2a2013;
+  color: #2a2723;
   letter-spacing: -0.015em;
 }
 
 .panel-notebook__page .panel-body {
-  color: #3c2e1c;
+  color: #3a342e;
   font-size: clamp(15px, 1.4vw, 17px);
   line-height: 1.7;
   margin: 0;
@@ -854,7 +855,7 @@ main:focus {
 }
 
 .panel-notebook__page .panel-footnote {
-  color: rgba(68, 52, 28, 0.74);
+  color: rgba(58, 52, 44, 0.68);
   font-size: 11px;
   letter-spacing: 0.08em;
   margin: auto 0 0;
@@ -862,8 +863,8 @@ main:focus {
 }
 
 .panel-notebook__page .panel-footnote a {
-  color: #573c18;
-  text-decoration-color: rgba(120, 82, 38, 0.5);
+  color: #4a4235;
+  text-decoration-color: rgba(90, 78, 62, 0.5);
 }
 
 .panel-notebook__initial {
@@ -873,7 +874,8 @@ main:focus {
   font-family: var(--font-display);
   font-style: italic;
   font-size: clamp(120px, 18vw, 210px);
-  color: rgba(94, 64, 24, 0.18);
+  /* Neutral watermark rather than the prior saturated amber wash. */
+  color: rgba(72, 64, 52, 0.15);
   line-height: 0.9;
   pointer-events: none;
   -webkit-user-select: none;
@@ -884,9 +886,9 @@ main:focus {
   width: clamp(28px, 4vw, 42px);
   background: linear-gradient(
     90deg,
-    rgba(10, 6, 2, 0.62) 0%,
-    rgba(30, 22, 10, 0.72) 40%,
-    rgba(10, 6, 2, 0.62) 100%
+    rgba(8, 8, 10, 0.6) 0%,
+    rgba(24, 22, 20, 0.72) 40%,
+    rgba(8, 8, 10, 0.6) 100%
   );
   display: flex;
   flex-direction: column;
@@ -899,10 +901,12 @@ main:focus {
   width: clamp(14px, 1.6vw, 20px);
   height: clamp(14px, 1.6vw, 20px);
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 30%, #e1b57f 0%, #a67838 70%, #5e3c12 100%);
+  /* Rings pulled from saturated honey-brass to muted antiqued brass
+     so they feel like small hardware, not glowing ornaments. */
+  background: radial-gradient(circle at 35% 30%, #cfbc9c 0%, #8f7a5c 70%, #4a3e2c 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 222, 180, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 rgba(234, 222, 200, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.38);
 }
 
 .panel-letter {
@@ -919,25 +923,25 @@ main:focus {
   position: relative;
   flex: 1;
   padding: clamp(32px, 4vw, 56px) clamp(28px, 4vw, 52px);
-  background-color: #c7bdab;
+  background-color: #d3cab8;
   background-image:
     repeating-linear-gradient(
       180deg,
       transparent 0,
       transparent calc(1.7em - 1px),
-      rgba(78, 62, 40, 0.14) calc(1.7em - 1px),
-      rgba(78, 62, 40, 0.14) 1.7em
+      rgba(68, 62, 52, 0.12) calc(1.7em - 1px),
+      rgba(68, 62, 52, 0.12) 1.7em
     ),
-    radial-gradient(circle at 28% 22%, rgba(255, 240, 210, 0.24) 0%, rgba(255, 240, 210, 0) 58%),
-    linear-gradient(180deg, #cec3b0 0%, #b6ab97 100%);
+    radial-gradient(circle at 28% 22%, rgba(246, 238, 222, 0.2) 0%, rgba(246, 238, 222, 0) 58%),
+    linear-gradient(180deg, #d8cfbd 0%, #beb5a2 100%);
   background-position: 0 1.2em, 0 0, 0 0;
-  color: #3c2e1c;
+  color: #35302a;
   font-family: var(--font-body);
   border-radius: 4px;
   box-shadow:
-    0 28px 60px rgba(10, 8, 2, 0.48),
-    inset 0 0 0 1px rgba(70, 54, 30, 0.22),
-    inset 0 -10px 28px rgba(40, 28, 10, 0.14);
+    0 28px 60px rgba(6, 6, 8, 0.44),
+    inset 0 0 0 1px rgba(70, 62, 50, 0.2),
+    inset 0 -10px 28px rgba(30, 26, 22, 0.12);
   transform: rotate(-1.2deg);
   transform-origin: center;
   display: flex;
@@ -951,20 +955,20 @@ main:focus {
   pointer-events: none;
   background: linear-gradient(
       180deg,
-      rgba(255, 245, 218, 0) 0%,
-      rgba(255, 245, 218, 0.18) 50%,
-      rgba(255, 245, 218, 0) 52%
+      rgba(246, 238, 222, 0) 0%,
+      rgba(246, 238, 222, 0.16) 50%,
+      rgba(246, 238, 222, 0) 52%
     ),
     linear-gradient(
       180deg,
-      rgba(60, 40, 14, 0) 48%,
-      rgba(60, 40, 14, 0.08) 50%,
-      rgba(60, 40, 14, 0) 52%
+      rgba(50, 46, 40, 0) 48%,
+      rgba(50, 46, 40, 0.07) 50%,
+      rgba(50, 46, 40, 0) 52%
     );
 }
 
 .panel-letter__sheet .eyebrow {
-  color: rgba(120, 82, 38, 0.86);
+  color: var(--accent-muted);
   margin-bottom: 14px;
 }
 
@@ -973,20 +977,20 @@ main:focus {
   font-size: clamp(32px, 5vw, 50px);
   line-height: 1.04;
   margin: 0;
-  color: #2a2013;
+  color: #2a2723;
   letter-spacing: -0.015em;
 }
 
 .panel-letter__sheet .panel-body {
   margin: 20px 0 0;
-  color: #3c2e1c;
+  color: #3a342e;
   font-size: clamp(16px, 1.5vw, 18px);
   max-width: 30ch;
 }
 
 .panel-letter__sheet .panel-body a {
-  color: #573c18;
-  text-decoration-color: rgba(120, 82, 38, 0.5);
+  color: #4a4235;
+  text-decoration-color: rgba(90, 78, 62, 0.5);
 }
 
 .panel-letter__seal {
@@ -996,10 +1000,12 @@ main:focus {
   width: clamp(36px, 5vw, 52px);
   height: clamp(36px, 5vw, 52px);
   border-radius: 999px;
-  background: radial-gradient(circle at 34% 28%, #c2653c 0%, #8a3a18 65%, #4e1e08 100%);
+  /* Seal pulled off saturated terracotta onto muted antique brass so it
+     matches the icon seal and the accent-muted token. */
+  background: radial-gradient(circle at 34% 28%, #b89c7a 0%, #7a6345 65%, #403326 100%);
   box-shadow:
-    0 4px 10px rgba(40, 16, 4, 0.55),
-    inset 0 2px 0 rgba(255, 204, 160, 0.28);
+    0 4px 10px rgba(24, 20, 14, 0.5),
+    inset 0 2px 0 rgba(232, 216, 192, 0.22);
 }
 
 .panel-letter__seal::before,
@@ -1008,7 +1014,7 @@ main:focus {
   position: absolute;
   left: 50%;
   top: 50%;
-  background: rgba(255, 222, 188, 0.36);
+  background: rgba(232, 222, 200, 0.34);
   transform: translate(-50%, -50%);
 }
 
@@ -1072,7 +1078,7 @@ main:focus {
 @media (prefers-reduced-transparency: reduce) {
   .panel-notebook,
   .panel-letter {
-    background: linear-gradient(180deg, rgba(45, 38, 22, 0.98) 0%, rgba(28, 22, 10, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(52, 48, 44, 0.98) 0%, rgba(30, 28, 25, 0.98) 100%);
   }
 }
 
@@ -1097,7 +1103,7 @@ main:focus {
 
 .panel-close:hover,
 .panel-close:focus-visible {
-  background: rgba(240, 191, 127, 0.12);
+  background: rgba(184, 156, 122, 0.12);
   color: var(--text-secondary);
 }
 
@@ -1165,7 +1171,10 @@ main:focus {
   }
 
   .hero h1 {
-    font-size: clamp(42px, 13vw, 72px);
+    /* Kept close to the desktop clamp so the hero reads at the same
+       visual weight across breakpoints — the prior 13vw target
+       over-scaled on phones relative to what's shown on desktop. */
+    font-size: clamp(44px, 10vw, 80px);
     max-width: 6ch;
   }
 

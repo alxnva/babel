@@ -14,6 +14,7 @@ Desktop.ini
 # Local exports and review artifacts
 *.zip
 *.png
+!og.png
 
 # Node / build
 node_modules/

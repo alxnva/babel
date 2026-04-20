@@ -1,6 +1,6 @@
 (() => {
   const site = (window.BabelSite = window.BabelSite || {});
-  const THREE_URL = "/vendor/three.min.js?v=648";
+  const THREE_URL = "/vendor/three.min.js";
 
   function initUi() {
     const ui = site.ui || {};

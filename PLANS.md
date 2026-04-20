@@ -6,16 +6,24 @@ Candidates for future work, roughly ordered by value. Pick from here when starti
 
 | #   | Task                                          | Why it matters                                                                                                                   | Size     |
 | --- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| 1   | Add a lightweight local dev server            | `python -m http.server` doesn't apply `_headers` / `_redirects`; a dev server that honors both would close the preview/prod gap. | Small    |
-| 2   | Create and commit an `og.png`                 | The `og:image`/`twitter:image` meta was removed because no asset existed. Social shares currently fall back to title-only cards. | Small    |
-| 3   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                 | Thinking |
-| 4   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor.         | Medium   |
+| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                 | Thinking |
+| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor.         | Medium   |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
 ### Adding to the backlog
 
 Anyone (human or agent) can propose additions. Keep entries to one line. Size is one of: **Small** (< 1 hour), **Medium** (a few hours), **Large** (multi-session), or **Thinking** (needs scoping).
+
+---
+
+## Current positioning
+
+- Audience: creative peers first, broader visitors second
+- Site role: sparse personal site, not a full portfolio hub
+- Babel role: atmospheric influence, not explicit framing copy
+- Public text: stay minimal; prefer small grounding changes over explanatory sections
+- Resume: defer until there is a clearer reason to surface it
 
 ---
 
@@ -96,3 +104,12 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 ### Structural map + phase headers in `main.js`
 
 **Completed.** Added a top-level structural map comment and phase headers inside `initHomeScene()`. Comment-only change — no behavior altered.
+
+### Roadmap foundation truthfulness + social share polish
+
+**Completed.** Tightened the project contract and added the first understated public polish pass:
+
+- Synced repo guidance so `README.md`, `AGENTS.md`, and `CLAUDE.md` all describe the same source-of-truth repo, preview flow, and verification contract.
+- Added a Wrangler-backed local preview command so local review is closer to Cloudflare Pages than a plain static file server.
+- Added a committed `og.png` asset and restored Open Graph / Twitter image metadata.
+- Captured the current internal positioning stance so future copy changes can stay minimal and consistent.

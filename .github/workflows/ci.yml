@@ -28,5 +28,8 @@ jobs:
       - name: Verify source entry points
         run: npm run verify
 
+      - name: Run test suite
+        run: npm test
+
       - name: Build deployable site
         run: npm run build:dist

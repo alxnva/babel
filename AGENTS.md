@@ -8,11 +8,12 @@ This contract applies to any AI agent working in this repository.
 
 - **Project:** `babel`
 - **Live site:** `alexnava.me`
+- **Repo role:** authoritative working source for the live site
 - **Stack:** static site (HTML, CSS, vanilla JS, self-hosted Three.js r128, self-hosted font subsets, esbuild-generated `dist/scripts/`)
 - **Host:** Cloudflare Pages project `alexnava-me` (re-confirm before deploy or DNS changes)
 - **Build step:** esbuild via `npm run build` / `npm run build:dist` — source in `src/`, generated publish payload in `dist/` (not tracked)
 - **Package manager:** npm (devDependencies only: esbuild, prettier, three, wrangler)
-- **Test suite:** none
+- **Test suite:** lightweight `node:test` coverage in `test/` for scene/runtime/UI verification
 
 ## Design intent
 
@@ -56,21 +57,21 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 | -------------- | ------------------------------------------------------ |
 | Install        | `npm install`                                          |
 | Build          | `npm run build` (same as `npm run build:dist`)         |
+| Preview        | `npm run preview` (builds `dist/` then serves it through Wrangler Pages) |
 | Verify         | `npm run verify` (compile-check, no writes)            |
+| Test           | `npm test`                                             |
 | Watch          | `npm run watch` (rebuild `dist/scripts/` on src change)|
 | Format         | `npm run format`                                       |
-| Local preview  | `npm run build:dist && cd dist && python -m http.server 4173` |
 | Deploy preview | `npm run deploy:preview` (requires Wrangler auth)      |
 | Deploy prod    | `npm run deploy:prod` (requires Wrangler auth)         |
-| Test           | n/a                                                    |
 
 ## Operating principles
 
 1. Prefer small, reversible diffs.
 2. Reuse the current structure before inventing a new one.
-3. JS edits go in `src/`. Run `npm run verify` before committing. `dist/` is generated — never hand-edit, never commit.
-4. Keep `file://` and HTTP preview both viable when possible; `dist/` served via `python -m http.server` is the honest preview (honors `_headers` layout and script paths).
-5. When bumping visible assets, bump the `?v=NNN` query strings in `index.html` and `404.html` together so cached HTML revalidates styles and scripts in lockstep.
+3. JS edits go in `src/`. Run `npm run verify` and `npm test` before committing. `dist/` is generated — never hand-edit, never commit.
+4. Keep `file://` and HTTP preview both viable when possible; `npm run preview` is the preferred local check because it serves `dist/` through Wrangler Pages.
+5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`, `vendor/three.min.HASH.js`); don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
 6. Update docs when file roles, preview assumptions, or deploy reality change. If a deploy detail matters, confirm it instead of trusting historical notes blindly.
 
 ## Ask before
@@ -88,4 +89,5 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 - The diff has been reviewed for regressions
 - Visual changes still fit `STYLE.md`
 - `npm run verify` passes
+- `npm test` passes
 - `README.md` and any affected project docs reflect reality
