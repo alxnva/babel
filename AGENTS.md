@@ -9,7 +9,7 @@ This contract applies to any AI agent working in this repository.
 - **Project:** `babel`
 - **Live site:** `alexnava.me`
 - **Repo role:** authoritative working source for the live site
-- **Stack:** static site (HTML, CSS, vanilla JS, self-hosted Three.js r128, self-hosted font subsets, esbuild-generated `dist/scripts/`)
+- **Stack:** static site (HTML, CSS, vanilla JS, bundled tree-shaken Three.js r160 via esbuild, self-hosted font subsets, esbuild-generated `dist/scripts/`)
 - **Host:** Cloudflare Pages project `alexnava-me` (re-confirm before deploy or DNS changes)
 - **Build step:** esbuild via `npm run build` / `npm run build:dist` — source in `src/`, generated publish payload in `dist/` (not tracked)
 - **Package manager:** npm (devDependencies only: esbuild, prettier, three, wrangler)
@@ -71,7 +71,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 2. Reuse the current structure before inventing a new one.
 3. JS edits go in `src/`. Run `npm run verify` and `npm test` before committing. `dist/` is generated — never hand-edit, never commit.
 4. Keep `file://` and HTTP preview both viable when possible; `npm run preview` is the preferred local check because it serves `dist/` through Wrangler Pages.
-5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`, `vendor/three.min.HASH.js`); don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
+5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`); three.js is bundled into `scripts/app.HASH.js` and tree-shaken by esbuild. Don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
 6. Update docs when file roles, preview assumptions, or deploy reality change. If a deploy detail matters, confirm it instead of trusting historical notes blindly.
 
 ## Ask before

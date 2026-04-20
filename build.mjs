@@ -6,22 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Order matters: each IIFE attaches to window.BabelSite and may read from
-// entries that ran before it. main.js must run last (it reads ui + scene).
-const ENTRIES = [
-  "scene/helpers.js",
-  "scene/palette.js",
-  "scene/world.js",
-  "scene/quality.js",
-  "scene/visibility.js",
-  "scene/textures.js",
-  "scene/index.js",
-  "ui/hero.js",
-  "ui/icons.js",
-  "ui/panels.js",
-  "ui/scene-tuner.js",
-  "main.js",
-];
+// Single entry point. src/app.js imports each module in dependency order; each
+// module attaches to window.BabelSite as a side effect. esbuild bundles the
+// whole graph (including tree-shaken three.js) into one IIFE.
+const APP_ENTRY = "src/app.js";
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -43,19 +31,14 @@ const STATIC_DIRS = ["fonts"];
 const DIST_DIR = join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = join(DIST_DIR, "scripts");
 const DIST_CSS_DIR = join(DIST_DIR, "css");
-const DIST_VENDOR_DIR = join(DIST_DIR, "vendor");
-const THREE_VENDOR_SOURCE = join(__dirname, "node_modules", "three", "build", "three.min.js");
-
-// Literal placeholder in bundled app.js; rewritten to the hashed vendor path at build time.
-const THREE_PLACEHOLDER = "/vendor/three.min.js";
 
 if ((watch && check) || (watch && dist) || (check && dist)) {
   throw new Error("Use only one of --watch, --check, or --dist.");
 }
 
-const entryOptions = (entry) => ({
-  entryPoints: [join(__dirname, "src", entry)],
-  bundle: false,
+const appBuildOptions = () => ({
+  entryPoints: [join(__dirname, APP_ENTRY)],
+  bundle: true,
   minify: true,
   target: "es2022",
   format: "iife",
@@ -68,14 +51,10 @@ function sha8(buf) {
 }
 
 async function buildAppBundle() {
-  const results = await Promise.all(ENTRIES.map((entry) => build(entryOptions(entry))));
-  const chunks = results.map((res, ix) => {
-    const out = res.outputFiles?.[0];
-    if (!out) throw new Error(`esbuild produced no output for ${ENTRIES[ix]}`);
-    return out.text;
-  });
-  // Concatenated IIFEs with a newline between so minifier-free joins stay safe.
-  return chunks.join("\n");
+  const result = await build(appBuildOptions());
+  const out = result.outputFiles?.[0];
+  if (!out) throw new Error(`esbuild produced no output for ${APP_ENTRY}`);
+  return out.text;
 }
 
 function rewriteHtml(src, { appPath, cssPath }) {
@@ -100,16 +79,8 @@ async function buildDist() {
   await clearDist();
   await mkdir(DIST_SCRIPTS_DIR, { recursive: true });
   await mkdir(DIST_CSS_DIR, { recursive: true });
-  await mkdir(DIST_VENDOR_DIR, { recursive: true });
 
-  const threeSrc = await readFile(THREE_VENDOR_SOURCE);
-  const threeHash = sha8(threeSrc);
-  const threeHashedName = `three.min.${threeHash}.js`;
-  const threeHashedUrl = `/vendor/${threeHashedName}`;
-  await writeFile(join(DIST_VENDOR_DIR, threeHashedName), threeSrc);
-
-  let bundled = await buildAppBundle();
-  bundled = bundled.split(THREE_PLACEHOLDER).join(threeHashedUrl);
+  const bundled = await buildAppBundle();
   const appHash = sha8(bundled);
   const appHashedName = `app.${appHash}.js`;
   const appHashedUrl = `/scripts/${appHashedName}`;
@@ -135,20 +106,18 @@ async function buildDist() {
   }
 
   const appKb = (Buffer.byteLength(bundled) / 1024).toFixed(1);
-  console.log(`bundled ${ENTRIES.length} entries -> scripts/${appHashedName} (${appKb} kB)`);
-  console.log(`hashed assets: css/${cssHashedName}, vendor/${threeHashedName}`);
+  console.log(`bundled ${APP_ENTRY} -> scripts/${appHashedName} (${appKb} kB)`);
+  console.log(`hashed assets: css/${cssHashedName}`);
 }
 
 if (watch) {
   await buildDist();
-  const contexts = await Promise.all(
-    ENTRIES.map((entry) => context({ ...entryOptions(entry), write: false })),
-  );
-  await Promise.all(contexts.map((ctx) => ctx.watch()));
+  const ctx = await context(appBuildOptions());
+  await ctx.watch();
   console.log("watching src/ (rerun build:dist after static asset changes)");
 } else if (check) {
   await buildAppBundle();
-  console.log(`verified ${ENTRIES.length} entry points`);
+  console.log(`verified ${APP_ENTRY}`);
 } else {
   await buildDist();
   console.log("built deployable dist/");
