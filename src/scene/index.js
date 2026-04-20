@@ -3093,8 +3093,21 @@
     }), tmpV89();
     const clock = new THREE.Clock(),
       num516 = 0.12 * Math.PI;
+    // Cap touch-primary devices (phones, tablets) at ~30fps. The scene is
+    // decorative; rendering every other frame keeps visuals smooth enough while
+    // roughly halving GPU + main-thread frame work, which is the single
+    // biggest lever on battery + sustained perf for mobile browsers.
+    const halveMobileFrames = (() => {
+      try {
+        return window.matchMedia?.("(pointer: coarse)")?.matches === true;
+      } catch (_err) {
+        return false;
+      }
+    })();
+    let frameTick = 0;
     !function tmpV54() {
       if (requestAnimationFrame(tmpV54), document.hidden || !sceneVisible) return;
+      if (halveMobileFrames && (++frameTick & 1)) return;
       const result97 = Math.min(0.1, clock.getDelta()),
         elapsedTime = clock.elapsedTime;
       const adaptiveProfile = typeof qualityState.sample === "function" ? qualityState.sample(1e3 * result97, 1e3 * elapsedTime) : null;
