@@ -36,6 +36,12 @@
     return SCRAMBLE_CHARSET[Math.floor(Math.random() * SCRAMBLE_CHARSET.length)];
   }
 
+  // Cache the true original nodeValue the first time we see a text node.
+  // Without this, a mid-scramble close leaves partially-random glyphs in the
+  // DOM; the next open captures that polluted state as "original" and reveals
+  // to it — locking random chars in permanently.
+  const ORIGINAL_TEXT = new WeakMap();
+
   function collectScrambleTargets(root) {
     const targets = [];
     const containers = root.querySelectorAll("[data-scramble]");
@@ -43,9 +49,14 @@
       const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
       let node = walker.nextNode();
       while (node) {
-        const value = node.nodeValue;
-        if (value && /[A-Za-z]/.test(value)) {
-          targets.push({ node, original: value });
+        const current = node.nodeValue;
+        if (current && /[A-Za-z]/.test(current)) {
+          let original = ORIGINAL_TEXT.get(node);
+          if (original === undefined) {
+            original = current;
+            ORIGINAL_TEXT.set(node, original);
+          }
+          targets.push({ node, original });
         }
         node = walker.nextNode();
       }
