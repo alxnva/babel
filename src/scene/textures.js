@@ -220,7 +220,7 @@
         tex.wrapT = THREE.MirroredRepeatWrapping;
         tex.repeat.set(4, 4);
         tex.anisotropy = aniso;
-        tex.encoding = THREE.sRGBEncoding;
+        tex.colorSpace = THREE.SRGBColorSpace;
       }),
       bumpMap: makeTexture(THREE, bumpCanvas, (tex) => {
         tex.wrapS = THREE.MirroredRepeatWrapping;
@@ -275,7 +275,7 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.encoding = THREE.sRGBEncoding;
+    tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   };
 
@@ -433,7 +433,7 @@
       colorMap: makeTexture(THREE, colorCanvas, (tex) => {
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.ClampToEdgeWrapping;
-        tex.encoding = THREE.sRGBEncoding;
+        tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = aniso;
       }),
       bumpMap: makeTexture(THREE, bumpCanvas, (tex) => {

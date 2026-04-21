@@ -1,3 +1,14 @@
+import * as THREE from "three";
+
+// r128-parity color / light pipeline. ColorManagement.enabled=true (the r152+
+// default) treats material+light hex colors as sRGB and converts to linear
+// before shading, which shifts every color in the scene. Disabling it matches
+// the pre-r152 workflow the scene was designed against. The renderer init
+// also sets _useLegacyLights (the internal field three.js reads) to keep
+// light intensities on pre-r155 units — the public .useLegacyLights accessor
+// logs a deprecation warning on every get, so we bypass it.
+THREE.ColorManagement.enabled = false;
+
 (() => {
   const site = window.BabelSite = window.BabelSite || {},
     scene = site.scene = site.scene || {},
@@ -18,7 +29,7 @@
     } = scene;
   scene.initHomeScene = function () {
     const container = document.getElementById("home-scene");
-    if (!container || !window.THREE || !supportsWebGL()) return;
+    if (!container || !supportsWebGL()) return;
     // Boot order:
     // 1. Renderer + fixed composition
     // 2. Camera-following atmosphere layers
@@ -238,7 +249,7 @@
       const result85 = Math.min(arg54, tmpV26.max ?? arg54);
       return Math.max(1, Math.min(renderer.capabilities.getMaxAnisotropy(), state.lowPower ? result84 : result85));
     }
-    renderer.setClearColor(0, 0), renderer.outputEncoding = THREE.sRGBEncoding, renderer.shadowMap.type = THREE.PCFSoftShadowMap, container.appendChild(renderer.domElement);
+    renderer.setClearColor(0, 0), renderer.outputColorSpace = THREE.SRGBColorSpace, renderer.toneMapping = THREE.NoToneMapping, renderer._useLegacyLights = true, renderer.shadowMap.type = THREE.PCFSoftShadowMap, container.appendChild(renderer.domElement);
     const visibilityTracker = typeof scene.createSceneVisibilityTracker === "function" ? scene.createSceneVisibilityTracker({
       THREE,
       camera: camera
@@ -379,7 +390,7 @@
       var gradient8 = ctx.createRadialGradient(num405, num406, 0, num405, num406, num405);
       gradient8.addColorStop(0, "rgba(" + arg56 + "," + arg57 + "," + arg58 + ",0.7)"), gradient8.addColorStop(0.18, "rgba(" + arg56 + "," + Math.floor(0.7 * arg57) + "," + Math.floor(0.6 * arg58) + ",0.35)"), gradient8.addColorStop(0.38, "rgba(" + Math.floor(0.85 * arg56) + "," + Math.floor(0.4 * arg57) + "," + Math.floor(0.3 * arg58) + ",0.14)"), gradient8.addColorStop(0.6, "rgba(" + Math.floor(0.65 * arg56) + "," + Math.floor(0.2 * arg57) + ",0,0.04)"), gradient8.addColorStop(0.85, "rgba(30,2,0,0.01)"), gradient8.addColorStop(1, "rgba(0,0,0,0)"), ctx.fillStyle = gradient8, ctx.fillRect(0, 0, arg55, arg55);
       var canvasTexture = new THREE.CanvasTexture(canvas);
-      return canvasTexture.encoding = THREE.sRGBEncoding, canvasTexture;
+      return canvasTexture.colorSpace = THREE.SRGBColorSpace, canvasTexture;
     }
     orbitalGlowGroup.position.copy(moonPosition), homeScene.add(orbitalGlowGroup);
     var sprite15 = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -426,7 +437,7 @@
           var gradient11 = ctx2.createRadialGradient(num407, num408, 153.6, num407, num408, 235.52);
           gradient11.addColorStop(0, "rgba(0,0,0,0)"), gradient11.addColorStop(1, "rgba(120,30,0,0.25)"), ctx2.fillStyle = gradient11, ctx2.fillRect(0, 0, arg59, arg59);
           var canvasTexture2 = new THREE.CanvasTexture(canvas2);
-          return canvasTexture2.encoding = THREE.sRGBEncoding, canvasTexture2;
+          return canvasTexture2.colorSpace = THREE.SRGBColorSpace, canvasTexture2;
         }(512),
         color: 16777215,
         transparent: !0,
@@ -447,7 +458,7 @@
         gradient12 = ctx3.createRadialGradient(num415 + num416, num415 + num417, 0, num415, num415, num415);
       gradient12.addColorStop(0, "rgba(255,255,235,1.0)"), gradient12.addColorStop(0.15, "rgba(255,230,130,0.85)"), gradient12.addColorStop(0.35, "rgba(255,170,40,0.5)"), gradient12.addColorStop(0.55, "rgba(240,90,10,0.22)"), gradient12.addColorStop(0.78, "rgba(160,30,0,0.06)"), gradient12.addColorStop(1, "rgba(0,0,0,0)"), ctx3.fillStyle = gradient12, ctx3.fillRect(0, 0, arg60, arg60);
       var canvasTexture3 = new THREE.CanvasTexture(canvas3);
-      return canvasTexture3.encoding = THREE.sRGBEncoding, canvasTexture3;
+      return canvasTexture3.colorSpace = THREE.SRGBColorSpace, canvasTexture3;
     }
     sprite17.scale.set(6, 6, 1), sprite17.renderOrder = 100, orbitalGlowGroup.add(sprite17);
     for (var arr7 = [], num497 = 0; num497 < 4; num497++) arr7.push(tmpV57(64, 3.7 * num497 + 1));
@@ -754,7 +765,7 @@
         ctx4.fillStyle = `rgba(120, 130, 100, ${0.08 + 0.12 * tmpV65(7903 + num208)})`, ctx4.beginPath(), ctx4.arc(num55, num56, num57, 0, 2 * Math.PI), ctx4.fill();
       }
       const canvasTexture4 = new THREE.CanvasTexture(canvas4);
-      canvasTexture4.encoding = THREE.sRGBEncoding;
+      canvasTexture4.colorSpace = THREE.SRGBColorSpace;
       const canvas5 = document.createElement("canvas");
       canvas5.width = num429, canvas5.height = num429;
       const ctx5 = canvas5.getContext("2d");
@@ -1115,7 +1126,7 @@
         }
       }
       const canvasTexture6 = new THREE.CanvasTexture(canvas6);
-      canvasTexture6.wrapS = THREE.RepeatWrapping, canvasTexture6.wrapT = THREE.RepeatWrapping, canvasTexture6.repeat.set(1.5, 2), canvasTexture6.encoding = THREE.sRGBEncoding;
+      canvasTexture6.wrapS = THREE.RepeatWrapping, canvasTexture6.wrapT = THREE.RepeatWrapping, canvasTexture6.repeat.set(1.5, 2), canvasTexture6.colorSpace = THREE.SRGBColorSpace;
       const meshStandardMaterial2 = new THREE.MeshStandardMaterial({
           color: 10123868,
           map: canvasTexture6,
@@ -1280,7 +1291,7 @@
         gradient2.addColorStop(0, "rgba(253, 244, 230, 0.78)"), gradient2.addColorStop(0.65, "rgba(236, 223, 206, 0.42)"), gradient2.addColorStop(1, "rgba(220, 204, 184, 0)"), ctx7.fillStyle = gradient2, ctx7.beginPath(), ctx7.ellipse(num72, num73, num74, num75, 0, 0, 2 * Math.PI), ctx7.fill();
       }
       const canvasTexture7 = new THREE.CanvasTexture(canvas7);
-      return canvasTexture7.encoding = THREE.sRGBEncoding, canvasTexture7.anisotropy = chooseAnisotropy(1, 2), canvasTexture7.minFilter = THREE.LinearFilter, canvasTexture7.magFilter = THREE.LinearFilter, canvasTexture7.generateMipmaps = !1, canvasTexture7;
+      return canvasTexture7.colorSpace = THREE.SRGBColorSpace, canvasTexture7.anisotropy = chooseAnisotropy(1, 2), canvasTexture7.minFilter = THREE.LinearFilter, canvasTexture7.magFilter = THREE.LinearFilter, canvasTexture7.generateMipmaps = !1, canvasTexture7;
     }
     group4.add(group7);
     const group8 = new THREE.Group();
@@ -1376,7 +1387,7 @@
       const gradient14 = ctx9.createRadialGradient(0, 0, 0.15 * num440, 0, 0, num440);
       gradient14.addColorStop(0, "rgba(255,255,255,1)"), gradient14.addColorStop(0.45, "rgba(255,255,255,0.88)"), gradient14.addColorStop(0.7, "rgba(255,255,255,0.45)"), gradient14.addColorStop(0.88, "rgba(255,255,255,0.10)"), gradient14.addColorStop(1, "rgba(255,255,255,0)"), ctx9.fillStyle = gradient14, ctx9.fillRect(-num439, -num440, 2 * num439, 2 * num440), ctx9.restore(), ctx8.drawImage(canvas9, 0, 0), ctx8.globalCompositeOperation = "source-over";
       const canvasTexture8 = new THREE.CanvasTexture(canvas8);
-      return canvasTexture8.encoding = THREE.sRGBEncoding, canvasTexture8.minFilter = THREE.LinearFilter, canvasTexture8.magFilter = THREE.LinearFilter, canvasTexture8.generateMipmaps = !1, canvasTexture8;
+      return canvasTexture8.colorSpace = THREE.SRGBColorSpace, canvasTexture8.minFilter = THREE.LinearFilter, canvasTexture8.magFilter = THREE.LinearFilter, canvasTexture8.generateMipmaps = !1, canvasTexture8;
     }
     const midCloudTextures = state.profile.counts.midCloudTextures,
       arr18 = [];
@@ -1448,7 +1459,7 @@
           ctx10.strokeStyle = `rgba(166, 178, 132, ${0.16 + 0.28 * (0.5 * Math.sin(0.77 * num242) + 0.5)})`, ctx10.lineWidth = 1 + 1.1 * (0.5 * Math.sin(1.41 * num242) + 0.5), ctx10.beginPath(), ctx10.moveTo(num82, 0.94 * canvas10.height), ctx10.quadraticCurveTo(num82 + 0.5 * num84, 0.94 * canvas10.height - 0.45 * num83, num82 + num84, 0.94 * canvas10.height - num83), ctx10.stroke();
         }
         const canvasTexture9 = new THREE.CanvasTexture(canvas10);
-        return canvasTexture9.encoding = THREE.sRGBEncoding, canvasTexture9.anisotropy = chooseAnisotropy(1, 2), canvasTexture9;
+        return canvasTexture9.colorSpace = THREE.SRGBColorSpace, canvasTexture9.anisotropy = chooseAnisotropy(1, 2), canvasTexture9;
       }(),
       groundPlantSprites = state.profile.counts.groundPlantSprites;
     if (result106) for (let num443 = 0; num443 < groundPlantSprites; num443 += 1) {
@@ -2092,7 +2103,7 @@
           gradient4.addColorStop(0, "rgba(255, 255, 255, " + (0.28 - 0.035 * num319) + ")"), gradient4.addColorStop(0.5, "rgba(255, 255, 255, " + (0.15 - 0.02 * num319) + ")"), gradient4.addColorStop(1, "rgba(255, 255, 255, 0)"), ctx11.fillStyle = gradient4, ctx11.fillRect(0, 0, 128, 128);
         }
         const canvasTexture10 = new THREE.CanvasTexture(canvas11);
-        return canvasTexture10.encoding = THREE.sRGBEncoding, canvasTexture10;
+        return canvasTexture10.colorSpace = THREE.SRGBColorSpace, canvasTexture10;
       }(),
       plumeColumns = state.profile.counts.plumeColumns,
       arr22 = [];
@@ -2238,7 +2249,7 @@
       const baseGrad = ctx12.createRadialGradient(32, 78, 0, 32, 78, 14);
       baseGrad.addColorStop(0, "rgba(180, 210, 255, 0.5)"), baseGrad.addColorStop(0.6, "rgba(150, 190, 255, 0.2)"), baseGrad.addColorStop(1, "rgba(120, 170, 255, 0)"), ctx12.fillStyle = baseGrad, ctx12.beginPath(), ctx12.ellipse(32, 78, 8, 6, 0, 0, 2 * Math.PI), ctx12.fill();
       const canvasTexture11 = new THREE.CanvasTexture(canvas12);
-      return canvasTexture11.encoding = THREE.sRGBEncoding, canvasTexture11;
+      return canvasTexture11.colorSpace = THREE.SRGBColorSpace, canvasTexture11;
     }
     function makeHotCoreTexture() {
       const canvas13 = document.createElement("canvas");
@@ -2248,7 +2259,7 @@
       const gradient17 = ctx13.createRadialGradient(16, 28, 0, 16, 28, 16);
       gradient17.addColorStop(0, "rgba(255, 255, 255, 1)"), gradient17.addColorStop(0.35, "rgba(255, 248, 220, 0.8)"), gradient17.addColorStop(0.75, "rgba(255, 220, 160, 0.3)"), gradient17.addColorStop(1, "rgba(255, 200, 120, 0)"), ctx13.fillStyle = gradient17, ctx13.beginPath(), ctx13.ellipse(16, 28, 9, 17, 0, 0, 2 * Math.PI), ctx13.fill();
       const canvasTexture12 = new THREE.CanvasTexture(canvas13);
-      return canvasTexture12.encoding = THREE.sRGBEncoding, canvasTexture12;
+      return canvasTexture12.colorSpace = THREE.SRGBColorSpace, canvasTexture12;
     }
     function makeEmberTexture() {
       const canvas14 = document.createElement("canvas");
@@ -2258,7 +2269,7 @@
       const gradient18 = ctx14.createRadialGradient(16, 16, 0, 16, 16, 14);
       gradient18.addColorStop(0, "rgba(255, 240, 200, 1)"), gradient18.addColorStop(0.4, "rgba(255, 160, 60, 0.7)"), gradient18.addColorStop(1, "rgba(200, 60, 10, 0)"), ctx14.fillStyle = gradient18, ctx14.beginPath(), ctx14.arc(16, 16, 14, 0, 2 * Math.PI), ctx14.fill();
       const canvasTexture13 = new THREE.CanvasTexture(canvas14);
-      return canvasTexture13.encoding = THREE.sRGBEncoding, canvasTexture13;
+      return canvasTexture13.colorSpace = THREE.SRGBColorSpace, canvasTexture13;
     }
     const _tResult = tmpV81("rgba(255, 245, 200, 0.95)", "rgba(255, 200, 80, 0.7)", "rgba(255, 130, 30, 0.3)", "rgba(255, 250, 220, 0.8)"),
       _tResult2 = tmpV81("rgba(255, 180, 60, 0.5)", "rgba(255, 120, 20, 0.3)", "rgba(200, 60, 10, 0.1)", "rgba(255, 200, 100, 0.3)"),
@@ -2395,7 +2406,7 @@
         gradient5.addColorStop(0, PLANT.leafHighlight), gradient5.addColorStop(1, "rgba(220, 230, 180, 0)"), ctx15.fillStyle = gradient5, ctx15.beginPath(), ctx15.ellipse(num128 - num126 * 0.3, num129 - num127 * 0.4, num126 * 0.5, num127 * 0.3, num130, 0, 2 * Math.PI), ctx15.fill();
       }
       const canvasTexture14 = new THREE.CanvasTexture(canvas15);
-      return canvasTexture14.encoding = THREE.sRGBEncoding, canvasTexture14;
+      return canvasTexture14.colorSpace = THREE.SRGBColorSpace, canvasTexture14;
     }
     function tmpV84(arg109) {
       const canvas16 = document.createElement("canvas");
@@ -2417,7 +2428,7 @@
         grad.addColorStop(0, PLANT.grassRoot), grad.addColorStop(1, PLANT.grassTip), ctx16.fillStyle = grad, ctx16.beginPath(), ctx16.moveTo(num131 - num136 / 2, num132), ctx16.quadraticCurveTo((num131 + num135) / 2 - num136 / 3, (num132 + num134) / 2, num135, num134), ctx16.quadraticCurveTo((num131 + num135) / 2 + num136 / 3, (num132 + num134) / 2, num131 + num136 / 2, num132), ctx16.closePath(), ctx16.fill(), ctx16.strokeStyle = "rgba(14, 22, 8, 0.35)", ctx16.lineWidth = 0.6, ctx16.beginPath(), ctx16.moveTo(num131, num132), ctx16.quadraticCurveTo((num131 + num135) / 2, (num132 + num134) / 2, num135, num134), ctx16.stroke();
       }
       const canvasTexture15 = new THREE.CanvasTexture(canvas16);
-      return canvasTexture15.encoding = THREE.sRGBEncoding, canvasTexture15;
+      return canvasTexture15.colorSpace = THREE.SRGBColorSpace, canvasTexture15;
     }
     const no = function (arg110, arg111) {
       return new THREE.MeshStandardMaterial({
@@ -2446,7 +2457,7 @@
       const gradient19 = ctx17.createRadialGradient(32, 32, 0, 32, 32, 30);
       gradient19.addColorStop(0, "rgba(0, 0, 0, 0.55)"), gradient19.addColorStop(0.6, "rgba(0, 0, 0, 0.18)"), gradient19.addColorStop(1, "rgba(0, 0, 0, 0)"), ctx17.fillStyle = gradient19, ctx17.fillRect(0, 0, 64, 64);
       const canvasTexture16 = new THREE.CanvasTexture(canvas17);
-      return canvasTexture16.encoding = THREE.sRGBEncoding, canvasTexture16;
+      return canvasTexture16.colorSpace = THREE.SRGBColorSpace, canvasTexture16;
     }
     const plantShadowTex = makePlantShadowTexture();
     plantShadowTex && (plantShadowMaterial.map = plantShadowTex);
@@ -2526,7 +2537,7 @@
       arg119.position.y = groundHeight(arg119.position.x, arg119.position.z) - 0.1;
     }), !state.lowPower) {
       const webGLCubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
-          format: THREE.RGBFormat,
+          format: THREE.RGBAFormat,
           generateMipmaps: !0,
           minFilter: THREE.LinearMipmapLinearFilter
         }),
@@ -2633,7 +2644,7 @@
         const gradient21 = ctx18.createLinearGradient(0, 0.82 * canvas18.height, 0, canvas18.height);
         gradient21.addColorStop(0, "rgba(14, 8, 4, 0)"), gradient21.addColorStop(1, "rgba(14, 8, 4, 0.38)"), ctx18.fillStyle = gradient21, ctx18.fillRect(0, 0.85 * canvas18.height, canvas18.width, 0.15 * canvas18.height);
         const canvasTexture17 = new THREE.CanvasTexture(canvas18);
-        return canvasTexture17.wrapS = THREE.RepeatWrapping, canvasTexture17.wrapT = THREE.RepeatWrapping, canvasTexture17.repeat.set(2.4, 1.2), canvasTexture17.anisotropy = chooseAnisotropy(2, 6), canvasTexture17.encoding = THREE.sRGBEncoding, canvasTexture17;
+        return canvasTexture17.wrapS = THREE.RepeatWrapping, canvasTexture17.wrapT = THREE.RepeatWrapping, canvasTexture17.repeat.set(2.4, 1.2), canvasTexture17.anisotropy = chooseAnisotropy(2, 6), canvasTexture17.colorSpace = THREE.SRGBColorSpace, canvasTexture17;
       }(),
       mapResult = [10126450, 8287592, 9138784, 10518632, 7365208, 9728094, 8945266, 10390128].map(arg123 => new THREE.MeshStandardMaterial({
         color: arg123,
@@ -2751,7 +2762,7 @@
           ctx19.fillStyle = `rgba(255, 244, 220, ${0.025 + 0.04 * (0.5 * Math.sin(5.19 * num379) + 0.5)})`, ctx19.beginPath(), ctx19.arc(num161, num162, num163, 0, 2 * Math.PI), ctx19.fill();
         }
         const canvasTexture18 = new THREE.CanvasTexture(canvas19);
-        return canvasTexture18.encoding = THREE.sRGBEncoding, canvasTexture18.anisotropy = chooseAnisotropy(1, 2), canvasTexture18;
+        return canvasTexture18.colorSpace = THREE.SRGBColorSpace, canvasTexture18.anisotropy = chooseAnisotropy(1, 2), canvasTexture18;
       }(),
       driftCloudCount = state.profile.counts.driftClouds;
     for (let num483 = 0; num483 < driftCloudCount; num483 += 1) {
@@ -2833,7 +2844,7 @@
           gradient23 = ctx20.createRadialGradient(num485, num486 - 4, 2, num485, num486, 0.38 * canvas20.width);
         gradient23.addColorStop(0, "rgba(255, 236, 188, 0.92)"), gradient23.addColorStop(0.5, "rgba(240, 172, 102, 0.54)"), gradient23.addColorStop(1, "rgba(180, 98, 42, 0)"), ctx20.fillStyle = gradient23, ctx20.beginPath(), ctx20.ellipse(num485, num486, 0.24 * canvas20.width, 0.29 * canvas20.height, 0, 0, 2 * Math.PI), ctx20.fill(), ctx20.fillStyle = "rgba(255, 218, 164, 0.34)", ctx20.beginPath(), ctx20.moveTo(num485, num486 - 0.36 * canvas20.height), ctx20.lineTo(num485 - 0.08 * canvas20.width, num486 - 0.06 * canvas20.height), ctx20.lineTo(num485 + 0.08 * canvas20.width, num486 - 0.06 * canvas20.height), ctx20.closePath(), ctx20.fill();
         const canvasTexture19 = new THREE.CanvasTexture(canvas20);
-        return canvasTexture19.encoding = THREE.sRGBEncoding, canvasTexture19.anisotropy = chooseAnisotropy(1, 2), canvasTexture19;
+        return canvasTexture19.colorSpace = THREE.SRGBColorSpace, canvasTexture19.anisotropy = chooseAnisotropy(1, 2), canvasTexture19;
       }(),
       emberCloudCount = state.profile.counts.emberClouds;
     if (emberCloudTexture) for (let num487 = 0; num487 < emberCloudCount; num487 += 1) {
@@ -2891,7 +2902,7 @@
       gradient7.addColorStop(0, `rgba(255, 255, 255, ${0.18 - 0.03 * num488})`), gradient7.addColorStop(0.5, `rgba(220, 210, 200, ${0.08 - 0.01 * num488})`), gradient7.addColorStop(1, "rgba(200, 190, 180, 0)"), hazeCloudCtx.fillStyle = gradient7, hazeCloudCtx.fillRect(0, 0, 128, 128);
     }
     const hazeCloudTexture = new THREE.CanvasTexture(hazeCloudCanvas);
-    hazeCloudTexture.encoding = THREE.sRGBEncoding;
+    hazeCloudTexture.colorSpace = THREE.SRGBColorSpace;
     for (let num489 = 0; num489 < hazeCloudCount; num489 += 1) {
       const qeResult100 = tmpV65(4101 + 1.47 * num489),
         qeResult101 = tmpV65(4133 + 2.13 * num489),
