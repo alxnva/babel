@@ -40,7 +40,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 | `styles.css`                                    | Visual styling, `@font-face` blocks, tokens, and responsive rules              |
 | `src/`                                          | Readable JS source of truth — edit here                                        |
 | `dist/`                                         | Generated publish payload for Cloudflare Pages — gitignored, never hand-edit   |
-| `fonts/`                                        | Self-hosted Inter + Cormorant Garamond woff2 subsets                           |
+| `fonts/`                                        | Self-hosted Instrument Sans + Cormorant Garamond woff2 subsets                 |
 | `build.mjs`, `package.json`, `.prettierrc.json` | Build + format tooling                                                         |
 | `wrangler.jsonc`                                | Cloudflare Pages project config (`pages_build_output_dir: ./dist`)             |
 | `_headers` / `_redirects`                       | Static hosting config copied into `dist/` at build time                        |

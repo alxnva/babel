@@ -92,7 +92,7 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 - Introduced an esbuild build step. Source of truth moved to `src/`; generated bundles now emit into `dist/scripts/` (gitignored).
 - Self-hosted Three.js r128 (via the `three` devDependency, emitted to `dist/vendor/three.min.js`).
-- Self-hosted Inter 400/600 and Cormorant Garamond 500/600 as latin-only woff2 subsets under `fonts/`.
+- Self-hosted Instrument Sans 400/600 and Cormorant Garamond 500/600 as latin-only woff2 subsets under `fonts/`.
 - Tightened CSP to `'self'`-only for scripts, styles, fonts; dropped both `'unsafe-inline'` directives.
 - Fixed `_headers`: immutable caching for `/scripts/*`, `/vendor/*`, `/fonts/*`; `must-revalidate` for HTML.
 - Added `defer` to every `<script>`; removed dead inline scripts and `<noscript>` styles.
@@ -113,3 +113,12 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Added a Wrangler-backed local preview command so local review is closer to Cloudflare Pages than a plain static file server.
 - Added a committed `og.png` asset and restored Open Graph / Twitter image metadata.
 - Captured the current internal positioning stance so future copy changes can stay minimal and consistent.
+
+### Cloudflare security baseline hardening
+
+**Completed.** Formalized the static-site security contract and documented the Cloudflare edge assumptions:
+
+- Kept `_headers` as the tracked source of truth for CSP, framing, MIME sniffing, permissions, COOP/CORP, and preload-capable HSTS.
+- Added project-contract coverage so the self-only CSP, HSTS preload shape, missing CORS wildcard, and legacy redirect map cannot drift silently.
+- Recorded that Cloudflare Web Analytics/RUM injection is disabled by design instead of widening `script-src` for `static.cloudflareinsights.com`.
+- Clarified that custom-domain activation, `www` to apex redirects, production `*.pages.dev` handling, DNS/CAA, certificates, WAF, and response transforms remain Cloudflare-side settings to re-confirm before deploy or security mutations.

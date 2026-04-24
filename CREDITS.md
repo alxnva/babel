@@ -2,15 +2,15 @@
 
 ## Third-party libraries
 
-- **Three.js** (r128) — MIT License. Copyright (c) 2010-2023 three.js authors.
-  Packaged via npm and emitted into `dist/vendor/three.min.js` during the build.
+- **Three.js** (r160) — MIT License. Copyright (c) 2010-2021 three.js authors.
+  Packaged via npm and bundled into `dist/scripts/app.HASH.js` during the build.
   Source: https://github.com/mrdoob/three.js
 
 ## Typography
 
 - **Cormorant Garamond** by Christian Thalmann — SIL Open Font License (OFL).
   Self-hosted as local woff2 subsets in `fonts/`.
-- **Inter** by Rasmus Andersson — SIL Open Font License (OFL).
+- **Instrument Sans** by The Instrument Sans Project Authors — SIL Open Font License (OFL).
   Self-hosted as local woff2 subsets in `fonts/`.
 
 ## Site content and code
