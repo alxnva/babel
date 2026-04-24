@@ -18,7 +18,7 @@ The page should feel intentional and still. It can be atmospheric, but it should
 ## Typography
 
 - Display: `Cormorant Garamond`
-- Body/UI: `Inter`
+- Body/UI: `Instrument Sans`
 - Headings are large, tight, and calm
 - Eyebrows are uppercase, tracked out, and restrained
 
