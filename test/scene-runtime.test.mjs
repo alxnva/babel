@@ -9,7 +9,6 @@ import * as THREE from "three";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const qualitySourcePath = path.join(projectRoot, "src", "scene", "quality.js");
-const sceneTunerSourcePath = path.join(projectRoot, "src", "ui", "scene-tuner.js");
 const visibilitySourcePath = path.join(projectRoot, "src", "scene", "visibility.js");
 
 function createSceneContext({
@@ -77,21 +76,6 @@ async function loadSceneScript(scriptPath, context) {
     { filename: scriptPath },
   );
   return context.window.BabelSite.scene;
-}
-
-async function loadUiScript(scriptPath, context) {
-  const source = await readFile(scriptPath, "utf8");
-  vm.runInNewContext(
-    source,
-    {
-      window: context.window,
-      document: context.document,
-      localStorage: context.localStorage,
-      console,
-    },
-    { filename: scriptPath },
-  );
-  return context.window.BabelSite.ui;
 }
 
 test("quality controls keep capable auto-tier devices on high and expose current balanced defaults", async () => {
@@ -162,51 +146,6 @@ test("composition profiles reframe portrait phones toward the tower", async () =
   assert.ok(portrait.camera.orbitBase > desktop.camera.orbitBase);
   assert.ok(portrait.camera.lookAtBase > desktop.camera.lookAtBase);
   assert.ok(portrait.sceneOffsetY > compact.sceneOffsetY);
-});
-
-test("scene tuner defaults stay hidden while manual zoom widens portrait framing and clamps bounds", async () => {
-  const context = createSceneContext();
-  const scene = await loadSceneScript(qualitySourcePath, context);
-
-  const defaults = scene.getSceneTunerDefaults();
-  const portrait = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 });
-  const widened = scene.getSceneCompositionProfile({
-    width: 390,
-    height: 844,
-    zoom: defaults.defaultZoom,
-  });
-  const clamped = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 999 });
-
-  assert.equal(defaults.defaultVisible, false);
-  assert.ok(defaults.defaultZoom > 0);
-  assert.ok(widened.camera.orbitBase > portrait.camera.orbitBase);
-  assert.ok(widened.camera.fov >= portrait.camera.fov);
-  assert.equal(
-    clamped.camera.orbitBase,
-    scene.getSceneCompositionProfile({
-      width: 390,
-      height: 844,
-      zoom: defaults.maxZoom,
-    }).camera.orbitBase,
-  );
-});
-
-test("scene tuner store persists zoom and visibility state", async () => {
-  const storage = createStorageMock();
-  const context = createSceneContext({ localStorage: storage });
-  const scene = await loadSceneScript(qualitySourcePath, context);
-  const ui = await loadUiScript(sceneTunerSourcePath, context);
-
-  const store = ui.createSceneTunerStore({ defaults: scene.getSceneTunerDefaults(), storage });
-  store.setZoom(999);
-  store.setVisible(false);
-
-  assert.equal(store.getState().visible, false);
-  assert.equal(store.getState().zoom, scene.getSceneTunerDefaults().maxZoom);
-
-  const restored = ui.createSceneTunerStore({ defaults: scene.getSceneTunerDefaults(), storage });
-  assert.equal(restored.getState().visible, false);
-  assert.equal(restored.getState().zoom, scene.getSceneTunerDefaults().maxZoom);
 });
 
 test("visibility classification prefers front-facing systems and culls backside decor", async () => {

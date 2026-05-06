@@ -1,14 +1,10 @@
 (() => {
   const site = (window.BabelSite = window.BabelSite || {});
   const scene = (site.scene = site.scene || {});
-  const {
-    clamp01,
-    smoothstep01,
-    wrappedDistance,
-    wrap01,
-  } = scene;
+  const { clamp01, smoothstep01, wrappedDistance, wrap01 } = scene;
   const {
     GROUND_TEXTURE_PALETTE: groundPalette,
+    MARBLE_PALETTE: marblePalette,
     TOWER_TEXTURE_PALETTE: towerPalette,
   } = scene;
 
@@ -32,12 +28,189 @@
       anisotropy: { min: 1, max: lowPower ? 4 : 8 },
       textures: {
         groundSize: lowPower ? 512 : 1024,
+        marbleCanvasSize: lowPower ? 256 : 1024,
         overlaySize: lowPower ? 256 : 512,
         towerWidth: lowPower ? 320 : 1280,
+      },
+      geometry: {
+        marbleCanvasSize: lowPower ? 256 : 1024,
+      },
+      counts: {
+        marbleVeinCount: lowPower ? 8 : 16,
       },
       tier: lowPower ? "low" : "high",
     };
   }
+
+  function hexToRgba(hex, alpha) {
+    const clean = String(hex || "#000000").replace("#", "");
+    const rr = parseInt(clean.slice(0, 2), 16) || 0;
+    const gg = parseInt(clean.slice(2, 4), 16) || 0;
+    const bb = parseInt(clean.slice(4, 6), 16) || 0;
+    return `rgba(${rr}, ${gg}, ${bb}, ${alpha})`;
+  }
+
+  function setSrgbTextureCompat(THREE, texture) {
+    if (THREE.SRGBColorSpace && "colorSpace" in texture) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    } else if (THREE.sRGBEncoding && "encoding" in texture) {
+      texture.encoding = THREE.sRGBEncoding;
+    }
+    return texture;
+  }
+
+  function makeWanderingPath(index, size, { crack = false } = {}) {
+    const pointCount = crack ? 9 : 7;
+    const horizontal = hashNoise(index, crack ? 931 : 131) > 0.35;
+    const startCross = hashNoise(index, crack ? 932 : 132) * size;
+    const drift = (hashNoise(index, crack ? 933 : 133) - 0.5) * size * (crack ? 0.42 : 0.28);
+    const waveA = (0.06 + 0.18 * hashNoise(index, crack ? 934 : 134)) * size;
+    const waveB = (0.02 + 0.08 * hashNoise(index, crack ? 935 : 135)) * size;
+    const phaseA = hashNoise(index, crack ? 936 : 136) * Math.PI * 2;
+    const phaseB = hashNoise(index, crack ? 937 : 137) * Math.PI * 2;
+    const points = [];
+
+    for (let pointIndex = 0; pointIndex < pointCount; pointIndex += 1) {
+      const t = pointIndex / Math.max(1, pointCount - 1);
+      const across = -0.08 * size + t * size * 1.16;
+      const wobble =
+        Math.sin(t * Math.PI * (1.15 + hashNoise(index, 141)) + phaseA) * waveA +
+        Math.sin(t * Math.PI * (2.1 + hashNoise(index, 142)) + phaseB) * waveB +
+        (hashNoise(index, pointIndex, crack ? 943 : 143) - 0.5) * size * (crack ? 0.065 : 0.04);
+      const cross = startCross + drift * (t - 0.5) + wobble;
+      points.push(horizontal ? [across, cross] : [cross, across]);
+    }
+
+    return {
+      lineWidth: crack ? 3 + 2 * hashNoise(index, 951) : 1.5 + 1.5 * hashNoise(index, 151),
+      points,
+    };
+  }
+
+  function strokeWanderingPath(ctx, path, { color, alpha, scale = 1 }) {
+    const points = path.points;
+    if (!points || points.length < 2) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = path.lineWidth * scale;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let idx = 1; idx < points.length - 1; idx += 1) {
+      const midX = (points[idx][0] + points[idx + 1][0]) * 0.5;
+      const midY = (points[idx][1] + points[idx + 1][1]) * 0.5;
+      ctx.quadraticCurveTo(points[idx][0], points[idx][1], midX, midY);
+    }
+    const last = points[points.length - 1];
+    ctx.lineTo(last[0], last[1]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function blurCanvas(canvas, ctx) {
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx || !("filter" in ctx)) return;
+
+    tempCtx.drawImage(canvas, 0, 0);
+    ctx.save();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.filter = "blur(1px)";
+    ctx.drawImage(tempCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  scene.createMarbleTextures = function ({ THREE, lowPower, qualityProfile, chooseAnisotropy }) {
+    const profile = resolveProfile(qualityProfile, lowPower);
+    const size =
+      profile.geometry?.marbleCanvasSize ||
+      profile.textures?.marbleCanvasSize ||
+      (lowPower ? 256 : profile.tier === "balanced" ? 512 : 1024);
+    const veinCount =
+      profile.counts?.marbleVeinCount || (lowPower ? 8 : profile.tier === "balanced" ? 12 : 16);
+    const colorCanvas = document.createElement("canvas");
+    const bumpCanvas = document.createElement("canvas");
+    colorCanvas.width = size;
+    colorCanvas.height = size;
+    bumpCanvas.width = size;
+    bumpCanvas.height = size;
+
+    const colorCtx = colorCanvas.getContext("2d");
+    const bumpCtx = bumpCanvas.getContext("2d");
+    if (!colorCtx || !bumpCtx) return { colorMap: null, bumpMap: null };
+
+    const palette = marblePalette || {
+      marbleBase: "#d8d2cc",
+      marbleVein: "#6f7886",
+      marbleHighlight: "#efeae3",
+      marbleShadow: "#9ea4ab",
+    };
+    const veinPaths = [];
+    for (let idx = 0; idx < veinCount; idx += 1) {
+      veinPaths.push(makeWanderingPath(idx, size));
+    }
+    const crackCount = 2 + Math.floor(hashNoise(size, 877) * 3);
+    const crackPaths = [];
+    for (let idx = 0; idx < crackCount; idx += 1) {
+      crackPaths.push(makeWanderingPath(idx + 100, size, { crack: true }));
+    }
+
+    colorCtx.fillStyle = palette.marbleBase;
+    colorCtx.fillRect(0, 0, size, size);
+    bumpCtx.fillStyle = "#000000";
+    bumpCtx.fillRect(0, 0, size, size);
+
+    for (const path of veinPaths) {
+      strokeWanderingPath(colorCtx, path, {
+        color: palette.marbleVein,
+        alpha: 0.18,
+      });
+      strokeWanderingPath(bumpCtx, path, {
+        color: "#ffffff",
+        alpha: 1,
+        scale: 0.82,
+      });
+    }
+
+    for (const path of crackPaths) {
+      strokeWanderingPath(colorCtx, path, {
+        color: palette.marbleShadow,
+        alpha: 0.32,
+        scale: 1.1,
+      });
+    }
+
+    const center = size / 2;
+    const highlight = colorCtx.createRadialGradient(center, center, 0, center, center, size * 0.62);
+    highlight.addColorStop(0, hexToRgba(palette.marbleHighlight, 0.12));
+    highlight.addColorStop(1, hexToRgba(palette.marbleHighlight, 0));
+    colorCtx.fillStyle = highlight;
+    colorCtx.fillRect(0, 0, size, size);
+    blurCanvas(colorCanvas, colorCtx);
+
+    const aniso =
+      typeof chooseAnisotropy === "function"
+        ? chooseAnisotropy(2, 8)
+        : Math.max(1, Math.min(8, profile.anisotropy?.max || 8));
+    return {
+      colorMap: makeTexture(THREE, colorCanvas, (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.anisotropy = aniso;
+        setSrgbTextureCompat(THREE, tex);
+      }),
+      bumpMap: makeTexture(THREE, bumpCanvas, (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.anisotropy = aniso;
+      }),
+    };
+  };
 
   scene.createGroundTextures = function ({ THREE, lowPower, qualityProfile, chooseAnisotropy }) {
     const profile = resolveProfile(qualityProfile, lowPower);
@@ -77,7 +250,15 @@
       colorGrad.addColorStop(1, "rgba(120, 104, 84, 0)");
       colorCtx.fillStyle = colorGrad;
       colorCtx.beginPath();
-      colorCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 608)), hashNoise(idx, 609) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.ellipse(
+        cx,
+        cy,
+        radius,
+        radius * (0.6 + 0.5 * hashNoise(idx, 608)),
+        hashNoise(idx, 609) * Math.PI,
+        0,
+        2 * Math.PI,
+      );
       colorCtx.fill();
 
       const bumpGrad = bumpCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
@@ -85,7 +266,15 @@
       bumpGrad.addColorStop(1, groundPalette.bumpBase);
       bumpCtx.fillStyle = bumpGrad;
       bumpCtx.beginPath();
-      bumpCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 608)), hashNoise(idx, 609) * Math.PI, 0, 2 * Math.PI);
+      bumpCtx.ellipse(
+        cx,
+        cy,
+        radius,
+        radius * (0.6 + 0.5 * hashNoise(idx, 608)),
+        hashNoise(idx, 609) * Math.PI,
+        0,
+        2 * Math.PI,
+      );
       bumpCtx.fill();
     }
 
@@ -117,7 +306,8 @@
       const cx = hashNoise(idx, 301) * size;
       const cy = hashNoise(idx, 302) * size;
       const big = hashNoise(idx, 310) > 0.86;
-      const radius = size * (big ? 0.006 + 0.012 * hashNoise(idx, 303) : 0.0022 + 0.005 * hashNoise(idx, 303));
+      const radius =
+        size * (big ? 0.006 + 0.012 * hashNoise(idx, 303) : 0.0022 + 0.005 * hashNoise(idx, 303));
       const base = 44 + Math.floor(46 * hashNoise(idx, 304));
       const shade = hashNoise(idx, 305);
       const shadowOffset = radius * 0.35;
@@ -125,7 +315,15 @@
       colorCtx.save();
       colorCtx.fillStyle = `rgba(20, 14, 8, ${0.22 + 0.14 * hashNoise(idx, 320)})`;
       colorCtx.beginPath();
-      colorCtx.ellipse(cx + shadowOffset, cy + shadowOffset, radius * 1.05, radius * 0.75, 0, 0, 2 * Math.PI);
+      colorCtx.ellipse(
+        cx + shadowOffset,
+        cy + shadowOffset,
+        radius * 1.05,
+        radius * 0.75,
+        0,
+        0,
+        2 * Math.PI,
+      );
       colorCtx.fill();
       colorCtx.restore();
 
@@ -136,7 +334,15 @@
             ? `rgba(${base + 26}, ${base + 18}, ${base + 8}, ${0.48 + 0.25 * hashNoise(idx, 307)})`
             : `rgba(${Math.max(28, base - 18)}, ${Math.max(22, base - 24)}, ${Math.max(16, base - 30)}, ${0.5 + 0.25 * hashNoise(idx, 308)})`;
       colorCtx.beginPath();
-      colorCtx.ellipse(cx, cy, radius, radius * (0.75 + 0.25 * hashNoise(idx, 311)), hashNoise(idx, 312) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.ellipse(
+        cx,
+        cy,
+        radius,
+        radius * (0.75 + 0.25 * hashNoise(idx, 311)),
+        hashNoise(idx, 312) * Math.PI,
+        0,
+        2 * Math.PI,
+      );
       colorCtx.fill();
 
       if (big) {
@@ -152,18 +358,44 @@
         hi.addColorStop(1, "rgba(255, 246, 224, 0)");
         colorCtx.fillStyle = hi;
         colorCtx.beginPath();
-        colorCtx.ellipse(cx - radius * 0.3, cy - radius * 0.3, radius * 0.5, radius * 0.35, 0, 0, 2 * Math.PI);
+        colorCtx.ellipse(
+          cx - radius * 0.3,
+          cy - radius * 0.3,
+          radius * 0.5,
+          radius * 0.35,
+          0,
+          0,
+          2 * Math.PI,
+        );
         colorCtx.fill();
       }
 
-      const bumpGray = big ? 210 + Math.floor(40 * hashNoise(idx, 309)) : 170 + Math.floor(60 * hashNoise(idx, 309));
+      const bumpGray = big
+        ? 210 + Math.floor(40 * hashNoise(idx, 309))
+        : 170 + Math.floor(60 * hashNoise(idx, 309));
       bumpCtx.fillStyle = `rgb(${bumpGray}, ${bumpGray}, ${bumpGray})`;
       bumpCtx.beginPath();
-      bumpCtx.ellipse(cx, cy, radius, radius * (0.75 + 0.25 * hashNoise(idx, 311)), hashNoise(idx, 312) * Math.PI, 0, 2 * Math.PI);
+      bumpCtx.ellipse(
+        cx,
+        cy,
+        radius,
+        radius * (0.75 + 0.25 * hashNoise(idx, 311)),
+        hashNoise(idx, 312) * Math.PI,
+        0,
+        2 * Math.PI,
+      );
       bumpCtx.fill();
       bumpCtx.fillStyle = "#7d7468";
       bumpCtx.beginPath();
-      bumpCtx.ellipse(cx + shadowOffset, cy + shadowOffset, radius * 1.05, radius * 0.75, 0, 0, 2 * Math.PI);
+      bumpCtx.ellipse(
+        cx + shadowOffset,
+        cy + shadowOffset,
+        radius * 1.05,
+        radius * 0.75,
+        0,
+        0,
+        2 * Math.PI,
+      );
       bumpCtx.fill();
     }
 
@@ -180,7 +412,15 @@
       grad.addColorStop(1, "rgba(66, 84, 44, 0)");
       colorCtx.fillStyle = grad;
       colorCtx.beginPath();
-      colorCtx.ellipse(cx, cy, radius, radius * (0.6 + 0.5 * hashNoise(idx, 404)), hashNoise(idx, 405) * Math.PI, 0, 2 * Math.PI);
+      colorCtx.ellipse(
+        cx,
+        cy,
+        radius,
+        radius * (0.6 + 0.5 * hashNoise(idx, 404)),
+        hashNoise(idx, 405) * Math.PI,
+        0,
+        2 * Math.PI,
+      );
       colorCtx.fill();
 
       for (let fleck = 0; fleck < 8; fleck += 1) {
@@ -252,7 +492,14 @@
     ctx.fillStyle = dampGrad;
     ctx.fillRect(0, 0, size, size);
 
-    const warmGrad = ctx.createRadialGradient(center, center, 0.06 * size, center, center, 0.36 * size);
+    const warmGrad = ctx.createRadialGradient(
+      center,
+      center,
+      0.06 * size,
+      center,
+      center,
+      0.36 * size,
+    );
     warmGrad.addColorStop(0, "rgba(174, 120, 72, 0.13)");
     warmGrad.addColorStop(0.55, "rgba(174, 120, 72, 0.05)");
     warmGrad.addColorStop(1, "rgba(174, 120, 72, 0)");
@@ -266,7 +513,14 @@
     ctx.fillStyle = shadowGrad;
     ctx.fillRect(0, 0, size, size);
 
-    const vignette = ctx.createRadialGradient(center, center, 0.38 * size, center, center, 0.5 * size);
+    const vignette = ctx.createRadialGradient(
+      center,
+      center,
+      0.38 * size,
+      center,
+      center,
+      0.5 * size,
+    );
     vignette.addColorStop(0, "rgba(10, 12, 22, 0)");
     vignette.addColorStop(1, "rgba(10, 12, 22, 0.22)");
     ctx.fillStyle = vignette;
@@ -332,8 +586,10 @@
         const collapseWeight =
           clamp01(1 - wrappedDistance(brickWrap, yawWrap) / spreadWrap) *
           smoothstep01(Math.max(0, (rowFrac - 0.42) / 0.58));
-        const brickInsetX = mortarThickness * (0.62 + 0.48 * hashNoise(row, col, 1) * (1 + rowCurve));
-        const brickInsetY = mortarThickness * (0.72 + 0.44 * hashNoise(row, col, 2) * (1 + rowCurve));
+        const brickInsetX =
+          mortarThickness * (0.62 + 0.48 * hashNoise(row, col, 1) * (1 + rowCurve));
+        const brickInsetY =
+          mortarThickness * (0.72 + 0.44 * hashNoise(row, col, 2) * (1 + rowCurve));
         const brickW = Math.max(columnWidth - 2 * brickInsetX, 0.58 * columnWidth);
         const brickH = Math.max(rowHeight - 1.6 * brickInsetY, 0.52 * rowHeight);
         const brickX = colX + brickInsetX;
@@ -341,7 +597,10 @@
         const shadeOffset = (hashNoise(row, col, 3) - 0.5) * (0.16 + 0.12 * rowCurve);
         const stainPick = hashNoise(row, col, 4);
 
-        colorCtx.fillStyle = shadeOffset >= 0 ? `rgba(255, 255, 255, ${shadeOffset})` : `rgba(0, 0, 0, ${Math.abs(shadeOffset)})`;
+        colorCtx.fillStyle =
+          shadeOffset >= 0
+            ? `rgba(255, 255, 255, ${shadeOffset})`
+            : `rgba(0, 0, 0, ${Math.abs(shadeOffset)})`;
         colorCtx.fillRect(brickX, brickY, brickW, brickH);
 
         if (stainPick > 0.72) {
@@ -365,7 +624,8 @@
           colorCtx.fillRect(brickX, brickY, brickW, brickH);
 
           if (hashNoise(row, col, 5) > 0.58) {
-            const crackW = mortarThickness * (1.2 + 2.8 * hashNoise(row, col, 6) + 1.8 * collapseWeight);
+            const crackW =
+              mortarThickness * (1.2 + 2.8 * hashNoise(row, col, 6) + 1.8 * collapseWeight);
             const crackH = rowHeight * (0.08 + 0.18 * hashNoise(row, col, 7));
             const crackX = hashNoise(row, col, 8) > 0.5 ? brickX : brickX + brickW - crackW;
             const crackY = brickY + hashNoise(row, col, 9) * Math.max(1, brickH - crackH);
@@ -376,9 +636,15 @@
           }
         }
 
-        const mortarX = colX - mortarThickness / 2 + (hashNoise(row, col, 10) - 0.5) * mortarThickness * (0.7 + rowCurve);
+        const mortarX =
+          colX -
+          mortarThickness / 2 +
+          (hashNoise(row, col, 10) - 0.5) * mortarThickness * (0.7 + rowCurve);
         const mortarY = rowY + 0.8 * mortarThickness;
-        const mortarH = Math.max(0.38 * rowHeight, rowHeight - mortarThickness * (1.8 + hashNoise(row, col, 11) * (1 + rowCurve)));
+        const mortarH = Math.max(
+          0.38 * rowHeight,
+          rowHeight - mortarThickness * (1.8 + hashNoise(row, col, 11) * (1 + rowCurve)),
+        );
 
         colorCtx.fillStyle = towerPalette.mortarShadow;
         colorCtx.fillRect(mortarX, mortarY, mortarThickness, mortarH);
@@ -397,7 +663,12 @@
       }
     }
 
-    const collapseGradient = colorCtx.createLinearGradient(yawWrap * width - 0.24 * width, 0, yawWrap * width + 0.18 * width, 0);
+    const collapseGradient = colorCtx.createLinearGradient(
+      yawWrap * width - 0.24 * width,
+      0,
+      yawWrap * width + 0.18 * width,
+      0,
+    );
     collapseGradient.addColorStop(0, "rgba(0, 0, 0, 0)");
     collapseGradient.addColorStop(0.36, "rgba(0, 0, 0, 0.05)");
     collapseGradient.addColorStop(0.5, towerPalette.collapseShadow);

@@ -4,10 +4,11 @@
 
 Candidates for future work, roughly ordered by value. Pick from here when starting a new task.
 
-| #   | Task                                          | Why it matters                                                                                                                   | Size     |
-| --- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                 | Thinking |
-| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor.         | Medium   |
+| #   | Task                                          | Why it matters                                                                                                           | Size     |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                         | Thinking |
+| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor. | Medium   |
+| 3   | Address scene-interactions audit findings     | See `ART/scene-interactions.md`.                                                                                         | Medium   |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
@@ -86,6 +87,32 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 ## Completed tasks
 
+### Panel frame unification — re-do as Option A
+
+**Completed 2026-05-05.** The first pass of `ART/last-pass.md` Section 3 shipped a "Plan C" that built neither Option A nor B — it inverted the panel hierarchy by making a Three.js notebook/letter scene the focal element with text crammed into a tiny absolute-positioned overlay. Re-did as actual Option A:
+
+- Both panels now use a single shared `.panel-parchment` frame: same paper treatment, straight (no skew/rotate), same drop-shadow.
+- About panel carries a large display "A" watermark (`.panel-parchment__watermark`) sitting behind the text — reads as a tooled cover initial.
+- Contact panel carries a CSS-only wax seal (`.panel-parchment__seal`) in the lower-right.
+- Text content is once again the focal element, in normal flow with a sensible content column (`max-width: 38ch`).
+- Unwired the Three.js panel-object scene (`src/scene/panel-objects.js`) and the canvas panel-asset draw functions (`drawNotebookPanelAsset` / `drawLetterPanelAsset` formerly in `src/ui/icons.js`) — both were detailed creative assets, not scaffolding, so they were **parked** in `src/art/` rather than deleted. Tree-shaking keeps them out of the bundle until something imports them.
+- Removed `revealPanelObject` plumbing from `src/ui/panels.js` and `enablePanelObjectFallback` from `src/main.js`.
+- Dropped the metaphor-named `--notebook` / `--letter` modifier classes — variant identity now lives in the watermark / seal element each panel carries.
+- Updated `test/markup-accessibility.test.mjs` to assert on the new ornament classes and the absence of `panel-object-stage`.
+
+`src/art/` notes:
+
+- `src/art/panel-objects.js` — the original Three.js scene, IIFE-style; re-enable by adding `import "../art/panel-objects.js";` to `src/scene-entry.js`, then call `site.scene.initPanelObjectArt()` and `site.scene.revealPanelObject(panelId)`.
+- `src/art/panel-canvas-assets.js` — the two PSX-dither canvas paintings, exposed at `site.art.drawNotebookPanelAsset` / `site.art.drawLetterPanelAsset`. Helpers (fillPoly, applyPsxDither, etc.) are duplicated from `src/ui/icons.js` so the file is self-contained.
+
+### Postprocessing pipeline
+
+**Completed.** Added a restrained global EffectComposer pipeline:
+
+- Added tier-aware color grading, high-tier bloom, and balanced/high vignette + static grain.
+- Kept developer-mode OutlinePass as the final interaction-feedback pass.
+- Added quality-tier and postprocess factory tests so adaptive profile changes keep pass enablement deterministic.
+
 ### Repository reorg to `src/` + `dist/` layout
 
 **Completed.** Landed a large improvements pass:
@@ -122,3 +149,11 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Added project-contract coverage so the self-only CSP, HSTS preload shape, missing CORS wildcard, and legacy redirect map cannot drift silently.
 - Recorded that Cloudflare Web Analytics/RUM injection is disabled by design instead of widening `script-src` for `static.cloudflareinsights.com`.
 - Clarified that custom-domain activation, `www` to apex redirects, production `*.pages.dev` handling, DNS/CAA, certificates, WAF, and response transforms remain Cloudflare-side settings to re-confirm before deploy or security mutations.
+
+### Security and deferred-scene performance pass
+
+**Completed.** Applied a focused repo-local polish pass:
+
+- Scoped Cloudflare deploy secrets to only the workflow steps that validate or deploy with Wrangler.
+- Split the browser payload into a lightweight UI boot bundle and a deferred Three.js scene bundle loaded after first paint.
+- Kept source docs aligned with the generated `scripts/app.HASH.js` plus `scripts/scene.HASH.js` output shape.

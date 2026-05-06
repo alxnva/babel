@@ -13,13 +13,28 @@ async function readProjectFile(relativePath) {
 
 test("repo contract reflects the current preview workflow and test suite", async () => {
   const packageJson = JSON.parse(await readProjectFile("package.json"));
+  const indexHtml = await readProjectFile("index.html");
+  const buildScript = await readProjectFile("build.mjs");
+  const ci = await readProjectFile(".github/workflows/ci.yml");
+  const deploy = await readProjectFile(".github/workflows/deploy.yml");
+  const preview = await readProjectFile(".github/workflows/preview.yml");
   const readme = await readProjectFile("README.md");
   const agents = await readProjectFile("AGENTS.md");
   const claude = await readProjectFile("CLAUDE.md");
 
+  assert.equal(packageJson.engines.node, ">=22");
+  for (const workflow of [ci, deploy, preview]) {
+    assert.match(workflow, /node-version:\s*22/);
+  }
   assert.match(packageJson.scripts.preview, /wrangler pages dev dist/);
+  assert.match(indexHtml, /data-scene-script/);
+  assert.match(indexHtml, /\/scripts\/scene\.js/);
+  assert.match(buildScript, /SCENE_ENTRY/);
+  assert.match(buildScript, /scenePath/);
   assert.match(readme, /npm run preview/);
+  assert.match(readme, /scripts\/scene\.HASH\.js/);
   assert.match(agents, /npm run preview/);
+  assert.match(agents, /deferred `scripts\/scene\.HASH\.js`/);
   assert.doesNotMatch(claude, /There is no automated test suite in this repo\./);
   assert.match(claude, /npm test/);
 });
@@ -82,4 +97,23 @@ test("redirect contract stays limited to known legacy paths", async () => {
     "/explore/* / 301",
     "/prototype/* / 301",
   ]);
+});
+
+test("Cloudflare workflow secrets stay scoped to deploy-only steps", async () => {
+  const deploy = await readProjectFile(".github/workflows/deploy.yml");
+  const preview = await readProjectFile(".github/workflows/preview.yml");
+
+  for (const workflow of [deploy, preview]) {
+    assert.doesNotMatch(workflow, /\n    env:\r?\n      CLOUDFLARE_API_TOKEN:/);
+    assert.match(workflow, /- name: Check deploy secrets[\s\S]*?env:[\s\S]*?CLOUDFLARE_API_TOKEN:/);
+  }
+
+  assert.match(
+    deploy,
+    /- name: Deploy to Cloudflare Pages[\s\S]*?env:[\s\S]*?CLOUDFLARE_API_TOKEN:/,
+  );
+  assert.match(
+    preview,
+    /- name: Deploy preview to Cloudflare Pages[\s\S]*?env:[\s\S]*?CLOUDFLARE_API_TOKEN:/,
+  );
 });

@@ -9,8 +9,7 @@
     ".bottom-bar",
     ".site-copyright",
   ];
-  const FOCUSABLE_SELECTOR =
-    'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+  const FOCUSABLE_SELECTOR = 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
   function focusElement(element) {
     if (!element) return;

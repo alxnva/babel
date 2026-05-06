@@ -1,4 +1,5 @@
-import { build, context } from "esbuild";
+import { build } from "esbuild";
+import { watch as watchFiles } from "node:fs";
 import { copyFile, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
@@ -6,10 +7,14 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Single entry point. src/app.js imports each module in dependency order; each
-// module attaches to window.BabelSite as a side effect. esbuild bundles the
-// whole graph (including tree-shaken three.js) into one IIFE.
+// The UI entry stays small for first paint. The scene entry carries Three.js
+// and the tower runtime, then main.js loads it after the hero has rendered.
 const APP_ENTRY = "src/app.js";
+const SCENE_ENTRY = "src/scene-entry.js";
+const SCRIPT_ENTRIES = [
+  { basename: "app", entry: APP_ENTRY },
+  { basename: "scene", entry: SCENE_ENTRY },
+];
 
 const args = new Set(process.argv.slice(2));
 const watch = args.has("--watch");
@@ -24,6 +29,7 @@ const STATIC_FILES = [
   "icon-maskable.svg",
   "manifest.webmanifest",
   "og.png",
+  "robots.txt",
   "_headers",
   "_redirects",
 ];
@@ -36,8 +42,8 @@ if ((watch && check) || (watch && dist) || (check && dist)) {
   throw new Error("Use only one of --watch, --check, or --dist.");
 }
 
-const appBuildOptions = () => ({
-  entryPoints: [join(__dirname, APP_ENTRY)],
+const scriptBuildOptions = (entry) => ({
+  entryPoints: [join(__dirname, entry)],
   bundle: true,
   minify: true,
   target: "es2022",
@@ -50,19 +56,20 @@ function sha8(buf) {
   return createHash("sha256").update(buf).digest("hex").slice(0, 8);
 }
 
-async function buildAppBundle() {
-  const result = await build(appBuildOptions());
+async function buildScriptBundle(entry) {
+  const result = await build(scriptBuildOptions(entry));
   const out = result.outputFiles?.[0];
-  if (!out) throw new Error(`esbuild produced no output for ${APP_ENTRY}`);
+  if (!out) throw new Error(`esbuild produced no output for ${entry}`);
   return out.text;
 }
 
-function rewriteHtml(src, { appPath, cssPath }) {
-  // Match styles.css and scripts/app.js refs with or without a ?v=NNN query,
+function rewriteHtml(src, { appPath, cssPath, scenePath }) {
+  // Match source refs with or without a ?v=NNN query,
   // so stale query strings in source can't drift away from the real hashed path.
   return src
     .replace(/\/styles\.css(\?v=\d+)?/g, cssPath)
-    .replace(/\/scripts\/app\.js(\?v=\d+)?/g, appPath);
+    .replace(/\/scripts\/app\.js(\?v=\d+)?/g, appPath)
+    .replace(/\/scripts\/scene\.js(\?v=\d+)?/g, scenePath);
 }
 
 async function clearDist() {
@@ -80,11 +87,18 @@ async function buildDist() {
   await mkdir(DIST_SCRIPTS_DIR, { recursive: true });
   await mkdir(DIST_CSS_DIR, { recursive: true });
 
-  const bundled = await buildAppBundle();
-  const appHash = sha8(bundled);
-  const appHashedName = `app.${appHash}.js`;
-  const appHashedUrl = `/scripts/${appHashedName}`;
-  await writeFile(join(DIST_SCRIPTS_DIR, appHashedName), bundled);
+  const scriptPaths = {};
+  for (const { basename, entry } of SCRIPT_ENTRIES) {
+    const bundled = await buildScriptBundle(entry);
+    const scriptHash = sha8(bundled);
+    const scriptHashedName = `${basename}.${scriptHash}.js`;
+    const scriptHashedUrl = `/scripts/${scriptHashedName}`;
+    await writeFile(join(DIST_SCRIPTS_DIR, scriptHashedName), bundled);
+    scriptPaths[basename] = scriptHashedUrl;
+
+    const scriptKb = (Buffer.byteLength(bundled) / 1024).toFixed(1);
+    console.log(`bundled ${entry} -> scripts/${scriptHashedName} (${scriptKb} kB)`);
+  }
 
   const cssSrc = await readFile(join(__dirname, "styles.css"));
   const cssHash = sha8(cssSrc);
@@ -101,23 +115,66 @@ async function buildDist() {
 
   for (const name of ["index.html", "404.html"]) {
     const htmlSrc = await readFile(join(__dirname, name), "utf8");
-    const rewritten = rewriteHtml(htmlSrc, { appPath: appHashedUrl, cssPath: cssHashedUrl });
+    const rewritten = rewriteHtml(htmlSrc, {
+      appPath: scriptPaths.app,
+      cssPath: cssHashedUrl,
+      scenePath: scriptPaths.scene,
+    });
     await writeFile(join(DIST_DIR, name), rewritten);
   }
 
-  const appKb = (Buffer.byteLength(bundled) / 1024).toFixed(1);
-  console.log(`bundled ${APP_ENTRY} -> scripts/${appHashedName} (${appKb} kB)`);
+  const today = new Date().toISOString().slice(0, 10);
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://alexnava.me/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`;
+  await writeFile(join(DIST_DIR, "sitemap.xml"), sitemap);
+
   console.log(`hashed assets: css/${cssHashedName}`);
+}
+
+function watchSourceTree() {
+  let timer = null;
+  const sourceRoot = join(__dirname, "src");
+  const rebuild = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      try {
+        await buildDist();
+        console.log("rebuilt dist/");
+      } catch (err) {
+        console.error(err);
+      }
+    }, 120);
+  };
+
+  const watcher = watchFiles(sourceRoot, { recursive: true }, rebuild);
+  process.on("SIGINT", () => {
+    watcher.close();
+    process.exit(0);
+  });
+  process.on("SIGTERM", () => {
+    watcher.close();
+    process.exit(0);
+  });
 }
 
 if (watch) {
   await buildDist();
-  const ctx = await context(appBuildOptions());
-  await ctx.watch();
+  watchSourceTree();
   console.log("watching src/ (rerun build:dist after static asset changes)");
+  await new Promise(() => {});
 } else if (check) {
-  await buildAppBundle();
-  console.log(`verified ${APP_ENTRY}`);
+  for (const { entry } of SCRIPT_ENTRIES) {
+    await buildScriptBundle(entry);
+  }
+  console.log(`verified ${SCRIPT_ENTRIES.map(({ entry }) => entry).join(", ")}`);
 } else {
   await buildDist();
   console.log("built deployable dist/");

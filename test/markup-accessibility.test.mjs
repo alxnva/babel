@@ -67,6 +67,25 @@ test("modal overlays declare dialog semantics and start hidden", async () => {
   }
 });
 
+test("about and contact panels share the parchment frame and each carry one ornament", async () => {
+  const html = await readIndexHtml();
+  const sharedFrames = html.match(/class="[^"]*\bpanel-parchment\b[^"]*\bpanel-surface\b[^"]*"/g) || [];
+
+  assert.equal(sharedFrames.length, 2, "both panels use the shared panel-parchment + panel-surface frame");
+  assert.match(html, /class="panel-parchment__watermark"/, "About carries the watermark ornament");
+  assert.match(html, /class="panel-parchment__seal"/, "Contact carries the wax-seal ornament");
+  assert.doesNotMatch(html, /panel-object-stage/, "the 3D panel-object stage is removed");
+  assert.doesNotMatch(html, /data-panel-object/);
+  assert.doesNotMatch(html, /panel-parchment--notebook/, "metaphor-named modifiers are gone");
+  assert.doesNotMatch(html, /panel-parchment--letter/);
+  assert.doesNotMatch(html, /panel-art-about/);
+  assert.doesNotMatch(html, /panel-art-contact/);
+  assert.doesNotMatch(html, /panel-parchment__rail/);
+  assert.doesNotMatch(html, /panel-notebook/);
+  assert.doesNotMatch(html, /panel-letter/);
+  assert.doesNotMatch(html, /panel-letter__quill/);
+});
+
 test("decorative regions are hidden from assistive tech and main content stays programmatically reachable", async () => {
   const html = await readIndexHtml();
   assert.match(html, /class="scene-shell"[^>]*aria-hidden="true"/);

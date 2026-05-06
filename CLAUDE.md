@@ -9,7 +9,7 @@ Read these files before starting a task:
 
 ## Project
 
-Authoritative working source for `alexnava.me`. JS source lives in `src/`; generated publish output lives in `dist/` and is gitignored. npm is used for local build, preview, verification, deployment, and formatting. Lightweight automated tests live under `test/`.
+Authoritative working source for `alexnava.me`. JS source lives in `src/`; generated publish output lives in `dist/` and is gitignored. npm on Node.js 22+ is used for local build, preview, verification, deployment, and formatting. Lightweight automated tests live under `test/`.
 
 ## Key files
 
@@ -17,7 +17,9 @@ Authoritative working source for `alexnava.me`. JS source lives in `src/`; gener
 - `styles.css` — styling and design tokens
 - `src/scene/` — readable Three.js scene helpers, textures, palette, and scene bootstrap
 - `src/ui/` — readable hero motion, icons, and panels
-- `src/main.js` — ordered classic-script boot source
+- `src/app.js` — lightweight UI bundle entry
+- `src/main.js` — UI boot and deferred scene loader
+- `src/scene-entry.js` — deferred Three.js scene bundle entry
 - `build.mjs` — esbuild + asset assembly (source → `dist/`)
 - `package.json` — build, verify, watch, deploy, format commands
 - `_headers` / `_redirects` — hosting config copied into `dist/` at build time

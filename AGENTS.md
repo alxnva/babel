@@ -9,10 +9,10 @@ This contract applies to any AI agent working in this repository.
 - **Project:** `babel`
 - **Live site:** `alexnava.me`
 - **Repo role:** authoritative working source for the live site
-- **Stack:** static site (HTML, CSS, vanilla JS, bundled tree-shaken Three.js r160 via esbuild, self-hosted font subsets, esbuild-generated `dist/scripts/`)
+- **Stack:** static site (HTML, CSS, vanilla JS, esbuild-generated UI bundle plus deferred tree-shaken Three.js r160 scene bundle, self-hosted font subsets)
 - **Host:** Cloudflare Pages project `alexnava-me` (re-confirm before deploy or DNS changes)
 - **Build step:** esbuild via `npm run build` / `npm run build:dist` — source in `src/`, generated publish payload in `dist/` (not tracked)
-- **Package manager:** npm (devDependencies only: esbuild, prettier, three, wrangler)
+- **Package manager:** npm on Node.js 22+ (devDependencies only: esbuild, prettier, three, wrangler)
 - **Test suite:** lightweight `node:test` coverage in `test/` for scene/runtime/UI verification
 
 ## Design intent
@@ -34,36 +34,36 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 
 ## File layout
 
-| File or folder                                  | Role                                                                           |
-| ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `index.html`                                    | Landing page markup and panel structure                                        |
-| `styles.css`                                    | Visual styling, `@font-face` blocks, tokens, and responsive rules              |
-| `src/`                                          | Readable JS source of truth — edit here                                        |
-| `dist/`                                         | Generated publish payload for Cloudflare Pages — gitignored, never hand-edit   |
-| `fonts/`                                        | Self-hosted Instrument Sans + Cormorant Garamond woff2 subsets                 |
-| `build.mjs`, `package.json`, `.prettierrc.json` | Build + format tooling                                                         |
-| `wrangler.jsonc`                                | Cloudflare Pages project config (`pages_build_output_dir: ./dist`)             |
-| `_headers` / `_redirects`                       | Static hosting config copied into `dist/` at build time                        |
-| `404.html`, `favicon.svg`, `LICENSE`            | Root assets copied into `dist/` at build time                                  |
-| `.github/workflows/`                            | CI (`ci.yml`) and production deploy (`deploy.yml`)                             |
-| `README.md`                                     | Local preview and deployment notes                                             |
-| `PLANS.md`                                      | Backlog and recent implementation notes                                        |
-| `STYLE.md`                                      | Design and motion constraints                                                  |
-| `CONTRIBUTING.md`, `SECURITY.md`, `CREDITS.md`  | Public contribution, security reporting, and third-party attribution           |
+| File or folder                                  | Role                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `index.html`                                    | Landing page markup and panel structure                                      |
+| `styles.css`                                    | Visual styling, `@font-face` blocks, tokens, and responsive rules            |
+| `src/`                                          | Readable JS source of truth — edit here                                      |
+| `dist/`                                         | Generated publish payload for Cloudflare Pages — gitignored, never hand-edit |
+| `fonts/`                                        | Self-hosted Instrument Sans + Cormorant Garamond woff2 subsets               |
+| `build.mjs`, `package.json`, `.prettierrc.json` | Build + format tooling                                                       |
+| `wrangler.jsonc`                                | Cloudflare Pages project config (`pages_build_output_dir: ./dist`)           |
+| `_headers` / `_redirects`                       | Static hosting config copied into `dist/` at build time                      |
+| `404.html`, `favicon.svg`, `LICENSE`            | Root assets copied into `dist/` at build time                                |
+| `.github/workflows/`                            | CI (`ci.yml`) and production deploy (`deploy.yml`)                           |
+| `README.md`                                     | Local preview and deployment notes                                           |
+| `PLANS.md`                                      | Backlog and recent implementation notes                                      |
+| `STYLE.md`                                      | Design and motion constraints                                                |
+| `CONTRIBUTING.md`, `SECURITY.md`, `CREDITS.md`  | Public contribution, security reporting, and third-party attribution         |
 
 ## Standard commands
 
-| Action         | Command                                                |
-| -------------- | ------------------------------------------------------ |
-| Install        | `npm install`                                          |
-| Build          | `npm run build` (same as `npm run build:dist`)         |
+| Action         | Command                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| Install        | `npm install`                                                            |
+| Build          | `npm run build` (same as `npm run build:dist`)                           |
 | Preview        | `npm run preview` (builds `dist/` then serves it through Wrangler Pages) |
-| Verify         | `npm run verify` (compile-check, no writes)            |
-| Test           | `npm test`                                             |
-| Watch          | `npm run watch` (rebuild `dist/scripts/` on src change)|
-| Format         | `npm run format`                                       |
-| Deploy preview | `npm run deploy:preview` (requires Wrangler auth)      |
-| Deploy prod    | `npm run deploy:prod` (requires Wrangler auth)         |
+| Verify         | `npm run verify` (compile-check, no writes)                              |
+| Test           | `npm test`                                                               |
+| Watch          | `npm run watch` (rebuild `dist/scripts/` on src change)                  |
+| Format         | `npm run format`                                                         |
+| Deploy preview | `npm run deploy:preview` (requires Wrangler auth)                        |
+| Deploy prod    | `npm run deploy:prod` (requires Wrangler auth)                           |
 
 ## Operating principles
 
@@ -71,7 +71,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 2. Reuse the current structure before inventing a new one.
 3. JS edits go in `src/`. Run `npm run verify` and `npm test` before committing. `dist/` is generated — never hand-edit, never commit.
 4. Keep `file://` and HTTP preview both viable when possible; `npm run preview` is the preferred local check because it serves `dist/` through Wrangler Pages.
-5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`); three.js is bundled into `scripts/app.HASH.js` and tree-shaken by esbuild. Don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
+5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `scripts/scene.HASH.js`, `css/styles.HASH.css`); three.js is bundled into the deferred `scripts/scene.HASH.js` and tree-shaken by esbuild. Don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
 6. Update docs when file roles, preview assumptions, or deploy reality change. If a deploy detail matters, confirm it instead of trusting historical notes blindly.
 
 ## Ask before

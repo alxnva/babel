@@ -90,6 +90,19 @@
     ctx.putImageData(image, px, py);
   }
 
+  function strokePolyline(ctx, color, width, points) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(Math.round(points[0][0]), Math.round(points[0][1]));
+    for (let idx = 1; idx < points.length; idx += 1) {
+      ctx.lineTo(Math.round(points[idx][0]), Math.round(points[idx][1]));
+    }
+    ctx.stroke();
+  }
+
   // Low-poly closed book viewed from a slight 3/4 angle above.
   // Four visible faces: top cover (largest), right page-edge, front
   // page-edge, and a title band — flat-shaded, pixel-snapped, PS-era.
@@ -98,8 +111,13 @@
     const px = (nn) => nn * scale;
 
     const palette = [
-      "#d3cab8", "#b89c7a", "#6d685f", "#4a4540",
-      "#36322b", "#2e2a24", "#211e19",
+      "#d3cab8",
+      "#b89c7a",
+      "#6d685f",
+      "#4a4540",
+      "#36322b",
+      "#2e2a24",
+      "#211e19",
     ].map(hexToRgb);
 
     const cover = active ? "#524c45" : "#46413c";
@@ -119,71 +137,84 @@
 
     // Front page-edge (thin strip visible below the cover).
     fillPoly(ctx, pages, [
-      [px(24), px(58)], [px(64), px(52)],
-      [px(70), px(56)], [px(30), px(62)],
+      [px(24), px(58)],
+      [px(64), px(52)],
+      [px(70), px(56)],
+      [px(30), px(62)],
     ]);
     // A darker sliver on the underside of the page stack so the
     // thickness reads as a 3D wedge, not a flat line.
     fillPoly(ctx, pagesShade, [
-      [px(30), px(62)], [px(70), px(56)],
-      [px(68), px(60)], [px(32), px(65)],
+      [px(30), px(62)],
+      [px(70), px(56)],
+      [px(68), px(60)],
+      [px(32), px(65)],
     ]);
 
     // Right page-edge (thin strip visible beside the cover).
     fillPoly(ctx, pages, [
-      [px(58), px(18)], [px(62), px(22)],
-      [px(70), px(56)], [px(64), px(52)],
+      [px(58), px(18)],
+      [px(62), px(22)],
+      [px(70), px(56)],
+      [px(64), px(52)],
     ]);
 
     // Top cover — primary face.
     fillPoly(ctx, cover, [
-      [px(20), px(22)], [px(58), px(18)],
-      [px(64), px(52)], [px(24), px(58)],
+      [px(20), px(22)],
+      [px(58), px(18)],
+      [px(64), px(52)],
+      [px(24), px(58)],
     ]);
     // Upper sliver of the cover catches a little more light — gives
     // the flat face a hint of form without a gradient.
     fillPoly(ctx, coverTop, [
-      [px(20), px(22)], [px(58), px(18)],
-      [px(60), px(26)], [px(22), px(30)],
+      [px(20), px(22)],
+      [px(58), px(18)],
+      [px(60), px(26)],
+      [px(22), px(30)],
     ]);
 
     // Spine-side dark edge where the binding rolls over.
     fillPoly(ctx, spine, [
-      [px(20), px(22)], [px(24), px(58)],
-      [px(27), px(58)], [px(23), px(22)],
+      [px(20), px(22)],
+      [px(24), px(58)],
+      [px(27), px(58)],
+      [px(23), px(22)],
     ]);
 
     // Title band — the icon's single accent element.
     fillPoly(ctx, title, [
-      [px(28), px(34)], [px(50), px(30)],
-      [px(52), px(40)], [px(30), px(44)],
+      [px(28), px(34)],
+      [px(50), px(30)],
+      [px(52), px(40)],
+      [px(30), px(44)],
     ]);
     // Shaded underside of the title band, same trick as the cover.
     fillPoly(ctx, titleShade, [
-      [px(30), px(44)], [px(52), px(40)],
-      [px(52), px(42)], [px(30), px(46)],
+      [px(30), px(44)],
+      [px(52), px(40)],
+      [px(52), px(42)],
+      [px(30), px(46)],
     ]);
 
     // Gold-tooled decorative band across the lower cover — classic
     // hardcover embellishment. Two pixel-thin parallelograms sloped to
     // match the cover's tilt.
     fillPoly(ctx, titleShade, [
-      [px(26), px(50)], [px(60), px(46)],
-      [px(60), px(48)], [px(26), px(52)],
+      [px(26), px(50)],
+      [px(60), px(46)],
+      [px(60), px(48)],
+      [px(26), px(52)],
     ]);
     fillPoly(ctx, titleShade, [
-      [px(26), px(54)], [px(60), px(50)],
-      [px(60), px(51)], [px(26), px(55)],
+      [px(26), px(54)],
+      [px(60), px(50)],
+      [px(60), px(51)],
+      [px(26), px(55)],
     ]);
 
-    applyPsxDither(
-      ctx,
-      px(14), px(14),
-      px(62), px(56),
-      palette,
-      active ? 10 : 7,
-      2,
-    );
+    applyPsxDither(ctx, px(14), px(14), px(62), px(56), palette, active ? 10 : 7, 2);
   }
 
   // Low-poly envelope, front view. A single rectangular body with the flap
@@ -195,8 +226,13 @@
     const px = (nn) => nn * scale;
 
     const palette = [
-      "#e4dccf", "#c9c1b2", "#a89f91", "#807868",
-      "#b89c7a", "#6d655a", "#3a342e",
+      "#e4dccf",
+      "#c9c1b2",
+      "#a89f91",
+      "#807868",
+      "#b89c7a",
+      "#6d655a",
+      "#3a342e",
     ].map(hexToRgb);
 
     const bodyLight = active ? "#e4dccf" : "#d9d1c3";
@@ -217,24 +253,30 @@
 
     // BODY — the full envelope rectangle. Everything else sits on top.
     fillPoly(ctx, bodyLight, [
-      [px(14), px(30)], [px(74), px(30)],
-      [px(74), px(62)], [px(14), px(62)],
+      [px(14), px(30)],
+      [px(74), px(30)],
+      [px(74), px(62)],
+      [px(14), px(62)],
     ]);
     // Bottom shade band so the flat body has a subtle ground plane.
     fillPoly(ctx, bodyShade, [
-      [px(14), px(58)], [px(74), px(58)],
-      [px(74), px(62)], [px(14), px(62)],
+      [px(14), px(58)],
+      [px(74), px(58)],
+      [px(74), px(62)],
+      [px(14), px(62)],
     ]);
 
     // FLAP CREASE — two triangles meeting at a point below center that
     // together form the classic "V" you see on the front of a sealed
     // envelope. Left is lit; right is the shaded back-of-fold.
     fillPoly(ctx, flapLight, [
-      [px(14), px(30)], [px(44), px(30)],
+      [px(14), px(30)],
+      [px(44), px(30)],
       [px(44), px(48)],
     ]);
     fillPoly(ctx, flapShade, [
-      [px(44), px(30)], [px(74), px(30)],
+      [px(44), px(30)],
+      [px(74), px(30)],
       [px(44), px(48)],
     ]);
 
@@ -260,29 +302,25 @@
     // STAMP — small brass square tucked into the top-right corner of
     // the body. Two-tone bevel matches the notebook's title-band style.
     fillPoly(ctx, stampFill, [
-      [px(62), px(34)], [px(70), px(34)],
-      [px(70), px(42)], [px(62), px(42)],
+      [px(62), px(34)],
+      [px(70), px(34)],
+      [px(70), px(42)],
+      [px(62), px(42)],
     ]);
     fillPoly(ctx, stampShade, [
-      [px(66), px(38)], [px(70), px(38)],
-      [px(70), px(42)], [px(66), px(42)],
+      [px(66), px(38)],
+      [px(70), px(38)],
+      [px(70), px(42)],
+      [px(66), px(42)],
     ]);
 
-    applyPsxDither(
-      ctx,
-      px(12), px(26),
-      px(64), px(40),
-      palette,
-      active ? 10 : 7,
-      2,
-    );
+    applyPsxDither(ctx, px(12), px(26), px(64), px(40), palette, active ? 10 : 7, 2);
   }
 
   function bindCanvas(canvas, drawFn) {
     const button = canvas.closest(".bottom-btn");
-    if (!button) {
-      return () => {};
-    }
+    const fallbackWidth = Number(canvas.getAttribute("width")) || canvas.width || 72;
+    const fallbackHeight = Number(canvas.getAttribute("height")) || canvas.height || 72;
 
     let active = false;
     let lastDrawSignature = "";
@@ -306,8 +344,8 @@
 
     function render() {
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width || 72;
-      const height = rect.height || 72;
+      const width = rect.width || fallbackWidth;
+      const height = rect.height || fallbackHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const pixelWidth = Math.max(1, Math.round(width * dpr));
       const pixelHeight = Math.max(1, Math.round(height * dpr));
@@ -339,22 +377,24 @@
       lastDrawSignature = drawSignature;
     }
 
-    button.addEventListener("mouseenter", () => {
-      active = true;
-      render();
-    });
-    button.addEventListener("mouseleave", () => {
-      active = false;
-      render();
-    });
-    button.addEventListener("focus", () => {
-      active = true;
-      render();
-    });
-    button.addEventListener("blur", () => {
-      active = false;
-      render();
-    });
+    if (button) {
+      button.addEventListener("mouseenter", () => {
+        active = true;
+        render();
+      });
+      button.addEventListener("mouseleave", () => {
+        active = false;
+        render();
+      });
+      button.addEventListener("focus", () => {
+        active = true;
+        render();
+      });
+      button.addEventListener("blur", () => {
+        active = false;
+        render();
+      });
+    }
 
     return render;
   }
