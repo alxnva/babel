@@ -42,9 +42,11 @@ CI and production deploys follow the same gate order: `npm run verify`, `npm tes
 
 ## Security baseline
 
-`_headers` is the tracked source of truth for Cloudflare Pages response headers. It keeps the site on a self-only CSP, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and preload-capable HSTS.
+`_headers` is the repo's intended source of truth for Cloudflare Pages response headers. It keeps the site on a self-only CSP, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and preload-capable HSTS.
 
 Cloudflare Web Analytics/RUM injection is disabled by design. Do not widen `script-src` for `static.cloudflareinsights.com` unless the privacy/CSP tradeoff is intentionally reopened.
+
+**Cloudflare dashboard can override `_headers`.** Managed Transforms (Rules → Transform Rules → Managed Transforms) and SSL/TLS → Edge Certificates → HSTS Settings both layer after the file and silently change values. Before assuming the live response matches `_headers`, fetch the apex with `curl -sSI https://alexnava.me/` and diff. Specifically watch HSTS `max-age`, `Referrer-Policy`, `X-Frame-Options`, and any injected `Access-Control-Allow-Origin`/`X-XSS-Protection`/`Expect-CT`.
 
 Hostname routing and zone controls live in Cloudflare, not in this repo: keep `alexnava.me` active on Pages project `alexnava-me`, redirect `www.alexnava.me` to the apex, and either redirect production `*.pages.dev` traffic to the apex or keep it non-indexable/access-controlled. Re-confirm the Cloudflare project, DNS, certificate, WAF, and CAA state before any deploy or DNS/security setting change.
 

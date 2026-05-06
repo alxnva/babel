@@ -3,28 +3,18 @@
   const scene = (site.scene = site.scene || {});
 
   const TIER_ORDER = ["low", "balanced", "high"];
-  const SCENE_TUNER_DEFAULTS = Object.freeze({
-    defaultVisible: false,
-    defaultZoom: 18,
-    maxZoom: 18,
-    minZoom: -12,
-    storageKeys: Object.freeze({
-      visible: "babel.sceneTuner.visible.v3",
-      zoom: "babel.sceneTuner.zoom.v3",
-    }),
-  });
   const SCENE_COMPOSITION_PROFILES = {
     compact: {
       camera: {
-        fov: 46,
+        fov: 48.52,
         heightBase: 21.9,
         heightScrollDelta: 0.9,
-        lookAtBase: 12.4,
+        lookAtBase: 11.68,
         lookAtScrollDelta: 2.1,
-        orbitBase: 55,
+        orbitBase: 74.8,
         orbitScale: 1.14,
         orbitScrollDelta: 2.4,
-        orbitTrim: 0.18,
+        orbitTrim: 0.144,
       },
       cloudAnchorY: -7.5,
       countScale: 1,
@@ -34,15 +24,15 @@
     },
     desktop: {
       camera: {
-        fov: 46,
+        fov: 48.52,
         heightBase: 21.9,
         heightScrollDelta: 0.9,
-        lookAtBase: 12.4,
+        lookAtBase: 11.68,
         lookAtScrollDelta: 2.1,
-        orbitBase: 46,
+        orbitBase: 65.8,
         orbitScale: 1.14,
         orbitScrollDelta: 2.4,
-        orbitTrim: 0.18,
+        orbitTrim: 0.144,
       },
       cloudAnchorY: -7.5,
       countScale: 1,
@@ -52,15 +42,15 @@
     },
     portraitPhone: {
       camera: {
-        fov: 46,
+        fov: 50.32,
         heightBase: 19.8,
         heightScrollDelta: 0.5,
-        lookAtBase: 13.7,
+        lookAtBase: 12.44,
         lookAtScrollDelta: 1.55,
-        orbitBase: 48,
+        orbitBase: 72.3,
         orbitScale: 1.08,
         orbitScrollDelta: 1.7,
-        orbitTrim: 0.16,
+        orbitTrim: 0.124,
       },
       cloudAnchorY: -6.8,
       // Fog already hides most of the backside on portrait framing, so we trim
@@ -76,15 +66,15 @@
     // frame. Phone-class countScale still applies.
     landscapePhone: {
       camera: {
-        fov: 52,
+        fov: 54.52,
         heightBase: 18.6,
         heightScrollDelta: 0.4,
-        lookAtBase: 10.8,
+        lookAtBase: 10.08,
         lookAtScrollDelta: 1.3,
-        orbitBase: 52,
+        orbitBase: 71.8,
         orbitScale: 1.1,
         orbitScrollDelta: 1.9,
-        orbitTrim: 0.18,
+        orbitTrim: 0.144,
       },
       cloudAnchorY: -7.2,
       countScale: 0.7,
@@ -97,15 +87,15 @@
     // modest count trim for thermal headroom.
     tabletPortrait: {
       camera: {
-        fov: 46,
+        fov: 48.52,
         heightBase: 21.2,
         heightScrollDelta: 0.7,
-        lookAtBase: 13.1,
+        lookAtBase: 12.38,
         lookAtScrollDelta: 1.85,
-        orbitBase: 52,
+        orbitBase: 71.8,
         orbitScale: 1.12,
         orbitScrollDelta: 2.1,
-        orbitTrim: 0.17,
+        orbitTrim: 0.134,
       },
       cloudAnchorY: -7.2,
       countScale: 0.85,
@@ -137,6 +127,10 @@
         enabled: true,
         mapSize: 1024,
       },
+      postprocessGrading: true,
+      postprocessBloom: true,
+      postprocessVignette: true,
+      postprocessGrain: true,
       lighting: {
         fogNear: 62,
         fogFar: 150,
@@ -193,6 +187,10 @@
         enabled: false,
         mapSize: 0,
       },
+      postprocessGrading: true,
+      postprocessBloom: false,
+      postprocessVignette: true,
+      postprocessGrain: true,
       lighting: {
         fogNear: 60,
         fogFar: 146,
@@ -246,6 +244,10 @@
         enabled: false,
         mapSize: 0,
       },
+      postprocessGrading: true,
+      postprocessBloom: false,
+      postprocessVignette: false,
+      postprocessGrain: false,
       lighting: {
         fogNear: 56,
         fogFar: 138,
@@ -297,6 +299,10 @@
       textures: { ...profile.textures },
       geometry: { ...profile.geometry },
       shadows: { ...profile.shadows },
+      postprocessGrading: profile.postprocessGrading,
+      postprocessBloom: profile.postprocessBloom,
+      postprocessVignette: profile.postprocessVignette,
+      postprocessGrain: profile.postprocessGrain,
       lighting: { ...profile.lighting },
       counts: { ...profile.counts },
     };
@@ -312,44 +318,6 @@
       sceneOffsetY: profile.sceneOffsetY,
       towerScale: profile.towerScale,
     };
-  }
-
-  function clampSceneTunerZoom(value, fallback = SCENE_TUNER_DEFAULTS.defaultZoom) {
-    if (value === null || value === undefined || value === "") {
-      return clampSceneTunerZoom(fallback, SCENE_TUNER_DEFAULTS.defaultZoom);
-    }
-    const numericValue = Number(value);
-    const safeValue = Number.isFinite(numericValue) ? numericValue : fallback;
-    return Math.min(
-      SCENE_TUNER_DEFAULTS.maxZoom,
-      Math.max(SCENE_TUNER_DEFAULTS.minZoom, Math.round(safeValue)),
-    );
-  }
-
-  function applySceneTunerZoom(profile, zoom = SCENE_TUNER_DEFAULTS.defaultZoom) {
-    const nextProfile = {
-      ...profile,
-      camera: { ...profile.camera },
-    };
-    const zoomValue = clampSceneTunerZoom(zoom, SCENE_TUNER_DEFAULTS.defaultZoom);
-    const isPortraitPhone = nextProfile.name === "portraitPhone";
-    const orbitScale = isPortraitPhone ? 1.35 : 1.1;
-    const fovScale = isPortraitPhone ? 0.24 : 0.14;
-    const lookAtScale = isPortraitPhone ? 0.07 : 0.04;
-
-    nextProfile.camera.fov = Math.min(
-      56,
-      Math.max(42, nextProfile.camera.fov + zoomValue * fovScale),
-    );
-    nextProfile.camera.lookAtBase = Math.max(
-      0,
-      nextProfile.camera.lookAtBase - zoomValue * lookAtScale,
-    );
-    nextProfile.camera.orbitBase += zoomValue * orbitScale;
-    nextProfile.camera.orbitTrim = Math.max(0.04, nextProfile.camera.orbitTrim - zoomValue * 0.002);
-    nextProfile.manualZoom = zoomValue;
-
-    return nextProfile;
   }
 
   function readSceneQualityControls(search = window.location?.search || "") {
@@ -435,11 +403,18 @@
     if (memoryLimited || weakCaps) return "low";
     if (cpuLimited) return "balanced";
 
-    // iOS Safari hides deviceMemory for privacy and modern phones have high
-    // core counts, so the checks above don't catch them. `pointer: coarse`
-    // reliably flags touch-primary devices (phones, tablets) — cap them at
-    // balanced to avoid cooking the GPU with the full high-tier asset load.
-    if (touchPrimary) return "balanced";
+    // Touch-primary devices (phones, tablets) used to get blanket-capped at
+    // balanced because iOS hides deviceMemory and we couldn't tell a flagship
+    // phone from a budget one. With explicit capability signals we can: a
+    // flagship-class touch device — modern Apple silicon, recent Snapdragon —
+    // passes maxTextureSize >= 8192, maxAnisotropy >= 8, and
+    // hardwareConcurrency >= 6, and gets the full high tier. Anything weaker
+    // still caps at balanced, and the runtime governor catches misjudgments.
+    const flagshipCaps =
+      (caps.maxTextureSize || 0) >= 8192 &&
+      (caps.maxAnisotropy || 1) >= 8 &&
+      (navigatorInfo.hardwareConcurrency || 0) >= 6;
+    if (touchPrimary && !flagshipCaps) return "balanced";
 
     const shortSide = Math.min(viewport.width || 0, viewport.height || 0);
     if (shortSide > 0 && shortSide < 340) return "balanced";
@@ -478,10 +453,17 @@
   // deviceMemory for privacy, so we can't classify those phones as "low" via
   // the normal path. Drop their effective DPR ceiling a notch instead — at
   // phone physical sizes it's invisible but the fragment-count win is real.
-  function resolveEffectiveDprCap(profile, { touchPrimary = false, navigatorInfo = {} } = {}) {
+  function resolveEffectiveDprCap(
+    profile,
+    { touchPrimary = false, navigatorInfo = {}, caps = {} } = {},
+  ) {
     const baseCap = profile && typeof profile.dprCap === "number" ? profile.dprCap : 1;
     const unknownMemory = typeof navigatorInfo.deviceMemory !== "number";
-    if (touchPrimary && unknownMemory) return Math.min(baseCap, 1.25);
+    const flagshipCaps =
+      (caps.maxTextureSize || 0) >= 8192 &&
+      (caps.maxAnisotropy || 1) >= 8 &&
+      (navigatorInfo.hardwareConcurrency || 0) >= 6;
+    if (touchPrimary && unknownMemory && !flagshipCaps) return Math.min(baseCap, 1.25);
     return baseCap;
   }
 
@@ -621,7 +603,7 @@
         return governor.getTier();
       },
       resolveDprCap(profile) {
-        return resolveEffectiveDprCap(profile, { touchPrimary, navigatorInfo });
+        return resolveEffectiveDprCap(profile, { touchPrimary, navigatorInfo, caps: resolvedCaps });
       },
       sample(frameTimeMs, nowMs) {
         const nextTier = governor.sample(frameTimeMs, nowMs);
@@ -630,11 +612,7 @@
     };
   }
 
-  function getSceneCompositionProfile({
-    width = window.innerWidth,
-    height = window.innerHeight,
-    zoom = SCENE_TUNER_DEFAULTS.defaultZoom,
-  } = {}) {
+  function getSceneCompositionProfile({ width = window.innerWidth, height = window.innerHeight } = {}) {
     const safeWidth = Math.max(1, width || 0);
     const safeHeight = Math.max(1, height || 0);
     const isPortrait = safeHeight > safeWidth;
@@ -647,20 +625,15 @@
     // compact-desktop camera pullback.
     const isTabletPortrait = isPortrait && safeWidth > 760 && safeWidth <= 1024;
 
-    if (isPortraitPhone) return applySceneTunerZoom(cloneCompositionProfile("portraitPhone"), zoom);
-    if (isLandscapePhone)
-      return applySceneTunerZoom(cloneCompositionProfile("landscapePhone"), zoom);
-    if (isTabletPortrait)
-      return applySceneTunerZoom(cloneCompositionProfile("tabletPortrait"), zoom);
-    if (safeWidth < 1100) return applySceneTunerZoom(cloneCompositionProfile("compact"), zoom);
-    return applySceneTunerZoom(cloneCompositionProfile("desktop"), zoom);
+    if (isPortraitPhone) return cloneCompositionProfile("portraitPhone");
+    if (isLandscapePhone) return cloneCompositionProfile("landscapePhone");
+    if (isTabletPortrait) return cloneCompositionProfile("tabletPortrait");
+    if (safeWidth < 1100) return cloneCompositionProfile("compact");
+    return cloneCompositionProfile("desktop");
   }
 
   scene.SCENE_COMPOSITION_PROFILES = SCENE_COMPOSITION_PROFILES;
   scene.SCENE_QUALITY_PROFILES = SCENE_QUALITY_PROFILES;
-  scene.SCENE_TUNER_DEFAULTS = SCENE_TUNER_DEFAULTS;
-  scene.applySceneTunerZoom = applySceneTunerZoom;
-  scene.clampSceneTunerZoom = clampSceneTunerZoom;
   scene.createSceneQualityGovernor = createSceneQualityGovernor;
   scene.createSceneQualityState = createSceneQualityState;
   scene.detectSaveData = detectSaveData;
@@ -669,15 +642,6 @@
   scene.resolveEffectiveDprCap = resolveEffectiveDprCap;
   scene.getSceneQualityProfile = function getSceneQualityProfile(tier) {
     return cloneProfile(normalizeTier(tier, "high"));
-  };
-  scene.getSceneTunerDefaults = function getSceneTunerDefaults() {
-    return {
-      defaultVisible: SCENE_TUNER_DEFAULTS.defaultVisible,
-      defaultZoom: SCENE_TUNER_DEFAULTS.defaultZoom,
-      maxZoom: SCENE_TUNER_DEFAULTS.maxZoom,
-      minZoom: SCENE_TUNER_DEFAULTS.minZoom,
-      storageKeys: { ...SCENE_TUNER_DEFAULTS.storageKeys },
-    };
   };
   scene.readSceneQualityControls = readSceneQualityControls;
   scene.readWebGLQualityCaps = readWebGLQualityCaps;

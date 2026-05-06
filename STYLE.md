@@ -34,6 +34,7 @@ The page should feel intentional and still. It can be atmospheric, but it should
 - The homepage can stay sparse as long as core actions remain legible.
 - Bottom nav icons should stay front-facing and clearly readable against their button backgrounds.
 - Panels should open quickly, close cleanly, and always remain keyboard-friendly.
+- About and Contact panels share one warm parchment frame system; preserve that pair logic when refining either panel.
 
 ## Guardrails
 

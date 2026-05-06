@@ -1,6 +1,6 @@
 # Postprocessing pipeline — asset spec v1
 
-**Status:** Spec drafted; awaiting review.
+**Status:** Shipped 2026-05-05.
 **Owner once approved:** Codex executes from this spec.
 **Reviewer:** project owner.
 **Depends on:** marble.md (shipped), cloister-fragment.md (optional — pipeline does not require it).

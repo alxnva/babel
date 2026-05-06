@@ -557,132 +557,6 @@ main:focus {
   text-shadow: var(--text-meta-shadow);
 }
 
-.scene-tuner {
-  position: fixed;
-  top: max(18px, calc(14px + env(safe-area-inset-top)));
-  right: max(18px, calc(14px + env(safe-area-inset-right)));
-  z-index: 12;
-  width: min(252px, calc(100vw - 28px));
-  pointer-events: auto;
-}
-
-.scene-tuner__card {
-  border: 1px solid rgba(241, 229, 212, 0.12);
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(255, 240, 214, 0.06) 0%, rgba(255, 240, 214, 0) 28%),
-    linear-gradient(180deg, rgba(16, 23, 43, 0.78) 0%, rgba(10, 13, 25, 0.74) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 247, 230, 0.05),
-    var(--shadow-panel);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.scene-tuner__toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
-  text-align: left;
-}
-
-.scene-tuner__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-accent);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  text-shadow: var(--text-meta-shadow);
-}
-
-.scene-tuner__title::before {
-  content: "";
-  display: inline-block;
-  width: 16px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(255, 210, 160, 0.16) 0%, rgba(255, 210, 160, 0.76) 100%);
-}
-
-.scene-tuner__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-meta);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.scene-tuner__panel {
-  display: grid;
-  gap: 10px;
-  padding: 0 14px 14px;
-  border-top: 1px solid rgba(241, 229, 212, 0.08);
-}
-
-.scene-tuner__label,
-.scene-tuner__scale {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  color: var(--text-meta);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.scene-tuner__label span:last-child,
-.scene-tuner__scale span:first-child {
-  opacity: 0.78;
-}
-
-.scene-tuner__slider {
-  width: 100%;
-  margin: 0;
-  accent-color: var(--torch-300);
-  background: transparent;
-}
-
-.scene-tuner__slider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(217, 164, 109, 0.22) 0%, rgba(255, 210, 160, 0.76) 100%);
-}
-
-.scene-tuner__slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  border: 1px solid rgba(255, 228, 194, 0.7);
-  border-radius: 999px;
-  background: #fff0dc;
-  box-shadow: 0 0 0 4px rgba(255, 210, 160, 0.12);
-}
-
-.scene-tuner__slider::-moz-range-track {
-  height: 4px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(217, 164, 109, 0.22) 0%, rgba(255, 210, 160, 0.76) 100%);
-}
-
-.scene-tuner__slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 1px solid rgba(255, 228, 194, 0.7);
-  border-radius: 999px;
-  background: #fff0dc;
-  box-shadow: 0 0 0 4px rgba(255, 210, 160, 0.12);
-}
-
 .panel-overlay {
   position: fixed;
   inset: 0;
@@ -751,356 +625,222 @@ main:focus {
 .panel-surface {
   position: relative;
   transform: translateY(22px);
-  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .panel-overlay.open .panel-surface {
   transform: translateY(0);
 }
 
-.panel-notebook {
-  width: min(100%, 860px);
-  min-height: clamp(320px, 58vh, 540px);
-  padding: clamp(18px, 2.8vw, 30px);
-  border-radius: 12px;
-  /* Cover pulled off warm-leather browns into the tower-stone family so
-     it reads as muted binding rather than a saturated object. */
-  background: linear-gradient(160deg, #3a3633 0%, #2a2724 78%, #1f1d1b 100%);
-  box-shadow:
-    0 32px 80px rgba(6, 6, 8, 0.5),
-    inset 0 1px 0 rgba(220, 210, 196, 0.07),
-    inset 0 0 0 1px rgba(20, 18, 16, 0.8);
+/* Single shared parchment frame for About + Contact panels.
+   Per-panel character comes from one ornament: an "A" watermark inside
+   #panel-about, a wax seal inside #panel-contact. The frame itself is
+   identical across both — same paper, same drop angle, same shadow. */
+.panel-parchment {
+  width: min(100%, 720px);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 30px 34px rgba(3, 4, 8, 0.42)) drop-shadow(0 8px 14px rgba(3, 4, 8, 0.28));
 }
 
-.panel-notebook__spread {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0;
-  min-height: inherit;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 14, 4, 0.55),
-    0 6px 18px rgba(10, 8, 2, 0.28);
-}
-
-.panel-notebook__page {
+.panel-parchment__sheet {
   position: relative;
-  padding: clamp(32px, 4vw, 56px) clamp(28px, 3.4vw, 48px);
-  /* Cooler aged-paper cream — complements the muted brass accents
-     instead of the previous honeyed warmth. */
-  background-color: #d3cab8;
+  padding: clamp(40px, 5.4vw, 64px) clamp(34px, 4.8vw, 60px) clamp(46px, 6vw, 72px);
+  min-height: clamp(320px, 48vh, 460px);
+  overflow: hidden;
+  color: #332d25;
+  font-family: var(--font-body);
+  background-color: #d8cfbd;
   background-image:
+    radial-gradient(circle at 18% 18%, rgba(255, 248, 229, 0.34) 0%, rgba(255, 248, 229, 0) 42%),
+    radial-gradient(circle at 86% 78%, rgba(96, 74, 48, 0.13) 0%, rgba(96, 74, 48, 0) 44%),
     repeating-linear-gradient(
       180deg,
       transparent 0,
-      transparent calc(1.7em - 1px),
-      rgba(68, 62, 52, 0.18) calc(1.7em - 1px),
-      rgba(68, 62, 52, 0.18) 1.7em
+      transparent calc(1.78em - 1px),
+      rgba(69, 58, 43, 0.1) calc(1.78em - 1px),
+      rgba(69, 58, 43, 0.1) 1.78em
     ),
-    radial-gradient(circle at 22% 18%, rgba(246, 238, 222, 0.18) 0%, rgba(246, 238, 222, 0) 60%),
-    linear-gradient(180deg, #d3cab8 0%, #bfb6a3 100%);
+    linear-gradient(180deg, #ded4c0 0%, #c8bea9 100%);
   background-position:
-    0 1.1em,
     0 0,
+    0 0,
+    0 1.2em,
     0 0;
-  color: #35302a;
-  font-family: var(--font-body);
-  min-height: inherit;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 249, 232, 0.28),
+    inset 0 -18px 34px rgba(44, 34, 24, 0.12),
+    inset 0 0 0 1px rgba(78, 65, 46, 0.22);
 }
 
-.panel-notebook__page--left {
-  border-right: 1px solid rgba(68, 62, 52, 0.24);
-  box-shadow: inset -12px 0 22px rgba(16, 14, 10, 0.12);
-  align-items: flex-start;
-  justify-content: center;
+.panel-parchment__content {
+  position: relative;
+  z-index: 2;
+  max-width: 38ch;
 }
 
-.panel-notebook__page--right {
-  border-left: 1px solid rgba(68, 62, 52, 0.18);
-  box-shadow: inset 12px 0 22px rgba(16, 14, 10, 0.1);
+.panel-parchment__sheet .eyebrow {
+  color: #7d6442;
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  opacity: 0.82;
 }
 
-.panel-notebook__page .eyebrow {
-  color: var(--accent-muted);
-  margin-bottom: 14px;
-}
-
-.panel-notebook__page h2 {
-  font-family: var(--font-display);
-  font-size: clamp(34px, 5.6vw, 56px);
-  line-height: 1;
+.panel-parchment__sheet h2 {
+  max-width: 11ch;
   margin: 0;
-  color: #2a2723;
+  color: #29241e;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5.4vw, 64px);
+  line-height: 1;
   letter-spacing: -0.015em;
 }
 
-.panel-notebook__page .panel-body {
-  color: #3a342e;
-  font-size: clamp(15px, 1.4vw, 17px);
-  line-height: 1.7;
-  margin: 0;
-  max-width: 34ch;
+.panel-parchment__sheet .panel-body {
+  max-width: 38ch;
+  margin: clamp(18px, 2.2vw, 26px) 0 0;
+  color: rgba(59, 51, 42, 0.82);
+  font-size: clamp(15px, 1.25vw, 17px);
+  line-height: 1.66;
 }
 
-.panel-notebook__page .panel-footnote {
-  color: rgba(58, 52, 44, 0.68);
-  font-size: 11px;
+#panel-contact .panel-parchment__sheet .panel-body {
+  font-size: clamp(17px, 1.55vw, 20px);
+}
+
+.panel-parchment__sheet .panel-body a,
+.panel-parchment__sheet .panel-footnote a {
+  color: #493f31;
+  text-decoration-color: rgba(94, 76, 52, 0.48);
+}
+
+.panel-parchment__sheet .panel-footnote {
+  margin: clamp(20px, 3vw, 30px) 0 0;
+  color: rgba(56, 48, 38, 0.62);
+  font-size: 10.5px;
   letter-spacing: 0.08em;
-  margin: auto 0 0;
-  padding-top: 22px;
 }
 
-.panel-notebook__page .panel-footnote a {
-  color: #4a4235;
-  text-decoration-color: rgba(90, 78, 62, 0.5);
-}
-
-.panel-notebook__initial {
+/* Display "A" sitting behind the About text — reads as a tooled cover
+   initial. Anchored right-of-center so the text column stays the eye's
+   first stop, then the watermark registers as ambient ornament. */
+.panel-parchment__watermark {
   position: absolute;
-  right: 8%;
-  bottom: 6%;
+  top: 50%;
+  right: clamp(-12px, 2vw, 24px);
+  transform: translateY(-52%);
+  z-index: 1;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(120px, 18vw, 210px);
-  /* Neutral watermark rather than the prior saturated amber wash. */
-  color: rgba(72, 64, 52, 0.15);
-  line-height: 0.9;
+  font-size: clamp(220px, 32vw, 360px);
+  line-height: 0.8;
+  color: rgba(60, 44, 24, 0.1);
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
 }
 
-.panel-notebook__binding {
-  width: clamp(28px, 4vw, 42px);
-  background: linear-gradient(
-    90deg,
-    rgba(8, 8, 10, 0.6) 0%,
-    rgba(24, 22, 20, 0.72) 40%,
-    rgba(8, 8, 10, 0.6) 100%
-  );
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-around;
-  padding: 6%;
-}
-
-.panel-notebook__ring {
-  width: clamp(14px, 1.6vw, 20px);
-  height: clamp(14px, 1.6vw, 20px);
-  border-radius: 999px;
-  /* Rings pulled from saturated honey-brass to muted antiqued brass
-     so they feel like small hardware, not glowing ornaments. */
-  background: radial-gradient(circle at 35% 30%, #cfbc9c 0%, #8f7a5c 70%, #4a3e2c 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(234, 222, 200, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.38);
-}
-
-.panel-letter {
-  width: min(100%, 640px);
-  min-height: clamp(360px, 58vh, 520px);
-  padding: clamp(20px, 3vw, 32px) clamp(56px, 7vw, 92px) clamp(20px, 3vw, 32px)
-    clamp(20px, 3vw, 32px);
-  display: flex;
-  align-items: stretch;
-  gap: clamp(10px, 2vw, 22px);
-}
-
-.panel-letter__sheet {
-  position: relative;
-  flex: 1;
-  padding: clamp(32px, 4vw, 56px) clamp(28px, 4vw, 52px);
-  background-color: #d3cab8;
-  background-image:
-    repeating-linear-gradient(
-      180deg,
-      transparent 0,
-      transparent calc(1.7em - 1px),
-      rgba(68, 62, 52, 0.12) calc(1.7em - 1px),
-      rgba(68, 62, 52, 0.12) 1.7em
-    ),
-    radial-gradient(circle at 28% 22%, rgba(246, 238, 222, 0.2) 0%, rgba(246, 238, 222, 0) 58%),
-    linear-gradient(180deg, #d8cfbd 0%, #beb5a2 100%);
-  background-position:
-    0 1.2em,
-    0 0,
-    0 0;
-  color: #35302a;
-  font-family: var(--font-body);
-  border-radius: 4px;
-  box-shadow:
-    0 28px 60px rgba(6, 6, 8, 0.44),
-    inset 0 0 0 1px rgba(70, 62, 50, 0.2),
-    inset 0 -10px 28px rgba(30, 26, 22, 0.12);
-  transform: rotate(-1.2deg);
-  transform-origin: center;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-letter__sheet::before {
-  content: "";
+/* Wax seal — pressed brass-red disc in the lower-right of the Contact
+   sheet. Pure CSS: radial highlight + warm gradient + inner shadow for
+   the rim. Decorative; aria-hidden in markup. */
+.panel-parchment__seal {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
+  right: clamp(28px, 4vw, 56px);
+  bottom: clamp(28px, 4vw, 56px);
+  z-index: 1;
+  width: clamp(76px, 9vw, 108px);
+  height: clamp(76px, 9vw, 108px);
+  border-radius: 50%;
   background:
-    linear-gradient(
-      180deg,
-      rgba(246, 238, 222, 0) 0%,
-      rgba(246, 238, 222, 0.16) 50%,
-      rgba(246, 238, 222, 0) 52%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(50, 46, 40, 0) 48%,
-      rgba(50, 46, 40, 0.07) 50%,
-      rgba(50, 46, 40, 0) 52%
-    );
-}
-
-.panel-letter__sheet .eyebrow {
-  color: var(--accent-muted);
-  margin-bottom: 14px;
-}
-
-.panel-letter__sheet h2 {
-  font-family: var(--font-display);
-  font-size: clamp(32px, 5vw, 50px);
-  line-height: 1.04;
-  margin: 0;
-  color: #2a2723;
-  letter-spacing: -0.015em;
-}
-
-.panel-letter__sheet .panel-body {
-  margin: 20px 0 0;
-  color: #3a342e;
-  font-size: clamp(16px, 1.5vw, 18px);
-  max-width: 30ch;
-}
-
-.panel-letter__sheet .panel-body a {
-  color: #4a4235;
-  text-decoration-color: rgba(90, 78, 62, 0.5);
-}
-
-.panel-letter__seal {
-  position: absolute;
-  right: clamp(24px, 4vw, 40px);
-  bottom: clamp(24px, 4vw, 40px);
-  width: clamp(36px, 5vw, 52px);
-  height: clamp(36px, 5vw, 52px);
-  border-radius: 999px;
-  /* Seal pulled off saturated terracotta onto muted antique brass so it
-     matches the icon seal and the accent-muted token. */
-  background: radial-gradient(circle at 34% 28%, #b89c7a 0%, #7a6345 65%, #403326 100%);
+    radial-gradient(circle at 32% 28%, rgba(255, 218, 174, 0.7), rgba(255, 218, 174, 0) 38%),
+    radial-gradient(circle at 70% 78%, rgba(58, 22, 12, 0.55), rgba(58, 22, 12, 0) 60%),
+    linear-gradient(155deg, #b16a44 0%, #8a4a2e 58%, #5b2c1c 100%);
   box-shadow:
-    0 4px 10px rgba(24, 20, 14, 0.5),
-    inset 0 2px 0 rgba(232, 216, 192, 0.22);
-}
-
-.panel-letter__seal::before,
-.panel-letter__seal::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  background: rgba(232, 222, 200, 0.34);
-  transform: translate(-50%, -50%);
-}
-
-.panel-letter__seal::before {
-  width: 60%;
-  height: 3px;
-}
-
-.panel-letter__seal::after {
-  width: 3px;
-  height: 60%;
-}
-
-.panel-letter__quill {
-  width: clamp(30px, 4vw, 46px);
-  height: auto;
-  align-self: stretch;
-  margin-right: clamp(-36px, -4vw, -12px);
-  transform: rotate(16deg) translateY(6%);
+    0 12px 22px rgba(34, 16, 8, 0.34),
+    inset 0 2px 0 rgba(255, 222, 184, 0.36),
+    inset 0 -8px 14px rgba(34, 16, 8, 0.34);
   pointer-events: none;
-  filter: drop-shadow(0 6px 8px rgba(10, 6, 2, 0.5));
 }
 
 @media (max-width: 640px) {
-  .panel-notebook__spread {
-    grid-template-columns: 1fr;
+  .panel-overlay {
+    padding: 18px 14px max(106px, calc(86px + env(safe-area-inset-bottom)));
   }
 
-  .panel-notebook__binding {
-    width: 100%;
-    height: clamp(26px, 6vw, 36px);
-    flex-direction: row;
-    padding: 0 6%;
+  .panel-parchment {
+    width: min(96vw, 520px);
   }
 
-  .panel-notebook__page--left {
-    border-right: 0;
-    border-bottom: 1px solid rgba(78, 62, 40, 0.2);
-    box-shadow: inset 0 -12px 22px rgba(24, 16, 4, 0.14);
+  .panel-parchment__sheet {
+    padding: clamp(32px, 7vw, 44px) clamp(24px, 6vw, 36px) clamp(40px, 8vw, 56px);
+    min-height: 0;
+    max-height: calc(100svh - 132px);
   }
 
-  .panel-notebook__page--right {
-    border-left: 0;
-    border-top: 1px solid rgba(78, 62, 40, 0.2);
-    box-shadow: inset 0 12px 22px rgba(24, 16, 4, 0.12);
+  .panel-parchment__sheet h2 {
+    max-width: 100%;
+    font-size: clamp(30px, 10vw, 44px);
   }
 
-  .panel-letter {
-    padding: clamp(16px, 3vw, 28px);
+  .panel-parchment__watermark {
+    font-size: clamp(180px, 56vw, 260px);
+    right: clamp(-24px, -2vw, -8px);
+    opacity: 0.85;
   }
 
-  .panel-letter__quill {
-    display: none;
-  }
-
-  .panel-letter__sheet {
-    transform: rotate(0);
+  .panel-parchment__seal {
+    width: clamp(64px, 16vw, 84px);
+    height: clamp(64px, 16vw, 84px);
+    right: clamp(20px, 6vw, 32px);
+    bottom: clamp(20px, 6vw, 32px);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .panel-notebook,
-  .panel-letter {
-    background: linear-gradient(180deg, rgba(52, 48, 44, 0.98) 0%, rgba(30, 28, 25, 0.98) 100%);
+  .panel-parchment__sheet {
+    background-color: #e6dac2;
   }
 }
 
 .panel-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 38px;
-  height: 38px;
+  top: clamp(18px, 4vw, 34px);
+  right: clamp(18px, 4vw, 34px);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border-soft);
+  border: 1px solid rgba(64, 47, 30, 0.22);
   border-radius: 999px;
-  background: rgba(255, 246, 226, 0.04);
-  color: var(--text-meta);
+  background:
+    linear-gradient(135deg, rgba(255, 232, 186, 0.42), rgba(126, 88, 48, 0.28)),
+    #b79563;
+  color: #3b2c1e;
   font-size: 21px;
   line-height: 1;
+  box-shadow:
+    0 10px 18px rgba(36, 24, 12, 0.22),
+    inset 0 1px 0 rgba(255, 246, 220, 0.5),
+    inset 0 -7px 10px rgba(72, 46, 24, 0.22);
+  transform: rotate(5deg);
   transition:
+    transform 160ms ease,
     background 160ms ease,
     color 160ms ease;
 }
 
 .panel-close:hover,
 .panel-close:focus-visible {
-  background: rgba(184, 156, 122, 0.12);
-  color: var(--text-secondary);
+  background:
+    linear-gradient(135deg, rgba(255, 238, 202, 0.58), rgba(142, 96, 50, 0.34)),
+    #c2a06d;
+  color: #241910;
+  transform: translateY(-1px) rotate(5deg);
 }
 
 .reveal {
@@ -1146,12 +886,6 @@ main:focus {
     padding: 0 0 0 clamp(14px, 4vw, 24px);
     text-align: left;
   }
-
-  .scene-tuner {
-    top: max(14px, calc(10px + env(safe-area-inset-top)));
-    right: max(14px, calc(10px + env(safe-area-inset-right)));
-    width: min(228px, calc(100vw - 24px));
-  }
 }
 
 @media (max-width: 640px) {
@@ -1178,12 +912,6 @@ main:focus {
     max-width: min(84vw, 360px);
     margin-bottom: max(20px, env(safe-area-inset-bottom));
     padding-left: clamp(18px, 5vw, 30px);
-  }
-
-  .scene-tuner {
-    top: max(10px, calc(8px + env(safe-area-inset-top)));
-    right: max(10px, calc(8px + env(safe-area-inset-right)));
-    width: min(212px, calc(100vw - 20px));
   }
 
   .story-text {
@@ -1234,10 +962,11 @@ main:focus {
   .skip-link,
   .hero-minimal,
   .bottom-btn,
-  .scene-tuner__card,
   .btn-icon-label,
   .panel-overlay,
   .panel-card,
+  .panel-surface,
+  .panel-parchment__sheet,
   .reveal,
   .bottom-btn--icon::after {
     transition: none;
@@ -1249,7 +978,8 @@ main:focus {
   .scene-shell,
   .site-shell,
   .bottom-bar .bottom-btn,
-  .site-copyright {
+  .site-copyright,
+  .panel-parchment__sheet {
     animation: none;
   }
 
@@ -1260,6 +990,8 @@ main:focus {
   }
 
   .panel-card,
+  .panel-surface,
+  .panel-parchment__sheet,
   .reveal {
     transform: none;
   }
@@ -1306,11 +1038,6 @@ main:focus {
   .bottom-btn--icon {
     width: 64px;
     height: 64px;
-  }
-
-  .scene-tuner {
-    top: max(10px, calc(8px + env(safe-area-inset-top)));
-    width: min(200px, calc(100vw - 20px));
   }
 }
 
@@ -1416,8 +1143,8 @@ body.dev-mode-active > *:not(.scene-shell):not(.dev-mode-hud) {
     color: LinkText;
   }
 
-  .panel-notebook,
-  .panel-letter,
+  .panel-parchment,
+  .panel-parchment__sheet,
   .panel-card {
     background: Canvas;
     color: CanvasText;

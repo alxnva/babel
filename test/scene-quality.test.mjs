@@ -110,8 +110,19 @@ test("selectSceneQualityTier resolves the full decision matrix", async () => {
       caps,
       touchPrimary: true,
     }),
+    "high",
+    "touch-primary flagship hardware reaches high",
+  );
+  assert.equal(
+    scene.selectSceneQualityTier({
+      controls,
+      navigatorInfo: { hardwareConcurrency: 8 },
+      viewport,
+      caps: { maxTextureSize: 4096, maxAnisotropy: 4 },
+      touchPrimary: true,
+    }),
     "balanced",
-    "touch-primary devices cap at balanced",
+    "touch-primary devices below flagship caps stay at balanced",
   );
   assert.equal(
     scene.selectSceneQualityTier({
@@ -159,6 +170,41 @@ test("readSceneQualityControls parses tier query strings and debug flag", async 
   assert.equal(bogus.debug, false);
 });
 
+test("quality profiles expose the postprocess tier matrix", async () => {
+  const scene = await loadQuality(createContext());
+  const high = scene.getSceneQualityProfile("high");
+  const balanced = scene.getSceneQualityProfile("balanced");
+  const low = scene.getSceneQualityProfile("low");
+
+  assert.deepEqual(
+    [
+      high.postprocessGrading,
+      high.postprocessBloom,
+      high.postprocessVignette,
+      high.postprocessGrain,
+    ],
+    [true, true, true, true],
+  );
+  assert.deepEqual(
+    [
+      balanced.postprocessGrading,
+      balanced.postprocessBloom,
+      balanced.postprocessVignette,
+      balanced.postprocessGrain,
+    ],
+    [true, false, true, true],
+  );
+  assert.deepEqual(
+    [
+      low.postprocessGrading,
+      low.postprocessBloom,
+      low.postprocessVignette,
+      low.postprocessGrain,
+    ],
+    [true, false, false, false],
+  );
+});
+
 test("readWebGLQualityCaps falls back when probing fails and reports parameters when it succeeds", async () => {
   const offline = await loadQuality(createContext());
   const fallback = offline.readWebGLQualityCaps({
@@ -203,40 +249,24 @@ test("readWebGLQualityCaps falls back when probing fails and reports parameters 
   assert.equal(losing.called, true, "probe context is released after measurement");
 });
 
-test("clampSceneTunerZoom rejects NaN and clamps to declared bounds", async () => {
+test("composition profiles bake the removed default scene zoom", async () => {
   const scene = await loadQuality(createContext());
-  const { maxZoom, minZoom, defaultZoom } = scene.getSceneTunerDefaults();
+  const cases = [
+    ["compact", { width: 900, height: 844 }, [48.52, 11.68, 74.8, 0.144]],
+    ["desktop", { width: 1440, height: 900 }, [48.52, 11.68, 65.8, 0.144]],
+    ["portraitPhone", { width: 390, height: 844 }, [50.32, 12.44, 72.3, 0.124]],
+    ["landscapePhone", { width: 844, height: 390 }, [54.52, 10.08, 71.8, 0.144]],
+    ["tabletPortrait", { width: 810, height: 1080 }, [48.52, 12.38, 71.8, 0.134]],
+  ];
 
-  assert.equal(scene.clampSceneTunerZoom(999), maxZoom);
-  assert.equal(scene.clampSceneTunerZoom(-999), minZoom);
-  assert.equal(scene.clampSceneTunerZoom(3.6), 4, "values are rounded toward the nearest integer");
-  assert.equal(scene.clampSceneTunerZoom("not a number"), defaultZoom);
-  assert.equal(scene.clampSceneTunerZoom(null), defaultZoom);
-  assert.equal(scene.clampSceneTunerZoom(""), defaultZoom);
-  assert.equal(scene.clampSceneTunerZoom(Number.NaN), defaultZoom);
-  assert.equal(scene.clampSceneTunerZoom(undefined, 0), 0, "falls back to the supplied default");
-});
-
-test("applySceneTunerZoom widens portrait framing more aggressively than compact and clamps FOV", async () => {
-  const scene = await loadQuality(createContext());
-  const portraitBase = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 });
-  const compactBase = scene.getSceneCompositionProfile({ width: 900, height: 844, zoom: 0 });
-
-  const portraitMax = scene.applySceneTunerZoom(portraitBase, 18);
-  const compactMax = scene.applySceneTunerZoom(compactBase, 18);
-  const portraitFloor = scene.applySceneTunerZoom(portraitBase, -12);
-
-  assert.ok(
-    portraitMax.camera.orbitBase - portraitBase.camera.orbitBase >
-      compactMax.camera.orbitBase - compactBase.camera.orbitBase,
-  );
-  assert.ok(portraitMax.camera.fov <= 56, "FOV is clamped at 56");
-  assert.ok(portraitFloor.camera.fov >= 42, "FOV is clamped at 42");
-  assert.ok(portraitMax.camera.lookAtBase >= 0);
-  assert.ok(portraitMax.camera.orbitTrim >= 0.04);
-  assert.equal(portraitMax.manualZoom, 18);
-  assert.notEqual(portraitMax, portraitBase, "applySceneTunerZoom returns a fresh profile");
-  assert.notEqual(portraitMax.camera, portraitBase.camera, "camera is cloned, not mutated");
+  for (const [name, viewport, [fov, lookAtBase, orbitBase, orbitTrim]] of cases) {
+    const profile = scene.getSceneCompositionProfile(viewport);
+    assert.equal(profile.name, name);
+    assert.equal(profile.camera.fov, fov);
+    assert.equal(profile.camera.lookAtBase, lookAtBase);
+    assert.equal(profile.camera.orbitBase, orbitBase);
+    assert.equal(profile.camera.orbitTrim, orbitTrim);
+  }
 });
 
 test("quality governor drops to low under sustained stress and ignores invalid samples", async () => {
@@ -326,9 +356,22 @@ test("resolveEffectiveDprCap caps touch-primary devices with hidden deviceMemory
   const profile = { dprCap: 2 };
 
   assert.equal(
-    scene.resolveEffectiveDprCap(profile, { touchPrimary: true, navigatorInfo: {} }),
+    scene.resolveEffectiveDprCap(profile, {
+      touchPrimary: true,
+      navigatorInfo: { hardwareConcurrency: 8 },
+      caps: { maxTextureSize: 8192, maxAnisotropy: 8 },
+    }),
+    2,
+    "unknown deviceMemory + touch primary keeps DPR 2 on flagship caps",
+  );
+  assert.equal(
+    scene.resolveEffectiveDprCap(profile, {
+      touchPrimary: true,
+      navigatorInfo: { hardwareConcurrency: 4 },
+      caps: { maxTextureSize: 4096, maxAnisotropy: 4 },
+    }),
     1.25,
-    "unknown deviceMemory + touch primary is capped at 1.25",
+    "unknown deviceMemory + weaker touch hardware is capped at 1.25",
   );
   assert.equal(
     scene.resolveEffectiveDprCap(profile, {
@@ -352,8 +395,8 @@ test("resolveEffectiveDprCap caps touch-primary devices with hidden deviceMemory
 
 test("portraitPhone composition profile trims active particle counts", async () => {
   const scene = await loadQuality(createContext());
-  const portrait = scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 });
-  const desktop = scene.getSceneCompositionProfile({ width: 1440, height: 900, zoom: 0 });
+  const portrait = scene.getSceneCompositionProfile({ width: 390, height: 844 });
+  const desktop = scene.getSceneCompositionProfile({ width: 1440, height: 900 });
 
   assert.equal(typeof portrait.countScale, "number");
   assert.ok(portrait.countScale < 1, "portrait phone trims counts below desktop");
@@ -365,41 +408,41 @@ test("getSceneCompositionProfile picks the right profile across device classes",
 
   // Phone portrait (iPhone 14): 390x844.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 390, height: 844, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 390, height: 844 }).name,
     "portraitPhone",
   );
   // Phone landscape (iPhone 14 rotated): 844x390.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 844, height: 390, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 844, height: 390 }).name,
     "landscapePhone",
   );
   // Tablet portrait (iPad): 810x1080.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 810, height: 1080, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 810, height: 1080 }).name,
     "tabletPortrait",
   );
   // Tablet landscape (iPad rotated): 1080x810 — wider than compact threshold only
   // for very large tablets, so this falls into compact framing.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 1080, height: 810, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 1080, height: 810 }).name,
     "compact",
   );
   // Small laptop: 1280x800.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 1280, height: 800, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 1280, height: 800 }).name,
     "desktop",
   );
   // Desktop: 1920x1080.
   assert.equal(
-    scene.getSceneCompositionProfile({ width: 1920, height: 1080, zoom: 0 }).name,
+    scene.getSceneCompositionProfile({ width: 1920, height: 1080 }).name,
     "desktop",
   );
 });
 
 test("landscapePhone and tabletPortrait profiles carry touch-friendly count trims", async () => {
   const scene = await loadQuality(createContext());
-  const landscape = scene.getSceneCompositionProfile({ width: 844, height: 390, zoom: 0 });
-  const tablet = scene.getSceneCompositionProfile({ width: 810, height: 1080, zoom: 0 });
+  const landscape = scene.getSceneCompositionProfile({ width: 844, height: 390 });
+  const tablet = scene.getSceneCompositionProfile({ width: 810, height: 1080 });
 
   assert.ok(
     landscape.countScale < 1,

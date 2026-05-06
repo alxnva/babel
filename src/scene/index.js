@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
+import { createPostprocessPipeline } from "./postprocess.js";
 
 // r128-parity color / light pipeline. ColorManagement.enabled=true (the r152+
 // default) treats material+light hex colors as sRGB and converts to linear
@@ -146,33 +145,23 @@ function setSrgbTexture(texture) {
               towerWidth: 1280,
             },
           };
-    const sceneTunerDefaults =
-      typeof scene.getSceneTunerDefaults === "function"
-        ? scene.getSceneTunerDefaults()
-        : {
-            defaultVisible: true,
-            defaultZoom: 12,
-            maxZoom: 18,
-            minZoom: -12,
-          };
     const fallbackComposition =
       typeof scene.getSceneCompositionProfile === "function"
         ? scene.getSceneCompositionProfile({
             width: window.innerWidth,
             height: window.innerHeight,
-            zoom: sceneTunerDefaults.defaultZoom,
           })
         : {
             camera: {
-              fov: 46,
+              fov: 48.52,
               heightBase: 21.9,
               heightScrollDelta: 0.9,
-              lookAtBase: 12.4,
+              lookAtBase: 11.68,
               lookAtScrollDelta: 2.1,
-              orbitBase: window.innerWidth < 1100 ? 55 : 46,
+              orbitBase: window.innerWidth < 1100 ? 74.8 : 65.8,
               orbitScale: 1.14,
               orbitScrollDelta: 2.4,
-              orbitTrim: 0.18,
+              orbitTrim: 0.144,
             },
             cloudAnchorY: -7.5,
             name:
@@ -327,11 +316,10 @@ function setSrgbTexture(texture) {
       (renderer._useLegacyLights = true),
       (renderer.shadowMap.type = THREE.PCFSoftShadowMap),
       container.appendChild(renderer.domElement));
-    // Postprocessing for developer-mode outline highlight. The composer is
-    // created up-front but only invoked when scene.devMode.active is true; the
-    // public render path remains renderer.render(homeScene, camera).
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(homeScene, camera));
+    // Postprocessing stays global and restrained; OutlinePass remains the
+    // developer-mode interaction feedback layer appended after the art passes.
+    const postprocessPipeline = createPostprocessPipeline(renderer, homeScene, camera, state.profile);
+    const composer = postprocessPipeline.composer;
     const outlinePass = new OutlinePass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       homeScene,
@@ -416,12 +404,14 @@ function setSrgbTexture(texture) {
           ? qualityState.resolveDprCap(state.profile)
           : typeof scene.resolveEffectiveDprCap === "function"
             ? scene.resolveEffectiveDprCap(state.profile, {
+                caps: qualityState.caps || {},
                 touchPrimary: qualityState.touchPrimary,
                 navigatorInfo: qualityState.navigatorInfo || navigator,
               })
             : state.profile.dprCap || 1;
       const pixelRatio = Math.min(window.devicePixelRatio || 1, effectiveCap || 1);
       renderer.setPixelRatio(pixelRatio);
+      if (postprocessPipeline) postprocessPipeline.setQualityProfile(state.profile);
       updateSceneDebug({
         reason,
         pixelRatio,
@@ -4442,7 +4432,6 @@ function setSrgbTexture(texture) {
       },
       compositionState = {
         profile: fallbackComposition,
-        zoom: sceneTunerDefaults.defaultZoom,
       },
       num515 = 1.15,
       cloudCameraVector = new THREE.Vector3(),
@@ -4454,7 +4443,6 @@ function setSrgbTexture(texture) {
         ? scene.getSceneCompositionProfile({
             width: cfg2.width,
             height: cfg2.height,
-            zoom: compositionState.zoom,
           })
         : fallbackComposition;
     }
@@ -4470,32 +4458,8 @@ function setSrgbTexture(texture) {
       updateSceneDebug({
         composition: compositionState.profile.name,
         compositionReason: reason,
-        manualZoom: compositionState.zoom,
       });
     }
-    scene.getSceneZoom = function () {
-      return compositionState.zoom;
-    };
-    scene.getSceneZoomRange = function () {
-      return {
-        defaultZoom: sceneTunerDefaults.defaultZoom,
-        maxZoom: sceneTunerDefaults.maxZoom,
-        minZoom: sceneTunerDefaults.minZoom,
-      };
-    };
-    scene.setSceneZoom = function (value, reason = "manual") {
-      const clampZoom =
-        typeof scene.clampSceneTunerZoom === "function"
-          ? scene.clampSceneTunerZoom
-          : (candidate, fallback = compositionState.zoom) => {
-              const numeric = Number(candidate);
-              return Number.isFinite(numeric) ? numeric : fallback;
-            };
-      const nextZoom = clampZoom(value, compositionState.zoom);
-      compositionState.zoom = nextZoom;
-      applySceneComposition(resolveSceneCompositionProfile(), reason);
-      return nextZoom;
-    };
     function cloudViewFade(
       arg126,
       arg127,
@@ -5070,11 +5034,7 @@ function setSrgbTexture(texture) {
         });
       }
       skyShell.material.uniforms.uTime.value = elapsedTime;
-      if (scene.devMode?.active && composer) {
-        composer.render();
-      } else {
-        renderer.render(homeScene, camera);
-      }
+      composer.render();
       if (!sceneReadyMarked) {
         sceneReadyMarked = true;
         if (container && container.classList) container.classList.add("is-ready");

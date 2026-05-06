@@ -90,6 +90,19 @@
     ctx.putImageData(image, px, py);
   }
 
+  function strokePolyline(ctx, color, width, points) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(Math.round(points[0][0]), Math.round(points[0][1]));
+    for (let idx = 1; idx < points.length; idx += 1) {
+      ctx.lineTo(Math.round(points[idx][0]), Math.round(points[idx][1]));
+    }
+    ctx.stroke();
+  }
+
   // Low-poly closed book viewed from a slight 3/4 angle above.
   // Four visible faces: top cover (largest), right page-edge, front
   // page-edge, and a title band — flat-shaded, pixel-snapped, PS-era.
@@ -306,9 +319,8 @@
 
   function bindCanvas(canvas, drawFn) {
     const button = canvas.closest(".bottom-btn");
-    if (!button) {
-      return () => {};
-    }
+    const fallbackWidth = Number(canvas.getAttribute("width")) || canvas.width || 72;
+    const fallbackHeight = Number(canvas.getAttribute("height")) || canvas.height || 72;
 
     let active = false;
     let lastDrawSignature = "";
@@ -332,8 +344,8 @@
 
     function render() {
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width || 72;
-      const height = rect.height || 72;
+      const width = rect.width || fallbackWidth;
+      const height = rect.height || fallbackHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const pixelWidth = Math.max(1, Math.round(width * dpr));
       const pixelHeight = Math.max(1, Math.round(height * dpr));
@@ -365,22 +377,24 @@
       lastDrawSignature = drawSignature;
     }
 
-    button.addEventListener("mouseenter", () => {
-      active = true;
-      render();
-    });
-    button.addEventListener("mouseleave", () => {
-      active = false;
-      render();
-    });
-    button.addEventListener("focus", () => {
-      active = true;
-      render();
-    });
-    button.addEventListener("blur", () => {
-      active = false;
-      render();
-    });
+    if (button) {
+      button.addEventListener("mouseenter", () => {
+        active = true;
+        render();
+      });
+      button.addEventListener("mouseleave", () => {
+        active = false;
+        render();
+      });
+      button.addEventListener("focus", () => {
+        active = true;
+        render();
+      });
+      button.addEventListener("blur", () => {
+        active = false;
+        render();
+      });
+    }
 
     return render;
   }

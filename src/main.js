@@ -1,17 +1,21 @@
 (() => {
   const site = (window.BabelSite = window.BabelSite || {});
+  let sceneInitialized = false;
 
   function initUi() {
     const ui = site.ui || {};
     if (typeof ui.initHeroChrome === "function") ui.initHeroChrome();
     if (typeof ui.initPanels === "function") ui.initPanels();
     if (typeof ui.initBottomNavIcons === "function") ui.initBottomNavIcons();
-    if (typeof ui.initSceneTuner === "function") ui.initSceneTuner();
   }
 
   function initScene() {
+    if (sceneInitialized) return;
     const scene = site.scene || {};
-    if (typeof scene.initHomeScene === "function") scene.initHomeScene();
+    if (typeof scene.initHomeScene === "function") {
+      scene.initHomeScene();
+      sceneInitialized = true;
+    }
   }
 
   function getSceneScriptUrl() {
@@ -69,24 +73,29 @@
   }
 
   async function loadAndInitScene() {
+    await site.ensureSceneReady();
+  }
+
+  site.ensureSceneReady = async function ensureSceneReady() {
     if (site.scene?.initHomeScene) {
       initScene();
-      return;
+      return true;
     }
-
     if (!hasWebGL()) {
       disableSceneHost();
-      return;
+      return false;
     }
 
     try {
       await loadScriptOnce(getSceneScriptUrl());
       initScene();
+      return true;
     } catch (error) {
       console.warn("Scene bundle failed to load.", error);
       disableSceneHost();
+      return false;
     }
-  }
+  };
 
   // Defer the heavier Three.js scene bundle past first paint so the hero LCP
   // and panel controls are interactive before WebGL setup starts.
