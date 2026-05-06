@@ -5,7 +5,7 @@
   "description": "Static source for alexnava.me. Built with esbuild into a generated dist/ payload for Cloudflare Pages.",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "node build.mjs",
@@ -22,6 +22,6 @@
     "esbuild": "^0.28.0",
     "prettier": "^3.3.3",
     "three": "^0.160.0",
-    "wrangler": "^4.86.0"
+    "wrangler": "^4.88.0"
   }
 }

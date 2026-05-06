@@ -4,10 +4,10 @@
 
 Candidates for future work, roughly ordered by value. Pick from here when starting a new task.
 
-| #   | Task                                          | Why it matters                                                                                                                   | Size     |
-| --- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                 | Thinking |
-| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor.         | Medium   |
+| #   | Task                                          | Why it matters                                                                                                           | Size     |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                         | Thinking |
+| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor. | Medium   |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
@@ -122,3 +122,11 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Added project-contract coverage so the self-only CSP, HSTS preload shape, missing CORS wildcard, and legacy redirect map cannot drift silently.
 - Recorded that Cloudflare Web Analytics/RUM injection is disabled by design instead of widening `script-src` for `static.cloudflareinsights.com`.
 - Clarified that custom-domain activation, `www` to apex redirects, production `*.pages.dev` handling, DNS/CAA, certificates, WAF, and response transforms remain Cloudflare-side settings to re-confirm before deploy or security mutations.
+
+### Security and deferred-scene performance pass
+
+**Completed.** Applied a focused repo-local polish pass:
+
+- Scoped Cloudflare deploy secrets to only the workflow steps that validate or deploy with Wrangler.
+- Split the browser payload into a lightweight UI boot bundle and a deferred Three.js scene bundle loaded after first paint.
+- Kept source docs aligned with the generated `scripts/app.HASH.js` plus `scripts/scene.HASH.js` output shape.

@@ -45,6 +45,13 @@
     collapseShadow: "rgba(8, 12, 20, 0.2)",
   };
 
+  scene.MARBLE_PALETTE = Object.freeze({
+    marbleBase: "#d8d2cc",
+    marbleVein: "#6f7886",
+    marbleHighlight: "#efeae3",
+    marbleShadow: "#9ea4ab",
+  });
+
   scene.GROUND_SURFACE_MATERIAL = {
     color: 7431518,
     roughness: 0.98,

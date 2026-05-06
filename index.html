@@ -37,9 +37,28 @@
     <link rel="canonical" href="https://alexnava.me/" />
     <link rel="stylesheet" href="/styles.css?v=648" />
     <link rel="preload" href="/scripts/app.js?v=648" as="script" />
-    <link rel="preload" href="/fonts/instrument-sans-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/instrument-sans-600.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/cormorant-garamond-500.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="prefetch" href="/scripts/scene.js?v=648" as="script" data-scene-script />
+    <link
+      rel="preload"
+      href="/fonts/instrument-sans-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/instrument-sans-600.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/cormorant-garamond-500.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
@@ -161,8 +180,8 @@
           <div class="panel-notebook__page panel-notebook__page--right">
             <p class="panel-body" data-scramble>
               I design and build interfaces, tools, and product systems that stay calm under
-              pressure. This site is intentionally spare; the work behind it is tactile,
-              technical, and product-shaped.
+              pressure. This site is intentionally spare; the work behind it is tactile, technical,
+              and product-shaped.
             </p>
             <p class="panel-footnote" data-scramble>
               Scene study rendered with
@@ -192,12 +211,7 @@
           </p>
           <span class="panel-letter__seal" aria-hidden="true"></span>
         </div>
-        <svg
-          class="panel-letter__quill"
-          viewBox="0 0 60 220"
-          aria-hidden="true"
-          focusable="false"
-        >
+        <svg class="panel-letter__quill" viewBox="0 0 60 220" aria-hidden="true" focusable="false">
           <path
             d="M30 10 C 48 40 52 90 46 150 C 44 170 38 185 30 200"
             fill="none"
@@ -224,13 +238,23 @@
             stroke-width="0.6"
             stroke-linecap="round"
           />
-          <path
-            d="M28 200 L 32 200 L 31 214 L 29 214 Z"
-            fill="#2a1f12"
-          />
+          <path d="M28 200 L 32 200 L 31 214 L 29 214 Z" fill="#2a1f12" />
         </svg>
       </div>
     </div>
+
+    <aside class="dev-mode-hud" id="dev-mode-hud" hidden aria-hidden="true">
+      <div class="dev-mode-hud__row"><span>pos</span><span data-field="pos">0, 0, 0</span></div>
+      <div class="dev-mode-hud__row"><span>vel</span><span data-field="vel">0, 0, 0</span></div>
+      <div class="dev-mode-hud__row"><span>speed</span><span data-field="speed">0</span></div>
+      <div class="dev-mode-hud__row"><span>yaw</span><span data-field="yaw">0&deg;</span></div>
+      <div class="dev-mode-hud__row"><span>mode</span><span data-field="mode">idle</span></div>
+      <div class="dev-mode-hud__row">
+        <span>grounded</span><span data-field="grounded">yes</span>
+      </div>
+      <div class="dev-mode-hud__row"><span>autoRun</span><span data-field="autoRun">off</span></div>
+      <div class="dev-mode-hud__row"><span>ground</span><span data-field="ground">0</span></div>
+    </aside>
 
     <script defer src="/scripts/app.js?v=648"></script>
   </body>

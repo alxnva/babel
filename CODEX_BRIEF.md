@@ -16,7 +16,7 @@ Read these before editing:
 - Project: `babel`
 - Live site: `alexnava.me`
 - Role: authoritative source for the live website
-- Type: static site with HTML, CSS, vanilla JS, and a bundled Three.js scene
+- Type: static site with HTML, CSS, vanilla JS, and a deferred bundled Three.js scene
 - Host: Cloudflare Pages project `alexnava-me` — confirm before deploy or DNS changes
 
 ## Stack
@@ -24,10 +24,10 @@ Read these before editing:
 - Source HTML/CSS lives at the repo root.
 - Readable JavaScript source lives in `src/`.
 - `dist/` is generated publish output and is gitignored.
-- Three.js r160 is imported from `three` and bundled/tree-shaken by esbuild.
+- Three.js r160 is imported from `three` and bundled/tree-shaken into a deferred scene script by esbuild.
 - Fonts are self-hosted woff2 subsets under `fonts/`.
 - Tests use Node's built-in `node:test`.
-- npm is used for scripts and dev tooling only.
+- npm on Node.js 22+ is used for scripts and dev tooling only.
 
 ## Common commands
 
@@ -51,7 +51,9 @@ npm run deploy:prod
 
 - `index.html` — homepage markup and panel structure
 - `styles.css` — visual system, responsive rules, and font declarations
-- `src/main.js` — ordered app entry source
+- `src/app.js` — lightweight UI entry
+- `src/main.js` — UI boot and deferred scene-loader source
+- `src/scene-entry.js` — deferred Three.js scene entry
 - `src/ui/` — UI behavior, hero motion, icons, and panel helpers
 - `src/scene/` — Three.js scene bootstrap, palette, textures, and runtime helpers
 - `build.mjs` — esbuild plus asset assembly into `dist/`

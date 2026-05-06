@@ -3,13 +3,13 @@
   const ui = (site.ui = site.ui || {});
 
   const FALLBACK_DEFAULTS = {
-    defaultVisible: true,
-    defaultZoom: 12,
+    defaultVisible: false,
+    defaultZoom: 18,
     maxZoom: 18,
     minZoom: -12,
     storageKeys: {
-      visible: "babel.sceneTuner.visible.v2",
-      zoom: "babel.sceneTuner.zoom.v2",
+      visible: "babel.sceneTuner.visible.v3",
+      zoom: "babel.sceneTuner.zoom.v3",
     },
   };
 
@@ -22,9 +22,15 @@
     if (typeof sceneApi.clampSceneTunerZoom === "function") {
       return sceneApi.clampSceneTunerZoom(value, fallback);
     }
+    if (value === null || value === undefined || value === "") {
+      return clampZoom(fallback, FALLBACK_DEFAULTS.defaultZoom);
+    }
     const numericValue = Number(value);
     const safeValue = Number.isFinite(numericValue) ? numericValue : fallback;
-    return Math.min(FALLBACK_DEFAULTS.maxZoom, Math.max(FALLBACK_DEFAULTS.minZoom, Math.round(safeValue)));
+    return Math.min(
+      FALLBACK_DEFAULTS.maxZoom,
+      Math.max(FALLBACK_DEFAULTS.minZoom, Math.round(safeValue)),
+    );
   }
 
   function readVisibility(value, fallback = true) {
@@ -52,7 +58,9 @@
 
   function resolveStorage(storage = window.localStorage) {
     try {
-      return storage && typeof storage.getItem === "function" && typeof storage.setItem === "function"
+      return storage &&
+        typeof storage.getItem === "function" &&
+        typeof storage.setItem === "function"
         ? storage
         : null;
     } catch (_err) {

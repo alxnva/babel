@@ -131,6 +131,7 @@
         circleSegments: 88,
         overlaySegments: 80,
         pointFieldCount: 210,
+        marbleCanvasSize: 1024,
       },
       shadows: {
         enabled: true,
@@ -164,6 +165,7 @@
         pulsePuffsPerCluster: 5,
         plumeColumns: 18,
         craterHaze: 7,
+        marbleVeinCount: 16,
       },
     },
     balanced: {
@@ -182,6 +184,7 @@
         circleSegments: 72,
         overlaySegments: 64,
         pointFieldCount: 160,
+        marbleCanvasSize: 512,
       },
       // Mobile and slow-CPU desktops land here. Shadows are a full extra
       // render pass of every shadow-casting object each frame — big win on
@@ -218,6 +221,7 @@
         pulsePuffsPerCluster: 4,
         plumeColumns: 12,
         craterHaze: 5,
+        marbleVeinCount: 12,
       },
     },
     low: {
@@ -236,6 +240,7 @@
         circleSegments: 56,
         overlaySegments: 48,
         pointFieldCount: 110,
+        marbleCanvasSize: 256,
       },
       shadows: {
         enabled: false,
@@ -269,6 +274,7 @@
         pulsePuffsPerCluster: 3,
         plumeColumns: 9,
         craterHaze: 4,
+        marbleVeinCount: 8,
       },
     },
   };
@@ -309,6 +315,9 @@
   }
 
   function clampSceneTunerZoom(value, fallback = SCENE_TUNER_DEFAULTS.defaultZoom) {
+    if (value === null || value === undefined || value === "") {
+      return clampSceneTunerZoom(fallback, SCENE_TUNER_DEFAULTS.defaultZoom);
+    }
     const numericValue = Number(value);
     const safeValue = Number.isFinite(numericValue) ? numericValue : fallback;
     return Math.min(
@@ -328,8 +337,14 @@
     const fovScale = isPortraitPhone ? 0.24 : 0.14;
     const lookAtScale = isPortraitPhone ? 0.07 : 0.04;
 
-    nextProfile.camera.fov = Math.min(56, Math.max(42, nextProfile.camera.fov + zoomValue * fovScale));
-    nextProfile.camera.lookAtBase = Math.max(0, nextProfile.camera.lookAtBase - zoomValue * lookAtScale);
+    nextProfile.camera.fov = Math.min(
+      56,
+      Math.max(42, nextProfile.camera.fov + zoomValue * fovScale),
+    );
+    nextProfile.camera.lookAtBase = Math.max(
+      0,
+      nextProfile.camera.lookAtBase - zoomValue * lookAtScale,
+    );
     nextProfile.camera.orbitBase += zoomValue * orbitScale;
     nextProfile.camera.orbitTrim = Math.max(0.04, nextProfile.camera.orbitTrim - zoomValue * 0.002);
     nextProfile.manualZoom = zoomValue;
@@ -443,7 +458,9 @@
     }
   }
 
-  function detectSaveData({ navigatorInfo = typeof navigator !== "undefined" ? navigator : {} } = {}) {
+  function detectSaveData({
+    navigatorInfo = typeof navigator !== "undefined" ? navigator : {},
+  } = {}) {
     const connection = navigatorInfo && navigatorInfo.connection;
     if (connection && connection.saveData === true) return true;
     if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
@@ -631,8 +648,10 @@
     const isTabletPortrait = isPortrait && safeWidth > 760 && safeWidth <= 1024;
 
     if (isPortraitPhone) return applySceneTunerZoom(cloneCompositionProfile("portraitPhone"), zoom);
-    if (isLandscapePhone) return applySceneTunerZoom(cloneCompositionProfile("landscapePhone"), zoom);
-    if (isTabletPortrait) return applySceneTunerZoom(cloneCompositionProfile("tabletPortrait"), zoom);
+    if (isLandscapePhone)
+      return applySceneTunerZoom(cloneCompositionProfile("landscapePhone"), zoom);
+    if (isTabletPortrait)
+      return applySceneTunerZoom(cloneCompositionProfile("tabletPortrait"), zoom);
     if (safeWidth < 1100) return applySceneTunerZoom(cloneCompositionProfile("compact"), zoom);
     return applySceneTunerZoom(cloneCompositionProfile("desktop"), zoom);
   }

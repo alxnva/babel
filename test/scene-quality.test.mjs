@@ -211,6 +211,8 @@ test("clampSceneTunerZoom rejects NaN and clamps to declared bounds", async () =
   assert.equal(scene.clampSceneTunerZoom(-999), minZoom);
   assert.equal(scene.clampSceneTunerZoom(3.6), 4, "values are rounded toward the nearest integer");
   assert.equal(scene.clampSceneTunerZoom("not a number"), defaultZoom);
+  assert.equal(scene.clampSceneTunerZoom(null), defaultZoom);
+  assert.equal(scene.clampSceneTunerZoom(""), defaultZoom);
   assert.equal(scene.clampSceneTunerZoom(Number.NaN), defaultZoom);
   assert.equal(scene.clampSceneTunerZoom(undefined, 0), 0, "falls back to the supplied default");
 });
@@ -224,7 +226,10 @@ test("applySceneTunerZoom widens portrait framing more aggressively than compact
   const compactMax = scene.applySceneTunerZoom(compactBase, 18);
   const portraitFloor = scene.applySceneTunerZoom(portraitBase, -12);
 
-  assert.ok(portraitMax.camera.orbitBase - portraitBase.camera.orbitBase > compactMax.camera.orbitBase - compactBase.camera.orbitBase);
+  assert.ok(
+    portraitMax.camera.orbitBase - portraitBase.camera.orbitBase >
+      compactMax.camera.orbitBase - compactBase.camera.orbitBase,
+  );
   assert.ok(portraitMax.camera.fov <= 56, "FOV is clamped at 56");
   assert.ok(portraitFloor.camera.fov >= 42, "FOV is clamped at 42");
   assert.ok(portraitMax.camera.lookAtBase >= 0);
@@ -241,7 +246,11 @@ test("quality governor drops to low under sustained stress and ignores invalid s
   for (let frame = 0; frame < 360; frame += 1) {
     governor.sample(40, frame * 40);
   }
-  assert.equal(governor.getTier(), "low", "sustained >20ms frames walk the governor down two tiers");
+  assert.equal(
+    governor.getTier(),
+    "low",
+    "sustained >20ms frames walk the governor down two tiers",
+  );
 
   assert.equal(governor.sample(-1, 0), null, "negative frame times are ignored");
   assert.equal(governor.sample(Number.NaN, 0), null, "NaN frame times are ignored");
@@ -270,7 +279,11 @@ test("governor warmup window skips early over-budget frames before arming the st
   // First 30 samples (10 downsample + 20 warmup) stay in the warmup window and
   // must not count toward the downgrade streak even though every frame is slow.
   for (let frame = 0; frame < 30; frame += 1) {
-    assert.equal(governor.sample(40, frame * 40), null, `warmup frame ${frame} should not trigger a tier change`);
+    assert.equal(
+      governor.sample(40, frame * 40),
+      null,
+      `warmup frame ${frame} should not trigger a tier change`,
+    );
   }
   assert.equal(governor.getTier(), "high", "tier stays pinned to initial during warmup");
 });
@@ -388,7 +401,10 @@ test("landscapePhone and tabletPortrait profiles carry touch-friendly count trim
   const landscape = scene.getSceneCompositionProfile({ width: 844, height: 390, zoom: 0 });
   const tablet = scene.getSceneCompositionProfile({ width: 810, height: 1080, zoom: 0 });
 
-  assert.ok(landscape.countScale < 1, "landscape phone trims counts for rotated phone fragment load");
+  assert.ok(
+    landscape.countScale < 1,
+    "landscape phone trims counts for rotated phone fragment load",
+  );
   assert.ok(tablet.countScale < 1, "tablet portrait trims counts for thermal headroom");
   assert.ok(tablet.countScale > landscape.countScale, "tablet keeps more detail than phone");
 });

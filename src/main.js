@@ -14,9 +14,82 @@
     if (typeof scene.initHomeScene === "function") scene.initHomeScene();
   }
 
-  // three.js is now bundled into app.js, so there's no separate vendor script
-  // to wait on. Still defer scene init past first paint so the hero LCP isn't
-  // competing with scene setup work on slow devices.
+  function getSceneScriptUrl() {
+    const link = document.querySelector("link[data-scene-script]");
+    return link?.href || "/scripts/scene.js";
+  }
+
+  // Mirrors src/scene/helpers.js#supportsWebGL so the pre-download gate and the
+  // post-load check agree. Defined separately because the helper only exists
+  // after scene.HASH.js loads, and we want to skip that download on browsers
+  // without WebGL.
+  function hasWebGL() {
+    try {
+      const probe = document.createElement("canvas");
+      return !(
+        !window.WebGLRenderingContext ||
+        (!probe.getContext("webgl") && !probe.getContext("experimental-webgl"))
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function disableSceneHost() {
+    const host = document.getElementById("home-scene");
+    if (host) host.hidden = true;
+  }
+
+  function loadScriptOnce(src) {
+    const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === "true") return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        existing.addEventListener("load", resolve, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.defer = true;
+      script.dataset.dynamicSrc = src;
+      script.addEventListener(
+        "load",
+        () => {
+          script.dataset.loaded = "true";
+          resolve();
+        },
+        { once: true },
+      );
+      script.addEventListener("error", reject, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadAndInitScene() {
+    if (site.scene?.initHomeScene) {
+      initScene();
+      return;
+    }
+
+    if (!hasWebGL()) {
+      disableSceneHost();
+      return;
+    }
+
+    try {
+      await loadScriptOnce(getSceneScriptUrl());
+      initScene();
+    } catch (error) {
+      console.warn("Scene bundle failed to load.", error);
+      disableSceneHost();
+    }
+  }
+
+  // Defer the heavier Three.js scene bundle past first paint so the hero LCP
+  // and panel controls are interactive before WebGL setup starts.
   function afterFirstPaint(cb) {
     if (typeof window.requestIdleCallback === "function") {
       window.requestIdleCallback(cb, { timeout: 500 });
@@ -27,7 +100,7 @@
 
   function boot() {
     initUi();
-    afterFirstPaint(initScene);
+    afterFirstPaint(loadAndInitScene);
   }
 
   if (document.readyState === "loading") {

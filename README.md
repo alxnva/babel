@@ -5,13 +5,15 @@ Source for [alexnava.me](https://alexnava.me/), a static portfolio site built wi
 ## Stack
 
 - Plain HTML, CSS, and vanilla JavaScript
-- Three.js r160 imported from `three`, bundled into `dist/scripts/`, and tree-shaken by esbuild
+- Three.js r160 imported from `three`, bundled into a deferred `dist/scripts/scene.HASH.js`, and tree-shaken by esbuild
 - Instrument Sans + Cormorant Garamond woff2 subsets, self-hosted under `fonts/`
 - Minimal esbuild step: edit readable source in `src/`, generate deploy output into `dist/`
 - Lightweight `node:test` coverage for scene/runtime/UI verification under `test/`
 - Cloudflare Pages Direct Upload for production hosting
 
 ## Local development
+
+Use Node.js 22 or newer.
 
 ```powershell
 npm install
@@ -34,7 +36,7 @@ npm run watch       # watch src/ and rebuild dist/scripts
 npm run format      # prettier-format src/, *.html, *.css, *.md
 ```
 
-Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `css/styles.HASH.css`); Three.js is bundled into the app script, so rerun `npm run build:dist` after changes — the hash moves automatically and cached HTML revalidates against the new path.
+Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `scripts/scene.HASH.js`, `css/styles.HASH.css`); the UI boot script and deferred Three.js scene script are separate bundles, so rerun `npm run build:dist` after changes — the hash moves automatically and cached HTML revalidates against the new path.
 
 CI and production deploys follow the same gate order: `npm run verify`, `npm test`, then `npm run build:dist`.
 
@@ -52,7 +54,7 @@ Hostname routing and zone controls live in Cloudflare, not in this repo: keep `a
 | ------------------------- | -------------------------------------------------------- |
 | `index.html`              | Homepage markup and panel structure                      |
 | `styles.css`              | Site-wide styles, `@font-face`, tokens, responsive rules |
-| `src/`                    | Authoritative JavaScript source                          |
+| `src/`                    | Authoritative JavaScript source for UI and scene bundles |
 | `dist/`                   | Generated publish directory for Cloudflare Pages         |
 | `fonts/*.woff2`           | Self-hosted font subsets                                 |
 | `404.html`                | Not-found page                                           |

@@ -209,6 +209,22 @@ test("scene tuner store persists zoom and visibility state", async () => {
   assert.equal(restored.getState().zoom, scene.getSceneTunerDefaults().maxZoom);
 });
 
+test("scene tuner fallback defaults match deferred scene defaults", async () => {
+  const storage = createStorageMock();
+  const context = createSceneContext({ localStorage: storage });
+  const ui = await loadUiScript(sceneTunerSourcePath, context);
+
+  const store = ui.createSceneTunerStore({ storage });
+  const state = store.getState();
+  assert.equal(state.visible, false);
+  assert.equal(state.zoom, 18);
+  store.setVisible(true);
+  store.setZoom(-999);
+
+  assert.equal(storage.getItem("babel.sceneTuner.visible.v3"), "1");
+  assert.equal(storage.getItem("babel.sceneTuner.zoom.v3"), "-12");
+});
+
 test("visibility classification prefers front-facing systems and culls backside decor", async () => {
   const context = createSceneContext();
   const scene = await loadSceneScript(visibilitySourcePath, context);

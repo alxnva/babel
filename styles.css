@@ -800,7 +800,10 @@ main:focus {
     ),
     radial-gradient(circle at 22% 18%, rgba(246, 238, 222, 0.18) 0%, rgba(246, 238, 222, 0) 60%),
     linear-gradient(180deg, #d3cab8 0%, #bfb6a3 100%);
-  background-position: 0 1.1em, 0 0, 0 0;
+  background-position:
+    0 1.1em,
+    0 0,
+    0 0;
   color: #35302a;
   font-family: var(--font-body);
   min-height: inherit;
@@ -923,7 +926,10 @@ main:focus {
     ),
     radial-gradient(circle at 28% 22%, rgba(246, 238, 222, 0.2) 0%, rgba(246, 238, 222, 0) 58%),
     linear-gradient(180deg, #d8cfbd 0%, #beb5a2 100%);
-  background-position: 0 1.2em, 0 0, 0 0;
+  background-position:
+    0 1.2em,
+    0 0,
+    0 0;
   color: #35302a;
   font-family: var(--font-body);
   border-radius: 4px;
@@ -942,7 +948,8 @@ main:focus {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
+  background:
+    linear-gradient(
       180deg,
       rgba(246, 238, 222, 0) 0%,
       rgba(246, 238, 222, 0.16) 50%,
@@ -1327,6 +1334,58 @@ main:focus {
     width: 84px;
     height: 84px;
   }
+}
+
+/* When developer-mode is active, hide the showcase UI so only the scene and
+   the HUD are visible. The body class is toggled by src/scene/dev-mode.js on
+   enter/exit. !important guards against open-panel styles whose specificity
+   would otherwise win. */
+body.dev-mode-active > *:not(.scene-shell):not(.dev-mode-hud) {
+  display: none !important;
+}
+
+/* Developer-mode HUD. Hidden by default; toggled via the `hidden` attribute
+   from src/scene/dev-mode.js when the user enters dev mode. Styled to fit
+   STYLE.md (calm, restrained — not loud debug colors). */
+.dev-mode-hud {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 50;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: rgba(6, 9, 20, 0.78);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-meta);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.dev-mode-hud[hidden] {
+  display: none;
+}
+
+.dev-mode-hud__row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+}
+
+.dev-mode-hud__row > span:first-child {
+  color: var(--text-muted-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  align-self: center;
 }
 
 /* Windows High Contrast / forced-colors: strip atmospheric layers and
