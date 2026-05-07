@@ -2,6 +2,20 @@
 Thumbs.db
 Desktop.ini
 
+# OS metadata (cross-platform)
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Logs
+*.log
+npm-debug.log*
+
 # Workspace/editor state
 .vscode/
 .vs/
