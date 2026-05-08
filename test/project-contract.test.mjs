@@ -117,3 +117,20 @@ test("Cloudflare workflow secrets stay scoped to deploy-only steps", async () =>
     /- name: Deploy preview to Cloudflare Pages[\s\S]*?env:[\s\S]*?CLOUDFLARE_API_TOKEN:/,
   );
 });
+
+test("GitHub Actions workflows pin third-party actions to full SHAs", async () => {
+  const workflows = [
+    await readProjectFile(".github/workflows/ci.yml"),
+    await readProjectFile(".github/workflows/deploy.yml"),
+    await readProjectFile(".github/workflows/preview.yml"),
+  ];
+  const usesLines = workflows.flatMap((workflow) =>
+    workflow.match(/^\s*uses:\s*actions\/[^\s]+$/gm) || [],
+  );
+
+  assert.ok(usesLines.length > 0, "expected at least one GitHub Action use");
+  for (const line of usesLines) {
+    assert.match(line, /@[a-f0-9]{40}$/, `${line.trim()} must use a full commit SHA`);
+    assert.doesNotMatch(line, /@(v\d+|main|master)$/, `${line.trim()} must not use a moving tag`);
+  }
+});
