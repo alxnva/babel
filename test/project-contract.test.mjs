@@ -64,6 +64,11 @@ test("Cloudflare Pages headers preserve the static security contract", async () 
   assert.match(headers, /X-Frame-Options:\s*DENY/);
   assert.match(headers, /Cross-Origin-Opener-Policy:\s*same-origin/);
   assert.match(headers, /Cross-Origin-Resource-Policy:\s*same-origin/);
+  assert.match(headers, /https:\/\/:project\.pages\.dev\/\*\r?\n\s*X-Robots-Tag:\s*noindex/);
+  assert.match(
+    headers,
+    /https:\/\/:version\.:project\.pages\.dev\/\*\r?\n\s*X-Robots-Tag:\s*noindex/,
+  );
   assert.match(
     headers,
     /Permissions-Policy:\s*camera=\(\), microphone=\(\), geolocation=\(\), payment=\(\), usb=\(\)/,
@@ -117,6 +122,21 @@ test("Cloudflare workflow secrets stay scoped to deploy-only steps", async () =>
     preview,
     /- name: Deploy preview to Cloudflare Pages[\s\S]*?env:[\s\S]*?CLOUDFLARE_API_TOKEN:/,
   );
+});
+
+test("production deploy commands explicitly publish the main branch", async () => {
+  const packageJson = JSON.parse(await readProjectFile("package.json"));
+  const deploy = await readProjectFile(".github/workflows/deploy.yml");
+
+  assert.match(
+    packageJson.scripts["deploy:prod"],
+    /wrangler pages deploy dist --project-name=alexnava-me --branch=main/,
+  );
+  assert.match(
+    deploy,
+    /npx wrangler pages deploy dist --project-name=alexnava-me --branch=main/,
+  );
+  assert.match(deploy, /if:\s*github\.ref == 'refs\/heads\/main'/);
 });
 
 test("GitHub Actions workflows pin third-party actions to full SHAs", async () => {

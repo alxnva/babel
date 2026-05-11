@@ -15,7 +15,7 @@
     "test": "node --test",
     "watch": "node build.mjs --watch",
     "deploy:preview": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me --branch=preview",
-    "deploy:prod": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me",
+    "deploy:prod": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me --branch=main",
     "format": "prettier --write \"src/**/*.js\" \"*.html\" \"*.css\" \"*.md\""
   },
   "devDependencies": {
