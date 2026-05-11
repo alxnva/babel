@@ -9,6 +9,9 @@ Candidates for future work, roughly ordered by value. Pick from here when starti
 | 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                         | Thinking |
 | 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor. | Medium   |
 | 3   | Address scene-interactions audit findings     | See `ART/scene-interactions.md`.                                                                                         | Medium   |
+| 4   | Rename auto-generated identifiers in `src/scene/index.js` | The file currently reads as post-transform output (`arg22`, `num405`, `tmpV68`, `!0`/`!1`, comma-sequenced statements). Mechanical rename in waves; blocks deeper review of the scene module. | Large |
+| 5   | Collapse `cloneProfile`/`cloneCompositionProfile` + remove parallel fallback in `scene/index.js` | `quality.js` exports the canonical profile shape; the ~110-line inline fallback literal in `index.js` (lines ~88-201) is unreachable (quality.js is imported first by `scene-entry.js`). Field-by-field clone makes every new flag a 3-place edit. | Medium |
+| 6   | Refactor cloud visibility state in scene      | `cloudsEnabled` and `group.userData.sceneVisible` form redundant state with two helpers (`applyCloudVisibility` + `setCloudGroupSceneVisibility`) that overlap. Unify into one path; remove leftover comma-expression in `toggleClouds`. | Small |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
@@ -104,6 +107,8 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 - `src/art/panel-objects.js` — the original Three.js scene, IIFE-style; re-enable by adding `import "../art/panel-objects.js";` to `src/scene-entry.js`, then call `site.scene.initPanelObjectArt()` and `site.scene.revealPanelObject(panelId)`.
 - `src/art/panel-canvas-assets.js` — the two PSX-dither canvas paintings, exposed at `site.art.drawNotebookPanelAsset` / `site.art.drawLetterPanelAsset`. Helpers (fillPoly, applyPsxDither, etc.) are duplicated from `src/ui/icons.js` so the file is self-contained.
+
+> Both files were deleted in the Tier A simplify pass (no imports, no callers). Recover from git history if needed.
 
 ### Postprocessing pipeline
 

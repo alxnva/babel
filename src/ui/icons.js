@@ -90,19 +90,6 @@
     ctx.putImageData(image, px, py);
   }
 
-  function strokePolyline(ctx, color, width, points) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(Math.round(points[0][0]), Math.round(points[0][1]));
-    for (let idx = 1; idx < points.length; idx += 1) {
-      ctx.lineTo(Math.round(points[idx][0]), Math.round(points[idx][1]));
-    }
-    ctx.stroke();
-  }
-
   // Low-poly closed book viewed from a slight 3/4 angle above.
   // Four visible faces: top cover (largest), right page-edge, front
   // page-edge, and a title band — flat-shaded, pixel-snapped, PS-era.
@@ -365,14 +352,12 @@
       }
 
       const bitmap = getCachedBitmap(width, height, pixelWidth, pixelHeight, dpr, active);
+      if (!bitmap) {
+        return;
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, pixelWidth, pixelHeight);
-      if (bitmap) {
-        ctx.drawImage(bitmap, 0, 0);
-      } else {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        drawFn(ctx, width, height, active);
-      }
+      ctx.drawImage(bitmap, 0, 0);
 
       lastDrawSignature = drawSignature;
     }
@@ -397,6 +382,16 @@
     }
 
     return render;
+  }
+
+  function roundedRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
   }
 
   const HOLY_FIRE_PROC_CHANCE = 0.35;

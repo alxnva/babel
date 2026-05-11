@@ -72,10 +72,6 @@
     });
   }
 
-  async function loadAndInitScene() {
-    await site.ensureSceneReady();
-  }
-
   site.ensureSceneReady = async function ensureSceneReady() {
     if (site.scene?.initHomeScene) {
       initScene();
@@ -109,7 +105,7 @@
 
   function boot() {
     initUi();
-    afterFirstPaint(loadAndInitScene);
+    afterFirstPaint(() => site.ensureSceneReady());
   }
 
   if (document.readyState === "loading") {
