@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -58,6 +58,7 @@ test("Cloudflare Pages headers preserve the static security contract", async () 
   const indexHtml = await readProjectFile("index.html");
 
   assert.match(headers, /^\/\*\r?\n/m);
+  assert.match(headers, /!\s*Access-Control-Allow-Origin/);
   assert.match(headers, /X-Content-Type-Options:\s*nosniff/);
   assert.match(headers, /Referrer-Policy:\s*strict-origin-when-cross-origin/);
   assert.match(headers, /X-Frame-Options:\s*DENY/);
@@ -119,13 +120,17 @@ test("Cloudflare workflow secrets stay scoped to deploy-only steps", async () =>
 });
 
 test("GitHub Actions workflows pin third-party actions to full SHAs", async () => {
-  const workflows = [
-    await readProjectFile(".github/workflows/ci.yml"),
-    await readProjectFile(".github/workflows/deploy.yml"),
-    await readProjectFile(".github/workflows/preview.yml"),
-  ];
+  const workflowDir = path.join(projectRoot, ".github", "workflows");
+  const workflowFiles = (await readdir(workflowDir))
+    .filter((file) => file.endsWith(".yml") || file.endsWith(".yaml"))
+    .sort();
+  assert.ok(workflowFiles.includes("lighthouse.yml"), "Lighthouse workflow must be covered");
+
+  const workflows = await Promise.all(
+    workflowFiles.map((file) => readProjectFile(path.join(".github", "workflows", file))),
+  );
   const usesLines = workflows.flatMap((workflow) =>
-    workflow.match(/^\s*uses:\s*actions\/[^\s]+$/gm) || [],
+    (workflow.match(/^\s*uses:\s*[^\s]+$/gm) || []).filter((line) => !line.includes("./")),
   );
 
   assert.ok(usesLines.length > 0, "expected at least one GitHub Action use");
