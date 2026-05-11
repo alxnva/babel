@@ -58,6 +58,7 @@ test("Cloudflare Pages headers preserve the static security contract", async () 
   const indexHtml = await readProjectFile("index.html");
 
   assert.match(headers, /^\/\*\r?\n/m);
+  assert.match(headers, /!\s*Access-Control-Allow-Origin/);
   assert.match(headers, /X-Content-Type-Options:\s*nosniff/);
   assert.match(headers, /Referrer-Policy:\s*strict-origin-when-cross-origin/);
   assert.match(headers, /X-Frame-Options:\s*DENY/);
