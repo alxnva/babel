@@ -9,6 +9,9 @@ Candidates for future work, roughly ordered by value. Pick from here when starti
 | 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                         | Thinking |
 | 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor. | Medium   |
 | 3   | Address scene-interactions audit findings     | See `ART/scene-interactions.md`.                                                                                         | Medium   |
+| 4   | Gate brazier / decorative arrays through visibility tracker | `arr23` (flames) and friends in `scene/index.js` update every frame even when camera-facing away. `plumeSystem` already shows the pattern via `registerDecorativeSystem`. Per-frame: 6+ `Math.sin`, inner ember loop, `setHSL` per light. | Small |
+| 5   | Skip orbital-glow color buffer re-upload when `glowAmount` stable | `scene/index.js` rewrites the full color attribute and flags `needsUpdate` every frame, even during the long hold phase. Add a change-detection guard. | Small |
+| 6   | Dispose `CubeCamera` + `WebGLCubeRenderTarget` after the one-shot env-map bake | Lives on `homeScene` for the page lifetime; only the captured `.texture` handle is needed by the consuming materials. Verify capture timing before disposing. | Small |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
