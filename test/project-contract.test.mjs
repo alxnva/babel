@@ -119,6 +119,20 @@ test("Cloudflare workflow secrets stay scoped to deploy-only steps", async () =>
   );
 });
 
+test("production deploy commands explicitly publish the main branch", async () => {
+  const packageJson = JSON.parse(await readProjectFile("package.json"));
+  const deploy = await readProjectFile(".github/workflows/deploy.yml");
+
+  assert.match(
+    packageJson.scripts["deploy:prod"],
+    /wrangler pages deploy dist --project-name=alexnava-me --branch=main/,
+  );
+  assert.match(
+    deploy,
+    /npx wrangler pages deploy dist --project-name=alexnava-me --branch=main/,
+  );
+});
+
 test("GitHub Actions workflows pin third-party actions to full SHAs", async () => {
   const workflowDir = path.join(projectRoot, ".github", "workflows");
   const workflowFiles = (await readdir(workflowDir))
