@@ -1,6 +1,7 @@
 (() => {
   const site = (window.BabelSite = window.BabelSite || {});
   const ui = (site.ui = site.ui || {});
+  const { hexToRgb } = site.shared;
 
   // Fills a closed polygon defined by an array of [x, y] points. Coordinates
   // are pixel-snapped so edges stay crisp — part of the PS1/PS2 low-poly look
@@ -17,15 +18,6 @@
   }
 
   const DITHER_4X4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-
-  function hexToRgb(hex) {
-    const value = hex.replace("#", "");
-    return {
-      r: Number.parseInt(value.slice(0, 2), 16),
-      g: Number.parseInt(value.slice(2, 4), 16),
-      b: Number.parseInt(value.slice(4, 6), 16),
-    };
-  }
 
   function nearestPaletteColor(r, g, b, palette) {
     let best = palette[0];
@@ -403,12 +395,7 @@
   const HOLY_FIRE_DURATION_MS = 1300;
   const HOLY_FIRE_OVERLAY_PAD = 44;
 
-  function prefersReducedMotion() {
-    return (
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    );
-  }
+  const { prefersReducedMotion } = site.shared;
 
   function spawnHolyFireProc(button) {
     if (button.dataset.holyFireActive === "1") {

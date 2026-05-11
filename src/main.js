@@ -23,21 +23,10 @@
     return link?.href || "/scripts/scene.js";
   }
 
-  // Mirrors src/scene/helpers.js#supportsWebGL so the pre-download gate and the
-  // post-load check agree. Defined separately because the helper only exists
-  // after scene.HASH.js loads, and we want to skip that download on browsers
-  // without WebGL.
-  function hasWebGL() {
-    try {
-      const probe = document.createElement("canvas");
-      return !(
-        !window.WebGLRenderingContext ||
-        (!probe.getContext("webgl") && !probe.getContext("experimental-webgl"))
-      );
-    } catch {
-      return false;
-    }
-  }
+  // src/shared/webgl-probe.js is bundled into both the UI and scene entries so
+  // the pre-download gate here and the in-scene check (`scene.supportsWebGL`)
+  // share one implementation. Skipping the scene-bundle download on no-WebGL
+  // browsers is the reason this check happens in the UI bundle.
 
   function disableSceneHost() {
     const host = document.getElementById("home-scene");
@@ -81,7 +70,7 @@
       initScene();
       return true;
     }
-    if (!hasWebGL()) {
+    if (!site.shared.supportsWebGL()) {
       disableSceneHost();
       return false;
     }

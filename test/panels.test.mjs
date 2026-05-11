@@ -8,6 +8,7 @@ import vm from "node:vm";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const panelsSourcePath = path.join(projectRoot, "src", "ui", "panels.js");
+const motionSourcePath = path.join(projectRoot, "src", "shared", "motion.js");
 const stylesPath = path.join(projectRoot, "styles.css");
 
 class FakeClassList {
@@ -402,8 +403,11 @@ function createSiteDom({ reduceMotion = true } = {}) {
 }
 
 async function loadPanels(window, document) {
+  const context = { window, document, console };
+  const motionSource = await readFile(motionSourcePath, "utf8");
+  vm.runInNewContext(motionSource, context, { filename: motionSourcePath });
   const source = await readFile(panelsSourcePath, "utf8");
-  vm.runInNewContext(source, { window, document, console }, { filename: panelsSourcePath });
+  vm.runInNewContext(source, context, { filename: panelsSourcePath });
   window.BabelSite.ui.initPanels();
 }
 
