@@ -64,9 +64,7 @@
   }
 
   function scramblePanel(panel) {
-    const reduce =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = site.shared.prefersReducedMotion();
     const targets = collectScrambleTargets(panel);
     if (!targets.length) return;
 
@@ -120,7 +118,7 @@
     const panels = Array.from(document.querySelectorAll(".panel-overlay"));
     if (!buttons.length || !panels.length) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const reduceMotion = site.shared.reducedMotionQuery();
     const backgroundNodes = BACKGROUND_SELECTORS.map((selector) =>
       document.querySelector(selector),
     ).filter(Boolean);
@@ -171,7 +169,7 @@
         }
       };
 
-      if (reduceMotion.matches) {
+      if (reduceMotion?.matches) {
         finishHide();
         return;
       }

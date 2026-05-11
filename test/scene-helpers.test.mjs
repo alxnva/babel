@@ -8,6 +8,7 @@ import vm from "node:vm";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const helpersPath = path.join(projectRoot, "src", "scene", "helpers.js");
+const webglProbePath = path.join(projectRoot, "src", "shared", "webgl-probe.js");
 
 async function loadHelpers({ webgl = "ok" } = {}) {
   const window = { BabelSite: {} };
@@ -30,8 +31,11 @@ async function loadHelpers({ webgl = "ok" } = {}) {
       };
     },
   };
-  const source = await readFile(helpersPath, "utf8");
-  vm.runInNewContext(source, { window, document, console }, { filename: helpersPath });
+  const context = { window, document, console };
+  const probeSource = await readFile(webglProbePath, "utf8");
+  vm.runInNewContext(probeSource, context, { filename: webglProbePath });
+  const helpersSource = await readFile(helpersPath, "utf8");
+  vm.runInNewContext(helpersSource, context, { filename: helpersPath });
   return window.BabelSite.scene;
 }
 

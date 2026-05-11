@@ -7,6 +7,7 @@
     MARBLE_PALETTE: marblePalette,
     TOWER_TEXTURE_PALETTE: towerPalette,
   } = scene;
+  const { hexToRgba } = site.shared;
 
   function hashNoise(xx, yy, zz = 0) {
     const val = 43758.5453123 * Math.sin(12.9898 * xx + 78.233 * yy + 37.719 * zz);
@@ -40,14 +41,6 @@
       },
       tier: lowPower ? "low" : "high",
     };
-  }
-
-  function hexToRgba(hex, alpha) {
-    const clean = String(hex || "#000000").replace("#", "");
-    const rr = parseInt(clean.slice(0, 2), 16) || 0;
-    const gg = parseInt(clean.slice(2, 4), 16) || 0;
-    const bb = parseInt(clean.slice(4, 6), 16) || 0;
-    return `rgba(${rr}, ${gg}, ${bb}, ${alpha})`;
   }
 
   function setSrgbTextureCompat(THREE, texture) {

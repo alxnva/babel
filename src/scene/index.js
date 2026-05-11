@@ -353,7 +353,12 @@ function setSrgbTexture(texture) {
       container.appendChild(renderer.domElement));
     // Postprocessing stays global and restrained; OutlinePass remains the
     // developer-mode interaction feedback layer appended after the art passes.
-    const postprocessPipeline = createPostprocessPipeline(renderer, homeScene, camera, state.profile);
+    const postprocessPipeline = createPostprocessPipeline(
+      renderer,
+      homeScene,
+      camera,
+      state.profile,
+    );
     const composer = postprocessPipeline.composer;
     const outlinePass = new OutlinePass(
       new Vector2(window.innerWidth, window.innerHeight),
@@ -844,7 +849,7 @@ function setSrgbTexture(texture) {
           result103 = Math.sqrt(
             result100 * result100 + result101 * result101 + result102 * result102,
           ),
-          result104 = Math.max(0, Math.min(1, (result103 - 8) / (num504 + 1)));
+          result104 = clamp01((result103 - 8) / (num504 + 1));
         (arr12.push(result104), arr11.push(1, 0.98 - 0.65 * result104, 0.75 - 0.7 * result104));
       }
       tubeGeometry.setAttribute("color", new Float32BufferAttribute(arr11, 3));
@@ -2502,7 +2507,7 @@ function setSrgbTexture(texture) {
         const num102 = result25 - 34 * (result31 + result32);
         if ((position4.setY(num258, num102), tmpV51)) {
           const result6 = tmpV51.getY(num258),
-            result7 = Math.min(1, Math.max(0, (num102 + 17) / 34)),
+            result7 = clamp01((num102 + 17) / 34),
             result8 = Math.min(1, result28 * result29 * tmpV50);
           tmpV51.setY(num258, result6 + (result7 - result6) * result8);
         }
@@ -2544,7 +2549,7 @@ function setSrgbTexture(texture) {
             num105 = 0.45 * Math.max(0, qeResult13 - 0.55),
             qeResult14 = tmpV65(2.03 * num259 + 211.1),
             qeResult15 = tmpV65(2.87 * num259 + 307.4),
-            result38 = Math.min(1, Math.max(0, (num103 - 0.9) / 0.1)),
+            result38 = clamp01((num103 - 0.9) / 0.1),
             num106 = (0.11 + 0.3 * qeResult14) * result38,
             num107 = result37 * (0.13 + 0.28 * qeResult15) * result38,
             num108 = num104 * (0.11 + 0.22 * qeResult14) * result38,
@@ -3976,7 +3981,7 @@ function setSrgbTexture(texture) {
     function tmpV88(arg124) {
       const num477 = mesh39.position.y - 17,
         num478 = mesh39.position.y + 17;
-      return 12.2 + (8.8 - 12.2) * Math.min(1, Math.max(0, (arg124 - num477) / (num478 - num477)));
+      return 12.2 + (8.8 - 12.2) * clamp01((arg124 - num477) / (num478 - num477));
     }
     for (let num479 = 0; num479 < overlaySegments; num479 += 1) {
       const qeResult87 = tmpV65(1.73 * num479 + 4.7),
@@ -4505,7 +4510,7 @@ function setSrgbTexture(texture) {
       minOpacity = 0.14,
     ) {
       const result91 = cloudCameraVector.copy(arg126).distanceTo(camera.position),
-        result92 = Math.min(1, Math.max(0, (result91 - arg127) / arg128));
+        result92 = clamp01((result91 - arg127) / arg128);
       cloudViewVector.copy(cloudLookTarget).sub(camera.position);
       const result93 = cloudViewVector.length();
       if (!(result93 > 1e-3)) return result92;
@@ -4514,7 +4519,7 @@ function setSrgbTexture(texture) {
       const result94 = cloudOffsetVector.dot(cloudViewVector);
       if (result94 <= 0 || result94 >= result93 * arg131) return result92;
       const result95 = cloudOffsetVector.addScaledVector(cloudViewVector, -result94).length(),
-        result96 = Math.min(1, Math.max(0, (result95 - arg129) / arg130));
+        result96 = clamp01((result95 - arg129) / arg130);
       return Math.max(minOpacity, Math.min(result92, result96));
     }
     function updateDecorativeVisibility() {
@@ -4587,13 +4592,7 @@ function setSrgbTexture(texture) {
     // decorative; rendering every other frame keeps visuals smooth enough while
     // roughly halving GPU + main-thread frame work, which is the single
     // biggest lever on battery + sustained perf for mobile browsers.
-    const halveMobileFrames = (() => {
-      try {
-        return window.matchMedia?.("(pointer: coarse)")?.matches === true;
-      } catch (_err) {
-        return false;
-      }
-    })();
+    const halveMobileFrames = scene.detectTouchPrimary();
     let frameTick = 0;
     let sceneReadyMarked = false;
     !(function tmpV54() {
@@ -5051,7 +5050,7 @@ function setSrgbTexture(texture) {
           const colorArray = orbitalRecord.geo.attributes.color.array;
           for (let colorIndex = 0; colorIndex < orbitalRecord.heightFracs.length; colorIndex += 1) {
             const heightFrac = orbitalRecord.heightFracs[colorIndex];
-            let colorFade = Math.max(0, Math.min(1, (glowAmount - heightFrac) / 0.15 + 0.5));
+            let colorFade = clamp01((glowAmount - heightFrac) / 0.15 + 0.5);
             colorFade = colorFade * colorFade * (3 - 2 * colorFade);
             ((colorArray[3 * colorIndex + 0] =
               orbitalRecord.baseColors[3 * colorIndex + 0] * colorFade),
