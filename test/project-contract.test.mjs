@@ -136,6 +136,7 @@ test("production deploy commands explicitly publish the main branch", async () =
     deploy,
     /npx wrangler pages deploy dist --project-name=alexnava-me --branch=main/,
   );
+  assert.match(deploy, /if:\s*github\.ref == 'refs\/heads\/main'/);
 });
 
 test("GitHub Actions workflows pin third-party actions to full SHAs", async () => {
