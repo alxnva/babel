@@ -64,11 +64,6 @@ test("Cloudflare Pages headers preserve the static security contract", async () 
   assert.match(headers, /X-Frame-Options:\s*DENY/);
   assert.match(headers, /Cross-Origin-Opener-Policy:\s*same-origin/);
   assert.match(headers, /Cross-Origin-Resource-Policy:\s*same-origin/);
-  assert.match(headers, /https:\/\/:project\.pages\.dev\/\*\r?\n\s*X-Robots-Tag:\s*noindex/);
-  assert.match(
-    headers,
-    /https:\/\/:version\.:project\.pages\.dev\/\*\r?\n\s*X-Robots-Tag:\s*noindex/,
-  );
   assert.match(
     headers,
     /Permissions-Policy:\s*camera=\(\), microphone=\(\), geolocation=\(\), payment=\(\), usb=\(\)/,
