@@ -1,6 +1,6 @@
 # Clouds Redesign Brief
 
-**Date:** 2026-05-13
+**Date:** 2026-05-13 (amended 2026-05-13 — color pivot from sunset cream → overcast gray + translucency + PS2 stylization)
 **Status:** Approved by Alex (visual brainstorm 2026-05-13). Ready for implementation plan.
 **Scope:** Replace the existing five-system cloud setup in `src/scene/index.js` with a single coherent cloud system. Visual + behavioral redesign; the underlying scene composition (tower at origin, camera orbit, fog) is preserved.
 
@@ -30,7 +30,9 @@ The scene currently runs five concurrent cloud systems — `midClouds`, `driftCl
 ### 4.1 Cloud bodies
 
 - Soft, puffy, alpha-blended.
-- **Color**: warm cream base with an amber/peach edge lift on the top-facing surfaces — late-afternoon light catching the cloud tops. Bottoms sit in soft cooler twilight cream. Ties to STYLE.md's "amber, brass, soft peach" accent range and "twilight stone" backgrounds.
+- **Color**: cool gray rain-cloud palette. Deep slate base, mid blue-gray body, palest gray catching the top edges. No warm cream or peach — the clouds read as overcast / rain weather, not sunset. Ties to STYLE.md's "soot" and "twilight stone" backgrounds; amber/brass accents stay on the page UI, not the sky.
+- **Translucency**: each cloud renders at ~0.7–0.8 overall opacity so the sky bleeds through. Reinforces the rain mood and prevents the clouds reading as opaque blocks.
+- **Visual register**: cel-shaded stepped value bands within each cluster — 3–4 discrete tiers (shadow base → mid slate → lit gray → palest top edge) with soft transitions, not smooth gradients. PS2-era stylized, halfway between photoreal volumetric and PS1 facets.
 - Each cloud has **real depth** (built from a cluster of soft semi-transparent primitives, not a flat sprite). This is what allows the camera to pass through them rather than past them.
 - Edges feather softly into the sky.
 
@@ -38,15 +40,16 @@ The scene currently runs five concurrent cloud systems — `midClouds`, `driftCl
 
 - A separate, low, wide, soft-edged atmospheric band sitting near the implied horizon line.
 - Single continuous strip, 360° around the tower at far radius (past the scatter zone, fading into the fog).
-- Slightly cooler twilight cream — warmer than the sky behind it, cooler than the cloud tops above it.
+- Cool muted slate — warmer than the sky behind it, slightly lighter than the cloud bases above it. Stays gray-family with the new rain palette; no warm cream.
 - Fades with `setClouds(false)` alongside the clouds (treated as one atmospheric system, one API toggle).
 
 ### 4.3 Palette tie-in
 
-- Cloud cream: warm off-white in the same family as the site's parchment text color (avoid pure white).
-- Cloud top-edge amber: in the brass/peach range used elsewhere on the site.
-- Horizon haze: cooler twilight cream, sits between cloud cream and sky background.
-- All values must read calmly against the deep-navy/soot/twilight-stone sky gradient already in the scene.
+- Cloud base slate: deep cool gray, in the soot / twilight-stone family already used in the scene's sky gradient.
+- Cloud mid: mid blue-gray, slightly desaturated so it reads as overcast rather than stylized.
+- Cloud top edge: palest gray (not pure white), catching what little light reaches the cloud tops on an overcast day.
+- Horizon haze: muted slate, between cloud bases and sky background.
+- All values must read calmly against the deep-navy / soot / twilight-stone sky gradient already in the scene. Warm accents (amber, brass, peach) stay reserved for the page UI text and accents — they do NOT appear in the cloud rendering.
 
 ## 5. Spatial layout
 
@@ -77,8 +80,9 @@ Three options considered for the "real depth" requirement:
 **Sphere cluster implementation notes (plan-level detail; final shape lives in the plan):**
 
 - Each cloud is a `THREE.Group` containing 5–8 `THREE.Mesh` instances using a low-poly soft sphere geometry (icosahedron with low subdivisions, or `SphereGeometry` with reduced segments).
-- Material: `MeshBasicMaterial` (or equivalent) with `transparent: true`, soft alpha falloff at sphere edges. Top-facing surfaces tinted with the amber/peach lift; bottom-facing surfaces in cooler cream. Achieved via per-vertex colors or a custom shader with a `vec3 lightDir = (0, 1, 0.5)` approximation — whichever lands cleanest in the plan.
+- Material: `MeshBasicMaterial` (or equivalent) with `transparent: true` and `opacity ≈ 0.78`. Soft alpha falloff at sphere edges. Color comes from a cool slate-gray ramp applied via per-vertex colors or a simple Lambert-like custom shader with `vec3 lightDir = (0, 1, 0.5)`; shading produces 3–4 discrete value tiers (cel-shaded), not a smooth gradient.
 - Spheres within a cluster are positioned with small random offsets in x/y/z; sized with small random scale variation. This gives the puffy silhouette without per-cloud authoring.
+- PS2-stylized texture: a very subtle dither (alpha-mapped 2×2 stipple) is applied as a screen-space pattern via a post-pass or a quad overlay — strength roughly equivalent to PS2 framebuffer dithering, not aggressive enough to read as PS1 pixel-art.
 
 ## 8. Quality tier scaling
 
@@ -116,29 +120,33 @@ Exact values land in the implementation plan after a manual look at the orbit.
 
 ## 10. Acceptance criteria
 
-1. The scene renders 10 (desktop) / 6 (mobile) / 4 (low-power) puffy warm-cream clouds with amber/peach top edges, floating above the tower at altitude y = 22–32, distributed at radii 45–65 from origin.
-2. A soft horizon haze band sits below the clouds, 360° around the tower.
-3. The orbiting camera passes through 2–3 clouds per full revolution; intersection reads as flying through volume, not punching through a sprite.
-4. No cloud drifts, rotates, breathes, or pulses on its own. The orbit is the only motion in the cloud layer.
-5. `scene.setClouds(false)` hides both clouds and the haze band. `setClouds(true)` restores them. `toggleClouds()` flips.
-6. `quality.js` no longer references any of the legacy cloud knobs. A single `cloudCount` knob remains.
-7. `npm run verify` and `npm test` pass.
-8. Total cloud-related mesh instance count ≤ 60 (down from ~128).
+1. The scene renders 10 (desktop) / 6 (mobile) / 4 (low-power) translucent cool-gray rain clouds with cel-shaded stepped values (deep slate base → mid slate → lit gray → palest top edge), floating above the tower at altitude y = 22–32, distributed at radii 45–65 from origin.
+2. Each cloud renders at ~0.7–0.8 overall opacity; the sky is visibly bleeding through.
+3. A muted slate horizon haze band sits below the clouds, 360° around the tower.
+4. The orbiting camera passes through 2–3 clouds per full revolution; intersection reads as flying through volume, not punching through a sprite.
+5. No cloud drifts, rotates, breathes, or pulses on its own. The orbit is the only motion in the cloud layer.
+6. `scene.setClouds(false)` hides both clouds and the haze band. `setClouds(true)` restores them. `toggleClouds()` flips.
+7. `quality.js` no longer references any of the legacy cloud knobs. A single `cloudCount` knob remains.
+8. A PS2-style dither overlay is present, subtle (not pixel-art-grade), visible only on close inspection.
+9. `npm run verify` and `npm test` pass.
+10. Total cloud-related mesh instance count ≤ 60 (down from ~128).
 
 ## 11. Risks
 
 | Risk | Mitigation |
 |---|---|
 | Camera-cloud intersection alpha-sorting glitches | Sphere clusters with proper material setup avoid the worst of this; the plan includes a manual orbit-and-watch verification step. |
-| Sunset amber lift competes with the existing twilight palette | Color values chosen conservatively from the existing palette range, not invented. The plan includes a visual review pass against the live site before merge. |
+| Cool-gray clouds read as washed-out / wallpaper against the navy sky | Cel-shaded stepped value tiers (4 discrete shades per cluster) ensure clear silhouette readability. Tower silhouette contrast against clouds is verified manually before merge. |
+| Translucent clouds let the sky's deepest color show through and lose silhouette in dark-sky regions | The palest top-edge tier is bright enough to read against any sky band. Verified manually during the orbit-and-watch step. |
 | Quality-tier scaling produces too few clouds on mobile to ever trigger an intersection | Acceptable — the cinematic moment is desktop-tier delight, mobile gets static atmospheric depth without forced intersection. Documented in plan. |
 | Sphere cluster + alpha blend tanks framerate on low-power | Low-power tier already drops to 4 clouds × ~5 spheres = ~20 meshes, well under current count. If still an issue, low-power falls back to layered-plane approach for clouds (plan contingency). |
 
 ## 12. Out of scope (future ideas)
 
-- Time-of-day variation (e.g. evening / dawn / overcast cloud palettes).
+- Alternate weather palettes (sunset / dawn / clear-blue cloud variants).
 - Subtle audio reactivity (the site has no audio; this would be a separate brief).
 - Volumetric god rays through the clouds.
 - Per-cloud authored shapes (rather than algorithmic sphere clusters).
+- Rain particles falling from the clouds (the rain palette is mood-only; no precipitation).
 
 These are captured here so they aren't lost, but no implementation work is planned for them in this brief.
