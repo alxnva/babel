@@ -1,4 +1,16 @@
-import * as THREE from "three";
+import {
+  AdditiveBlending, AmbientLight, BackSide, BoxGeometry, BufferAttribute,
+  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry, Clock,
+  Color, CubeCamera, CylinderGeometry, DirectionalLight, DodecahedronGeometry,
+  DoubleSide, Float32BufferAttribute, Fog, Group, HemisphereLight,
+  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, NoToneMapping, OctahedronGeometry,
+  PCFSoftShadowMap, PerspectiveCamera, PlaneGeometry, PointLight, Points,
+  PointsMaterial, RepeatWrapping, RGBAFormat, RingGeometry, Scene,
+  ShaderMaterial, SphereGeometry, Sprite, SpriteMaterial, TetrahedronGeometry,
+  TorusGeometry, TubeGeometry, Vector2, Vector3, WebGLCubeRenderTarget,
+  WebGLRenderer,
+} from "three";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
 import { createPostprocessPipeline } from "./postprocess.js";
 
@@ -7,7 +19,7 @@ import { createPostprocessPipeline } from "./postprocess.js";
 // before shading, which shifts every color in the scene. Disabling it when the
 // API is available matches the pre-r152 workflow the scene was designed
 // against. The renderer init also sets _useLegacyLights (the internal field
-// three.js reads) to keep light intensities on pre-r155 units — the public
+// js reads) to keep light intensities on pre-r155 units — the public
 // .useLegacyLights accessor logs a deprecation warning on every get, so we
 // bypass it.
 function getThreeExport(name) {
@@ -263,26 +275,26 @@ function setSrgbTexture(texture) {
         skyTopColor: 2500953,
         skyBottomColor: 794687,
         skyGlowColor: 14927322,
-        sunDirection: new THREE.Vector3(...WORLD.SUN_DIRECTION).normalize(),
+        sunDirection: new Vector3(...WORLD.SUN_DIRECTION).normalize(),
         sunColor: 16638446,
         shellOpacity: 0.472,
       },
-      homeScene = new THREE.Scene();
+      homeScene = new Scene();
     function isLowPower() {
       return state.profile.isLow;
     }
-    homeScene.fog = new THREE.Fog(
+    homeScene.fog = new Fog(
       lightingConfig.fogColor,
       lightingConfig.fogNear,
       lightingConfig.fogFar,
     );
-    const camera = new THREE.PerspectiveCamera(
+    const camera = new PerspectiveCamera(
         WORLD.CAMERA_FOV,
         window.innerWidth / window.innerHeight,
         WORLD.CAMERA_NEAR,
         WORLD.CAMERA_FAR,
       ),
-      renderer = new THREE.WebGLRenderer({
+      renderer = new WebGLRenderer({
         alpha: !0,
         antialias: state.profile.antialias,
         powerPreference: "high-performance",
@@ -300,7 +312,7 @@ function setSrgbTexture(texture) {
       );
     }
     function createMarbleMaterial(textures = {}) {
-      return new THREE.MeshStandardMaterial({
+      return new MeshStandardMaterial({
         color: 0xffffff,
         map: textures.colorMap || null,
         bumpMap: textures.bumpMap || null,
@@ -312,16 +324,16 @@ function setSrgbTexture(texture) {
     scene.createMarbleMaterial = createMarbleMaterial;
     (renderer.setClearColor(0, 0),
       setRendererOutputColorSpace(renderer),
-      (renderer.toneMapping = THREE.NoToneMapping),
+      (renderer.toneMapping = NoToneMapping),
       (renderer._useLegacyLights = true),
-      (renderer.shadowMap.type = THREE.PCFSoftShadowMap),
+      (renderer.shadowMap.type = PCFSoftShadowMap),
       container.appendChild(renderer.domElement));
     // Postprocessing stays global and restrained; OutlinePass remains the
     // developer-mode interaction feedback layer appended after the art passes.
     const postprocessPipeline = createPostprocessPipeline(renderer, homeScene, camera, state.profile);
     const composer = postprocessPipeline.composer;
     const outlinePass = new OutlinePass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      new Vector2(window.innerWidth, window.innerHeight),
       homeScene,
       camera,
     );
@@ -417,22 +429,22 @@ function setSrgbTexture(texture) {
         pixelRatio,
       });
     }
-    const sceneRoot = new THREE.Group();
+    const sceneRoot = new Group();
     homeScene.add(sceneRoot);
-    const ambientLight = new THREE.AmbientLight(
+    const ambientLight = new AmbientLight(
         lightingConfig.ambientColor,
         lightingConfig.ambientIntensity,
       ),
-      hemisphereLight = new THREE.HemisphereLight(
+      hemisphereLight = new HemisphereLight(
         lightingConfig.hemisphereSkyColor,
         lightingConfig.hemisphereGroundColor,
         lightingConfig.hemisphereIntensity,
       ),
-      sunLight = new THREE.DirectionalLight(
+      sunLight = new DirectionalLight(
         lightingConfig.directionalColor,
         lightingConfig.directionalIntensity,
       ),
-      fillLight = new THREE.DirectionalLight(9086928, 0.6);
+      fillLight = new DirectionalLight(9086928, 0.6);
     sunLight.position.set(
       lightingConfig.directionalPosition.x,
       lightingConfig.directionalPosition.y,
@@ -453,26 +465,26 @@ function setSrgbTexture(texture) {
       typeof qualityState.getProfile === "function" ? qualityState.getProfile() : fallbackProfile,
       "initial",
     );
-    const skyShell = new THREE.Mesh(
-      new THREE.SphereGeometry(WORLD.SKY_DOME_RADIUS, skyWidthSegments, skyHeightSegments),
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
+    const skyShell = new Mesh(
+      new SphereGeometry(WORLD.SKY_DOME_RADIUS, skyWidthSegments, skyHeightSegments),
+      new ShaderMaterial({
+        side: BackSide,
         transparent: !0,
         uniforms: {
           topColor: {
-            value: new THREE.Color(skyConfig.skyTopColor),
+            value: new Color(skyConfig.skyTopColor),
           },
           bottomColor: {
-            value: new THREE.Color(skyConfig.skyBottomColor),
+            value: new Color(skyConfig.skyBottomColor),
           },
           glowColor: {
-            value: new THREE.Color(skyConfig.skyGlowColor),
+            value: new Color(skyConfig.skyGlowColor),
           },
           sunDirection: {
             value: skyConfig.sunDirection,
           },
           sunColor: {
-            value: new THREE.Color(skyConfig.sunColor),
+            value: new Color(skyConfig.sunColor),
           },
           uTime: {
             value: 0,
@@ -523,8 +535,8 @@ function setSrgbTexture(texture) {
       }),
     );
     ((skyShell.renderOrder = -1), (skyShell.material.depthWrite = !1), homeScene.add(skyShell));
-    var moonPosition = new THREE.Vector3(...WORLD.MOON_POSITION),
-      orbitalGlowGroup = new THREE.Group();
+    var moonPosition = new Vector3(...WORLD.MOON_POSITION),
+      orbitalGlowGroup = new Group();
     function createOrbitalGlowTexture(arg55, arg56, arg57, arg58) {
       var canvas = document.createElement("canvas");
       ((canvas.width = arg55), (canvas.height = arg55));
@@ -565,12 +577,12 @@ function setSrgbTexture(texture) {
         gradient8.addColorStop(1, "rgba(0,0,0,0)"),
         (ctx.fillStyle = gradient8),
         ctx.fillRect(0, 0, arg55, arg55));
-      var canvasTexture = new THREE.CanvasTexture(canvas);
+      var canvasTexture = new CanvasTexture(canvas);
       return (setSrgbTexture(canvasTexture), canvasTexture);
     }
     (orbitalGlowGroup.position.copy(moonPosition), homeScene.add(orbitalGlowGroup));
-    var sprite15 = new THREE.Sprite(
-      new THREE.SpriteMaterial({
+    var sprite15 = new Sprite(
+      new SpriteMaterial({
         map: createOrbitalGlowTexture(256, 200, 60, 10),
         color: 16728096,
         transparent: !0,
@@ -581,8 +593,8 @@ function setSrgbTexture(texture) {
       }),
     );
     (sprite15.scale.set(26, 26, 1), (sprite15.renderOrder = 98), (sprite15.visible = !1));
-    var sprite16 = new THREE.Sprite(
-      new THREE.SpriteMaterial({
+    var sprite16 = new Sprite(
+      new SpriteMaterial({
         map: createOrbitalGlowTexture(256, 255, 180, 60),
         color: 16752688,
         transparent: !0,
@@ -590,11 +602,11 @@ function setSrgbTexture(texture) {
         depthWrite: !1,
         depthTest: !0,
         fog: !1,
-        blending: THREE.AdditiveBlending,
+        blending: AdditiveBlending,
       }),
     );
     (sprite16.scale.set(17, 17, 1), (sprite16.renderOrder = 101), (sprite16.visible = !1));
-    var spriteMaterial = new THREE.SpriteMaterial({
+    var spriteMaterial = new SpriteMaterial({
         map: (function (arg59) {
           var canvas2 = document.createElement("canvas");
           ((canvas2.width = arg59), (canvas2.height = arg59));
@@ -647,7 +659,7 @@ function setSrgbTexture(texture) {
             gradient11.addColorStop(1, "rgba(120,30,0,0.25)"),
             (ctx2.fillStyle = gradient11),
             ctx2.fillRect(0, 0, arg59, arg59));
-          var canvasTexture2 = new THREE.CanvasTexture(canvas2);
+          var canvasTexture2 = new CanvasTexture(canvas2);
           return (setSrgbTexture(canvasTexture2), canvasTexture2);
         })(512),
         color: 16777215,
@@ -657,7 +669,7 @@ function setSrgbTexture(texture) {
         depthTest: !0,
         fog: !1,
       }),
-      sprite17 = new THREE.Sprite(spriteMaterial);
+      sprite17 = new Sprite(spriteMaterial);
     function tmpV57(arg60, arg61) {
       var canvas3 = document.createElement("canvas");
       ((canvas3.width = arg60), (canvas3.height = arg60));
@@ -685,7 +697,7 @@ function setSrgbTexture(texture) {
         gradient12.addColorStop(1, "rgba(0,0,0,0)"),
         (ctx3.fillStyle = gradient12),
         ctx3.fillRect(0, 0, arg60, arg60));
-      var canvasTexture3 = new THREE.CanvasTexture(canvas3);
+      var canvasTexture3 = new CanvasTexture(canvas3);
       return (setSrgbTexture(canvasTexture3), canvasTexture3);
     }
     (sprite17.scale.set(6, 6, 1), (sprite17.renderOrder = 100), orbitalGlowGroup.add(sprite17));
@@ -708,8 +720,8 @@ function setSrgbTexture(texture) {
             : 1 === tmpV58
               ? 2 + Math.floor(3 * Math.abs(Math.sin(2.7 * num500)))
               : 4 + Math.floor(3 * Math.abs(Math.sin(2.7 * num500))),
-        sprite18 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite18 = new Sprite(
+          new SpriteMaterial({
             map: arr7[num499 % 4],
             color: arr8[Math.min(tmpV59, 6)],
             transparent: !0,
@@ -717,7 +729,7 @@ function setSrgbTexture(texture) {
             depthWrite: !1,
             depthTest: !0,
             fog: !1,
-            blending: THREE.AdditiveBlending,
+            blending: AdditiveBlending,
           }),
         );
       ((sprite18.renderOrder = 2 - tmpV58 + 103), orbitalGlowGroup.add(sprite18));
@@ -761,9 +773,9 @@ function setSrgbTexture(texture) {
         colorPhase: (0.73 * num500) % (2 * Math.PI),
       });
     }
-    var vector3 = new THREE.Vector3(),
-      vector32 = new THREE.Vector3(),
-      vector33 = new THREE.Vector3();
+    var vector3 = new Vector3(),
+      vector32 = new Vector3(),
+      vector33 = new Vector3();
     function tmpV60(arg62, arg63, arg64, arg65, arg66) {
       for (var arr5 = [], num418 = 0; num418 <= arg66; num418++) {
         var num419 = num418 / arg66,
@@ -774,7 +786,7 @@ function setSrgbTexture(texture) {
           tmpV27 = num419 > 0.6 ? 2.5 * (num419 - 0.6) * arg63 * 0.3 : 0,
           num424 =
             Math.sin(num419 * Math.PI) * Math.sin(arg65) * arg63 * 0.5 + tmpV27 * Math.cos(arg65);
-        arr5.push(new THREE.Vector3(num422, num423, num424));
+        arr5.push(new Vector3(num422, num423, num424));
       }
       return arr5;
     }
@@ -794,8 +806,8 @@ function setSrgbTexture(texture) {
           num506 = 1.4 * (Math.sin(3.7 * num502) - 0.5),
           num507 = 0.12 + 0.18 * fn4(1.7 * num502),
           eeResult = tmpV60(num503, num504, num505, num506, 20),
-          catmullRomCurve3 = new THREE.CatmullRomCurve3(eeResult),
-          tubeGeometry = new THREE.TubeGeometry(catmullRomCurve3, 24, num507, 4, !1),
+          catmullRomCurve3 = new CatmullRomCurve3(eeResult),
+          tubeGeometry = new TubeGeometry(catmullRomCurve3, 24, num507, 4, !1),
           arr11 = [],
           arr12 = [],
           position8 = tubeGeometry.attributes.position,
@@ -812,19 +824,19 @@ function setSrgbTexture(texture) {
           result104 = Math.max(0, Math.min(1, (result103 - 8) / (num504 + 1)));
         (arr12.push(result104), arr11.push(1, 0.98 - 0.65 * result104, 0.75 - 0.7 * result104));
       }
-      tubeGeometry.setAttribute("color", new THREE.Float32BufferAttribute(arr11, 3));
+      tubeGeometry.setAttribute("color", new Float32BufferAttribute(arr11, 3));
       var sliceResult = arr11.slice(),
-        meshBasicMaterial = new THREE.MeshBasicMaterial({
+        meshBasicMaterial = new MeshBasicMaterial({
           vertexColors: !0,
           transparent: !0,
           opacity: 0,
           depthWrite: !1,
           depthTest: !0,
           fog: !1,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide,
+          blending: AdditiveBlending,
+          side: DoubleSide,
         }),
-        mesh35 = new THREE.Mesh(tubeGeometry, meshBasicMaterial);
+        mesh35 = new Mesh(tubeGeometry, meshBasicMaterial);
       ((mesh35.renderOrder = 102),
         orbitalGlowGroup.add(mesh35),
         arr10.push({
@@ -850,9 +862,9 @@ function setSrgbTexture(texture) {
       radius: 42,
     });
     setShadowParticipation(orbitalGlowGroup);
-    const group4 = new THREE.Group();
+    const group4 = new Group();
     sceneRoot.add(group4);
-    const circleGeometry = new THREE.CircleGeometry(
+    const circleGeometry = new CircleGeometry(
         WORLD.GROUND_RADIUS,
         circleSegments,
         0,
@@ -871,9 +883,9 @@ function setSrgbTexture(texture) {
         qualityProfile: state.profile,
         chooseAnisotropy: chooseAnisotropy,
       }),
-      mesh36 = new THREE.Mesh(
+      mesh36 = new Mesh(
         circleGeometry,
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: GROUND_SURFACE_MATERIAL.color,
           map: result105.colorMap,
           bumpMap: result105.bumpMap,
@@ -894,7 +906,7 @@ function setSrgbTexture(texture) {
         qualityProfile: state.profile,
       });
       if (createGroundOverlayTextureResult) {
-        const overlayGeom = new THREE.CircleGeometry(
+        const overlayGeom = new CircleGeometry(
             WORLD.GROUND_OVERLAY_RADIUS,
             state.profile.geometry.overlaySegments,
           ),
@@ -905,9 +917,9 @@ function setSrgbTexture(texture) {
           overlayPos.setZ(num47, groundHeight(result, result2) + 0.04);
         }
         overlayPos.needsUpdate = !0;
-        const mesh5 = new THREE.Mesh(
+        const mesh5 = new Mesh(
           overlayGeom,
-          new THREE.MeshBasicMaterial({
+          new MeshBasicMaterial({
             map: createGroundOverlayTextureResult,
             transparent: !0,
             opacity: 0.92,
@@ -918,74 +930,74 @@ function setSrgbTexture(texture) {
       }
     }
     const num509 = Math.atan2(18, 24) + Math.PI,
-      group5 = new THREE.Group(),
+      group5 = new Group(),
       arr13 = [
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 9079432,
           roughness: 0.92,
           metalness: 0.02,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 8026744,
           roughness: 0.95,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 10131605,
           roughness: 0.9,
           metalness: 0.03,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 11048056,
           roughness: 0.94,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 12099720,
           roughness: 0.88,
           metalness: 0.02,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 9337442,
           roughness: 0.96,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 6975608,
           roughness: 0.93,
           metalness: 0.04,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 7896710,
           roughness: 0.91,
           metalness: 0.03,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 4868166,
           roughness: 0.97,
           metalness: 0.02,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 5657168,
           roughness: 0.95,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 9070680,
           roughness: 0.94,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 8028776,
           roughness: 0.96,
           metalness: 0.01,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 11907236,
           roughness: 0.86,
           metalness: 0.02,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 12761776,
           roughness: 0.84,
           metalness: 0.03,
@@ -993,22 +1005,22 @@ function setSrgbTexture(texture) {
       ],
       arr14 = [
         function (arg67) {
-          return new THREE.DodecahedronGeometry(arg67, 0);
+          return new DodecahedronGeometry(arg67, 0);
         },
         function (arg68) {
-          return new THREE.IcosahedronGeometry(arg68, 0);
+          return new IcosahedronGeometry(arg68, 0);
         },
         function (arg69) {
-          return new THREE.OctahedronGeometry(arg69, 0);
+          return new OctahedronGeometry(arg69, 0);
         },
         function (arg70) {
-          return new THREE.TetrahedronGeometry(arg70, 0);
+          return new TetrahedronGeometry(arg70, 0);
         },
         function (arg71) {
-          return new THREE.DodecahedronGeometry(arg71, 1);
+          return new DodecahedronGeometry(arg71, 1);
         },
         function (arg72) {
-          return new THREE.IcosahedronGeometry(arg72, 1);
+          return new IcosahedronGeometry(arg72, 1);
         },
       ],
       haloTwisters = state.profile.counts.haloTwisters;
@@ -1022,7 +1034,7 @@ function setSrgbTexture(texture) {
         qeResult21 = tmpV65(num188 + 67),
         num189 = 0.2 + 1.2 * qeResult16,
         result58 = arr14[Math.floor(qeResult21 * arr14.length)](num189),
-        mesh6 = new THREE.Mesh(result58, arr13[Math.floor(qeResult20 * arr13.length)]),
+        mesh6 = new Mesh(result58, arr13[Math.floor(qeResult20 * arr13.length)]),
         num190 = num509 + (qeResult17 - 0.5) * Math.PI * 1.8,
         num191 = 14 + 80 * qeResult18,
         num192 = Math.cos(num190) * num191,
@@ -1061,7 +1073,7 @@ function setSrgbTexture(texture) {
         qeResult26 = tmpV65(num194 + 59),
         num195 = 0.06 + 0.35 * qeResult22,
         result60 = arr14[Math.floor(qeResult26 * arr14.length)](num195),
-        mesh7 = new THREE.Mesh(result60, arr13[Math.floor(qeResult25 * arr13.length)]),
+        mesh7 = new Mesh(result60, arr13[Math.floor(qeResult25 * arr13.length)]),
         num196 = num509 + (qeResult23 - 0.5) * Math.PI * 2,
         num197 = 10 + 85 * qeResult24,
         num198 = Math.cos(num196) * num197,
@@ -1082,7 +1094,7 @@ function setSrgbTexture(texture) {
         qeResult30 = tmpV65(num200 + 39),
         num201 = 0.03 + 0.12 * qeResult27,
         result62 = Math.floor(4 * qeResult30),
-        mesh8 = new THREE.Mesh(
+        mesh8 = new Mesh(
           arr14[result62](num201),
           arr13[Math.floor(qeResult30 * arr13.length)],
         ),
@@ -1134,7 +1146,7 @@ function setSrgbTexture(texture) {
             ctx4.arc(num55, num56, num57, 0, 2 * Math.PI),
             ctx4.fill());
         }
-        const canvasTexture4 = new THREE.CanvasTexture(canvas4);
+        const canvasTexture4 = new CanvasTexture(canvas4);
         setSrgbTexture(canvasTexture4);
         const canvas5 = document.createElement("canvas");
         ((canvas5.width = num429), (canvas5.height = num429));
@@ -1150,8 +1162,8 @@ function setSrgbTexture(texture) {
             ctx5.arc(num58, num59, num60, 0, 2 * Math.PI),
             ctx5.fill());
         }
-        const canvasTexture5 = new THREE.CanvasTexture(canvas5),
-          dodecahedronGeometry = new THREE.DodecahedronGeometry(2.5, 1),
+        const canvasTexture5 = new CanvasTexture(canvas5),
+          dodecahedronGeometry = new DodecahedronGeometry(2.5, 1),
           position = dodecahedronGeometry.attributes.position;
         for (let num210 = 0; num210 < position.count; num210++) {
           const result12 = position.getX(num210),
@@ -1163,9 +1175,9 @@ function setSrgbTexture(texture) {
             position.setZ(num210, result14 * (1 + 0.3 * tmpV65(8802 + 1.9 * num210) - 0.12)));
         }
         dodecahedronGeometry.computeVertexNormals();
-        const mesh28 = new THREE.Mesh(
+        const mesh28 = new Mesh(
             dodecahedronGeometry,
-            new THREE.MeshStandardMaterial({
+            new MeshStandardMaterial({
               color: 7894386,
               map: canvasTexture4,
               bumpMap: canvasTexture5,
@@ -1183,14 +1195,14 @@ function setSrgbTexture(texture) {
           (mesh28.receiveShadow = !state.lowPower),
           group4.add(mesh28));
       })());
-    const group6 = new THREE.Group();
+    const group6 = new Group();
     group4.add(group6);
-    const sphereGeometry = new THREE.SphereGeometry(
+    const sphereGeometry = new SphereGeometry(
         1,
         state.lowPower ? 10 : 16,
         state.lowPower ? 8 : 12,
       ),
-      cylinderGeometry2 = new THREE.CylinderGeometry(0.04, 0.08, 0.65, 5),
+      cylinderGeometry2 = new CylinderGeometry(0.04, 0.08, 0.65, 5),
       canvas21 = document.createElement("canvas");
     ((canvas21.width = state.lowPower ? 64 : 128), (canvas21.height = state.lowPower ? 64 : 128));
     const ctx21 = canvas21.getContext("2d");
@@ -1208,12 +1220,12 @@ function setSrgbTexture(texture) {
           ctx21.fill());
       }
     }
-    const canvasTexture20 = new THREE.CanvasTexture(canvas21);
-    ((canvasTexture20.wrapS = THREE.RepeatWrapping),
-      (canvasTexture20.wrapT = THREE.RepeatWrapping),
+    const canvasTexture20 = new CanvasTexture(canvas21);
+    ((canvasTexture20.wrapS = RepeatWrapping),
+      (canvasTexture20.wrapT = RepeatWrapping),
       canvasTexture20.repeat.set(3, 3));
     const arr15 = [
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 8687723,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1222,7 +1234,7 @@ function setSrgbTexture(texture) {
           emissive: 2304024,
           emissiveIntensity: 0.06,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 9675129,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1231,7 +1243,7 @@ function setSrgbTexture(texture) {
           emissive: 2633757,
           emissiveIntensity: 0.05,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 7503965,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1240,7 +1252,7 @@ function setSrgbTexture(texture) {
           emissive: 2040854,
           emissiveIntensity: 0.06,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 9079386,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1249,7 +1261,7 @@ function setSrgbTexture(texture) {
           emissive: 2762776,
           emissiveIntensity: 0.05,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 6981752,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1258,7 +1270,7 @@ function setSrgbTexture(texture) {
           emissive: 1714208,
           emissiveIntensity: 0.05,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 10131552,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1267,7 +1279,7 @@ function setSrgbTexture(texture) {
           emissive: 3156500,
           emissiveIntensity: 0.06,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 6189136,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1276,7 +1288,7 @@ function setSrgbTexture(texture) {
           emissive: 1580564,
           emissiveIntensity: 0.06,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 8288850,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
@@ -1286,14 +1298,14 @@ function setSrgbTexture(texture) {
           emissiveIntensity: 0.05,
         }),
       ],
-      meshStandardMaterial5 = new THREE.MeshStandardMaterial({
+      meshStandardMaterial5 = new MeshStandardMaterial({
         color: 7701086,
         roughness: 1,
         metalness: 0,
         emissive: 2238488,
         emissiveIntensity: 0.04,
       }),
-      meshStandardMaterial6 = new THREE.MeshStandardMaterial({
+      meshStandardMaterial6 = new MeshStandardMaterial({
         color: 12888194,
         roughness: 0.88,
         metalness: 0.01,
@@ -1489,7 +1501,7 @@ function setSrgbTexture(texture) {
       },
     ].forEach((arg73) => {
       !(function (arg23, arg24, arg25, arg26 = 0) {
-        const group2 = new THREE.Group(),
+        const group2 = new Group(),
           result63 = Math.abs(73 * arg23 + 137 * arg24 + 31 * arg26),
           fn = function (arg3) {
             return tmpV65(result63 + arg3);
@@ -1503,8 +1515,8 @@ function setSrgbTexture(texture) {
             num217 = (0.4 + 0.5 * fn(130 + num65)) * arg25 * num213,
             num218 = (0.03 + 0.03 * fn(140 + num65)) * arg25,
             num219 = 0.15 + 0.35 * fn(150 + num65),
-            cylinderGeometry = new THREE.CylinderGeometry(0.5 * num218, num218, num217, 5),
-            mesh9 = new THREE.Mesh(cylinderGeometry, meshStandardMaterial6),
+            cylinderGeometry = new CylinderGeometry(0.5 * num218, num218, num217, 5),
+            mesh9 = new Mesh(cylinderGeometry, meshStandardMaterial6),
             num220 = fn(160 + num65) * num214 * 0.25 * arg25;
           (mesh9.position.set(Math.cos(num216) * num220, 0.4 * num217, Math.sin(num216) * num220),
             mesh9.rotation.set(Math.sin(num216) * num219, num216, Math.cos(num216) * num219),
@@ -1522,7 +1534,7 @@ function setSrgbTexture(texture) {
             num222 = (0.4 + 0.5 * fn(50 + num66)) * num213,
             num223 = 0.5 + 0.6 * fn(60 + num66);
           const result3 = Math.floor(fn(70 + num66) * arr15.length),
-            mesh2 = new THREE.Mesh(sphereGeometry, arr15[result3]);
+            mesh2 = new Mesh(sphereGeometry, arr15[result3]);
           (mesh2.position.set(num13 * arg25, num15 * arg25, num14 * arg25),
             mesh2.scale.set(arg25 * num221, arg25 * num222, arg25 * num223),
             (mesh2.castShadow = !1),
@@ -1531,7 +1543,7 @@ function setSrgbTexture(texture) {
         }
         var num224 = 2 + Math.floor(3 * fn(80));
         for (let num67 = 0; num67 < num224; num67++) {
-          const mesh3 = new THREE.Mesh(cylinderGeometry2, meshStandardMaterial5);
+          const mesh3 = new Mesh(cylinderGeometry2, meshStandardMaterial5);
           var num225 = fn(90 + num67) * Math.PI * 2,
             num226 = fn(95 + num67) * num214 * 0.4;
           (mesh3.position.set(
@@ -1549,7 +1561,7 @@ function setSrgbTexture(texture) {
       })(arg73.x, arg73.z, arg73.scale, arg73.variant);
     }),
       (function (arg74, arg75, arg76 = 1) {
-        const group3 = new THREE.Group(),
+        const group3 = new Group(),
           canvas6 = document.createElement("canvas");
         ((canvas6.width = state.lowPower ? 128 : 256),
           (canvas6.height = state.lowPower ? 64 : 128));
@@ -1597,32 +1609,32 @@ function setSrgbTexture(texture) {
               ctx6.fill());
           }
         }
-        const canvasTexture6 = new THREE.CanvasTexture(canvas6);
-        ((canvasTexture6.wrapS = THREE.RepeatWrapping),
-          (canvasTexture6.wrapT = THREE.RepeatWrapping),
+        const canvasTexture6 = new CanvasTexture(canvas6);
+        ((canvasTexture6.wrapS = RepeatWrapping),
+          (canvasTexture6.wrapT = RepeatWrapping),
           canvasTexture6.repeat.set(1.5, 2),
           setSrgbTexture(canvasTexture6));
-        const meshStandardMaterial2 = new THREE.MeshStandardMaterial({
+        const meshStandardMaterial2 = new MeshStandardMaterial({
             color: 10123868,
             map: canvasTexture6,
             roughness: 0.96,
             metalness: 0.01,
           }),
-          meshStandardMaterial3 = new THREE.MeshStandardMaterial({
+          meshStandardMaterial3 = new MeshStandardMaterial({
             color: 8282952,
             map: canvasTexture6,
             roughness: 1,
             metalness: 0.01,
           }),
-          meshStandardMaterial4 = new THREE.MeshStandardMaterial({
+          meshStandardMaterial4 = new MeshStandardMaterial({
             color: 7307098,
             roughness: 1,
             metalness: 0,
             emissive: 1909784,
             emissiveIntensity: 0.05,
           }),
-          mesh29 = new THREE.Mesh(
-            new THREE.CylinderGeometry(
+          mesh29 = new Mesh(
+            new CylinderGeometry(
               0.9 * arg76,
               1.25 * arg76,
               8.2 * arg76,
@@ -1635,8 +1647,8 @@ function setSrgbTexture(texture) {
           (mesh29.castShadow = !state.lowPower),
           (mesh29.receiveShadow = !state.lowPower),
           group3.add(mesh29));
-        const mesh30 = new THREE.Mesh(
-          new THREE.CylinderGeometry(
+        const mesh30 = new Mesh(
+          new CylinderGeometry(
             0.45 * arg76,
             0.72 * arg76,
             5.8 * arg76,
@@ -1702,8 +1714,8 @@ function setSrgbTexture(texture) {
               rBase: 0.15,
             },
           ].forEach((arg27) => {
-            const mesh10 = new THREE.Mesh(
-              new THREE.CylinderGeometry(
+            const mesh10 = new Mesh(
+              new CylinderGeometry(
                 arg27.rTop * arg76,
                 arg27.rBase * arg76,
                 arg27.len * arg76,
@@ -1768,11 +1780,11 @@ function setSrgbTexture(texture) {
               sz: 1.3,
             },
           ].forEach((arg28, arg29) => {
-            const mesh11 = new THREE.Mesh(
-              new THREE.SphereGeometry(1 * arg76, state.lowPower ? 8 : 12, state.lowPower ? 7 : 10),
+            const mesh11 = new Mesh(
+              new SphereGeometry(1 * arg76, state.lowPower ? 8 : 12, state.lowPower ? 7 : 10),
               arg29 % 2 == 0 ? meshStandardMaterial4 : meshStandardMaterial4.clone(),
             );
-            (arg29 % 2 == 1 && (mesh11.material.color = new THREE.Color(8359270)),
+            (arg29 % 2 == 1 && (mesh11.material.color = new Color(8359270)),
               mesh11.position.set(arg28.x * arg76, arg28.y * arg76, arg28.z * arg76),
               mesh11.scale.set(arg28.sx, arg28.sy, arg28.sz),
               (mesh11.castShadow = !state.lowPower),
@@ -1802,8 +1814,8 @@ function setSrgbTexture(texture) {
               tilt: 0.68,
             },
           ].forEach((arg30) => {
-            const mesh12 = new THREE.Mesh(
-                new THREE.CylinderGeometry(
+            const mesh12 = new Mesh(
+                new CylinderGeometry(
                   arg30.rTip * arg76,
                   arg30.rBase * arg76,
                   arg30.len * arg76,
@@ -1823,7 +1835,7 @@ function setSrgbTexture(texture) {
         const result87 = groundHeight(arg74, arg75);
         (group3.position.set(arg74, result87, arg75), group4.add(group3));
       })(-42, 28, state.lowPower ? 1.25 : 1.5));
-    const group7 = new THREE.Group();
+    const group7 = new Group();
     function tmpV65(arg77) {
       const num433 = 43758.5453123 * Math.sin(12.9898 * arg77);
       return num433 - Math.floor(num433);
@@ -1859,18 +1871,18 @@ function setSrgbTexture(texture) {
           ctx7.ellipse(num72, num73, num74, num75, 0, 0, 2 * Math.PI),
           ctx7.fill());
       }
-      const canvasTexture7 = new THREE.CanvasTexture(canvas7);
+      const canvasTexture7 = new CanvasTexture(canvas7);
       return (
         setSrgbTexture(canvasTexture7),
         (canvasTexture7.anisotropy = chooseAnisotropy(1, 2)),
-        (canvasTexture7.minFilter = THREE.LinearFilter),
-        (canvasTexture7.magFilter = THREE.LinearFilter),
+        (canvasTexture7.minFilter = LinearFilter),
+        (canvasTexture7.magFilter = LinearFilter),
         (canvasTexture7.generateMipmaps = !1),
         canvasTexture7
       );
     }
     group4.add(group7);
-    const group8 = new THREE.Group();
+    const group8 = new Group();
     sceneRoot.add(group8);
     const arr16 = [],
       upperGlowSprites = state.profile.counts.upperGlowSprites;
@@ -1881,8 +1893,8 @@ function setSrgbTexture(texture) {
         qeResult34 = tmpV65(947 + 3.67 * num435),
         jeResult = tmpV66(num435);
       if (!jeResult) continue;
-      const sprite5 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+      const sprite5 = new Sprite(
+          new SpriteMaterial({
             map: jeResult,
             color: 14734570,
             transparent: !0,
@@ -1920,7 +1932,7 @@ function setSrgbTexture(texture) {
       radius: 118,
     });
     setShadowParticipation(group8);
-    const group9 = new THREE.Group();
+    const group9 = new Group();
     sceneRoot.add(group9);
     const arr17 = [];
     function tmpV67(arg79, arg80, arg81, arg82) {
@@ -2019,11 +2031,11 @@ function setSrgbTexture(texture) {
         ctx9.restore(),
         ctx8.drawImage(canvas9, 0, 0),
         (ctx8.globalCompositeOperation = "source-over"));
-      const canvasTexture8 = new THREE.CanvasTexture(canvas8);
+      const canvasTexture8 = new CanvasTexture(canvas8);
       return (
         setSrgbTexture(canvasTexture8),
-        (canvasTexture8.minFilter = THREE.LinearFilter),
-        (canvasTexture8.magFilter = THREE.LinearFilter),
+        (canvasTexture8.minFilter = LinearFilter),
+        (canvasTexture8.magFilter = LinearFilter),
         (canvasTexture8.generateMipmaps = !1),
         canvasTexture8
       );
@@ -2052,8 +2064,8 @@ function setSrgbTexture(texture) {
         num239 = 20 + 40 * qeResult37 + 14 * (qeResult38 - 0.5),
         num240 = 26 + 28 * qeResult37,
         num241 = 1.4 + 0.8 * qeResult35,
-        sprite6 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite6 = new Sprite(
+          new SpriteMaterial({
             map: tmpV11.mid,
             transparent: !0,
             opacity: 0.55 + 0.28 * qeResult38,
@@ -2086,7 +2098,7 @@ function setSrgbTexture(texture) {
       radius: 112,
     });
     setShadowParticipation(group9);
-    const group10 = new THREE.Group();
+    const group10 = new Group();
     group4.add(group10);
     const arr19 = [],
       result106 = (function () {
@@ -2112,7 +2124,7 @@ function setSrgbTexture(texture) {
             ),
             ctx10.stroke());
         }
-        const canvasTexture9 = new THREE.CanvasTexture(canvas10);
+        const canvasTexture9 = new CanvasTexture(canvas10);
         return (
           setSrgbTexture(canvasTexture9),
           (canvasTexture9.anisotropy = chooseAnisotropy(1, 2)),
@@ -2130,8 +2142,8 @@ function setSrgbTexture(texture) {
           num245 = Math.cos(num243) * num244,
           num246 = Math.sin(num243) * num244,
           num247 = groundHeight(num245, num246) + 0.06,
-          sprite7 = new THREE.Sprite(
-            new THREE.SpriteMaterial({
+          sprite7 = new Sprite(
+            new SpriteMaterial({
               map: result106,
               color: 10398333,
               transparent: !0,
@@ -2167,8 +2179,8 @@ function setSrgbTexture(texture) {
           num87 = Math.cos(num85) * num86,
           num88 = Math.sin(num85) * num86,
           num89 = groundHeight(num87, num88) + 0.05,
-          sprite4 = new THREE.Sprite(
-            new THREE.SpriteMaterial({
+          sprite4 = new Sprite(
+            new SpriteMaterial({
               map: result106,
               color: 10924161,
               transparent: !0,
@@ -2208,8 +2220,8 @@ function setSrgbTexture(texture) {
             num3 = num93 + Math.cos(num) * num2,
             num4 = num94 + Math.sin(num) * num2,
             num5 = groundHeight(num3, num4) + 0.05,
-            sprite2 = new THREE.Sprite(
-              new THREE.SpriteMaterial({
+            sprite2 = new Sprite(
+              new SpriteMaterial({
                 map: result106,
                 color: 11187588,
                 transparent: !0,
@@ -2304,16 +2316,16 @@ function setSrgbTexture(texture) {
       }
       ((position3.needsUpdate = !0), arg87.computeVertexNormals());
     }
-    const ftLowerGeom = new THREE.CylinderGeometry(17.4, 18.6, 1.2, 56, 1);
+    const ftLowerGeom = new CylinderGeometry(17.4, 18.6, 1.2, 56, 1);
     baseEdgeErode(ftLowerGeom, {
       jitterRadial: 0.3,
       jitterVertical: 0.09,
       halfHeight: 0.6,
       seedOffset: 5100,
     });
-    const ftLower = new THREE.Mesh(
+    const ftLower = new Mesh(
       ftLowerGeom,
-      new THREE.MeshStandardMaterial({
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.plinthColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2326,16 +2338,16 @@ function setSrgbTexture(texture) {
       (ftLower.receiveShadow = !state.lowPower),
       (ftLower.castShadow = !state.lowPower),
       group7.add(ftLower));
-    const ftUpperGeom = new THREE.CylinderGeometry(15.8, 17.2, 1.4, 56, 1);
+    const ftUpperGeom = new CylinderGeometry(15.8, 17.2, 1.4, 56, 1);
     baseEdgeErode(ftUpperGeom, {
       jitterRadial: 0.22,
       jitterVertical: 0.07,
       halfHeight: 0.7,
       seedOffset: 5200,
     });
-    const mesh37 = new THREE.Mesh(
+    const mesh37 = new Mesh(
       ftUpperGeom,
-      new THREE.MeshStandardMaterial({
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.plinthColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2348,9 +2360,9 @@ function setSrgbTexture(texture) {
       (mesh37.receiveShadow = !state.lowPower),
       (mesh37.castShadow = !state.lowPower),
       group7.add(mesh37));
-    const ftSeam = new THREE.Mesh(
-      new THREE.TorusGeometry(17.1, 0.25, 8, 56),
-      new THREE.MeshStandardMaterial({
+    const ftSeam = new Mesh(
+      new TorusGeometry(17.1, 0.25, 8, 56),
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.ringColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2363,20 +2375,20 @@ function setSrgbTexture(texture) {
       (ftSeam.position.y = result107 + 0.72),
       (ftSeam.receiveShadow = !state.lowPower),
       group7.add(ftSeam));
-    const ftSootGeom = new THREE.CylinderGeometry(18.7, 18.7, 0.6, 56, 1, !0),
-      ftSoot = new THREE.Mesh(
+    const ftSootGeom = new CylinderGeometry(18.7, 18.7, 0.6, 56, 1, !0),
+      ftSoot = new Mesh(
         ftSootGeom,
-        new THREE.MeshBasicMaterial({
+        new MeshBasicMaterial({
           color: 1316882,
           transparent: !0,
           opacity: 0.18,
-          side: THREE.DoubleSide,
+          side: DoubleSide,
           depthWrite: !1,
         }),
       );
     ((ftSoot.position.y = result107 + 0.1), group7.add(ftSoot));
     const ftButtressCount = state.profile.counts.buttresses,
-      ftButtressMaterial = new THREE.MeshStandardMaterial({
+      ftButtressMaterial = new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.plinthColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2390,7 +2402,7 @@ function setSrgbTexture(texture) {
         num254 = 1.1 + 0.6 * tmpV65(5310 + num447),
         num255 = 1.6 + 0.5 * tmpV65(5320 + num447),
         num256 = 0.9 + 0.35 * tmpV65(5330 + num447),
-        mesh13 = new THREE.Mesh(new THREE.BoxGeometry(num254, num255, num256), ftButtressMaterial),
+        mesh13 = new Mesh(new BoxGeometry(num254, num255, num256), ftButtressMaterial),
         num257 = 18.3;
       (mesh13.position.set(
         Math.cos(num253) * num257,
@@ -2403,9 +2415,9 @@ function setSrgbTexture(texture) {
         (mesh13.receiveShadow = !state.lowPower),
         group7.add(mesh13));
     }
-    const mesh38 = new THREE.Mesh(
-      new THREE.TorusGeometry(12.2, 0.6, 8, 40),
-      new THREE.MeshStandardMaterial({
+    const mesh38 = new Mesh(
+      new TorusGeometry(12.2, 0.6, 8, 40),
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.ringColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2415,9 +2427,9 @@ function setSrgbTexture(texture) {
       }),
     );
     ((mesh38.rotation.x = -Math.PI / 2), (mesh38.position.y = result107 + 1.6), group7.add(mesh38));
-    const plinthTorchLight = new THREE.PointLight(16756340, 0.4, 16, 2);
+    const plinthTorchLight = new PointLight(16756340, 0.4, 16, 2);
     (plinthTorchLight.position.set(0, result107 + 3, 0), group7.add(plinthTorchLight));
-    const cylinderGeometry3 = new THREE.CylinderGeometry(8.8, 12.2, 34, 34, 10, !0);
+    const cylinderGeometry3 = new CylinderGeometry(8.8, 12.2, 34, 34, 10, !0);
     (!(function (arg89, arg90 = {}) {
       const {
           topStartRatio: tmpV41 = 0.78,
@@ -2523,9 +2535,9 @@ function setSrgbTexture(texture) {
         }
         ((position5.needsUpdate = !0), arg91.computeVertexNormals());
       })(cylinderGeometry3));
-    const mesh39 = new THREE.Mesh(
+    const mesh39 = new Mesh(
       cylinderGeometry3,
-      new THREE.MeshStandardMaterial({
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.shellColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2565,7 +2577,7 @@ function setSrgbTexture(texture) {
           (float32Array[3 * num260 + 1] = num112),
           (float32Array[3 * num260 + 2] = num112));
       }
-      (cylinderGeometry3.setAttribute("color", new THREE.BufferAttribute(float32Array, 3)),
+      (cylinderGeometry3.setAttribute("color", new BufferAttribute(float32Array, 3)),
         (mesh39.material.vertexColors = !0),
         (mesh39.material.needsUpdate = !0));
     }
@@ -2647,21 +2659,21 @@ function setSrgbTexture(texture) {
                 arr4.push(num275 + 3, num275 + 6, num275 + 7));
             }
           }
-          var bufferGeometry = new THREE.BufferGeometry();
-          (bufferGeometry.setAttribute("position", new THREE.Float32BufferAttribute(arr2, 3)),
-            bufferGeometry.setAttribute("color", new THREE.Float32BufferAttribute(arr3, 3)),
+          var bufferGeometry = new BufferGeometry();
+          (bufferGeometry.setAttribute("position", new Float32BufferAttribute(arr2, 3)),
+            bufferGeometry.setAttribute("color", new Float32BufferAttribute(arr3, 3)),
             bufferGeometry.setIndex(arr4),
             bufferGeometry.computeVertexNormals());
-          var meshStandardMaterial = new THREE.MeshStandardMaterial({
+          var meshStandardMaterial = new MeshStandardMaterial({
             vertexColors: !0,
             roughness: 1,
             metalness: 0,
-            side: THREE.DoubleSide,
+            side: DoubleSide,
             polygonOffset: !0,
             polygonOffsetFactor: -1,
             polygonOffsetUnits: -1,
           });
-          return new THREE.Mesh(bufferGeometry, meshStandardMaterial);
+          return new Mesh(bufferGeometry, meshStandardMaterial);
         })(result89, 0, 0, arg98, arg99);
       return (
         result90 && ((result90.position.y = mesh39.position.y), group7.add(result90)),
@@ -2712,16 +2724,16 @@ function setSrgbTexture(texture) {
           arg101[6],
         );
       }));
-    const mesh40 = new THREE.Mesh(
-      new THREE.CylinderGeometry(8.2, 11.5, 33.6, 34, 6, !0),
-      new THREE.MeshStandardMaterial({
+    const mesh40 = new Mesh(
+      new CylinderGeometry(8.2, 11.5, 33.6, 34, 6, !0),
+      new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.shellInnerColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
         bumpScale: state.lowPower ? 0.022 : 0.042,
         roughness: 0.98,
         metalness: 0,
-        side: THREE.BackSide,
+        side: BackSide,
       }),
     );
     (mesh40.position.copy(mesh39.position),
@@ -2740,14 +2752,14 @@ function setSrgbTexture(texture) {
         craterRimWorld = Number.isFinite(craterRimLocal)
           ? mesh39.position.y + craterRimLocal
           : mesh39.position.y + 14,
-        craterEmber = new THREE.PointLight(15311978, state.lowPower ? 0.35 : 0.55, 14, 2);
+        craterEmber = new PointLight(15311978, state.lowPower ? 0.35 : 0.55, 14, 2);
       (craterEmber.position.set(Math.cos(num511) * 4, craterRimWorld - 1.5, Math.sin(num511) * 4),
         (craterEmber.castShadow = !1),
         group7.add(craterEmber));
     }
-    const group11 = new THREE.Group();
+    const group11 = new Group();
     ((group11.position.y = mesh39.position.y), group7.add(group11));
-    const meshStandardMaterial7 = new THREE.MeshStandardMaterial({
+    const meshStandardMaterial7 = new MeshStandardMaterial({
         color: 7227960,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2755,7 +2767,7 @@ function setSrgbTexture(texture) {
         roughness: 0.95,
         metalness: 0.01,
       }),
-      meshStandardMaterial8 = new THREE.MeshStandardMaterial({
+      meshStandardMaterial8 = new MeshStandardMaterial({
         color: 4073504,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2783,8 +2795,8 @@ function setSrgbTexture(texture) {
         num281 = 1.15 + 0.88 * qeResult44,
         num282 = 0.54 + 0.68 * qeResult45,
         num283 = 0.9 + 0.66 * qeResult46,
-        mesh14 = new THREE.Mesh(
-          new THREE.BoxGeometry(num281, num282, num283),
+        mesh14 = new Mesh(
+          new BoxGeometry(num281, num282, num283),
           meshStandardMaterial7,
         ),
         gtResult = tmpV69(cylinderGeometry3, num277);
@@ -2806,8 +2818,8 @@ function setSrgbTexture(texture) {
         group11.add(mesh14),
         qeResult43 > 0.73 && result69 < 0.66 && num278 < 0.75)
       ) {
-        const mesh4 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.42 * num281, 0.42 * num282, 0.58 * num283),
+        const mesh4 = new Mesh(
+            new BoxGeometry(0.42 * num281, 0.42 * num282, 0.58 * num283),
             meshStandardMaterial7,
           ),
           num116 = -Math.sin(num277),
@@ -2839,8 +2851,8 @@ function setSrgbTexture(texture) {
         num289 = 0.3 + 0.2 * qeResult49,
         num290 = 0.35 + 0.25 * qeResult50,
         num291 = 7.6 + 0.35 * (qeResult48 - 0.5),
-        mesh15 = new THREE.Mesh(
-          new THREE.BoxGeometry(num288, num289, num290),
+        mesh15 = new Mesh(
+          new BoxGeometry(num288, num289, num290),
           meshStandardMaterial7,
         );
       (mesh15.position.set(
@@ -2855,7 +2867,7 @@ function setSrgbTexture(texture) {
         (mesh15.receiveShadow = !1),
         group11.add(mesh15));
     }
-    const reliefBrickMaterial = new THREE.MeshStandardMaterial({
+    const reliefBrickMaterial = new MeshStandardMaterial({
         color: TOWER_SURFACE_MATERIALS.shellColor,
         map: result108.colorMap,
         bumpMap: result108.bumpMap,
@@ -2882,7 +2894,7 @@ function setSrgbTexture(texture) {
         num293 = 0.3 + 0.2 * qeResult54,
         num294 = 0.18 + 0.22 * qeResult55,
         radial = shellR + num294 * 0.42,
-        mesh = new THREE.Mesh(new THREE.BoxGeometry(num292, num293, num294), reliefBrickMaterial);
+        mesh = new Mesh(new BoxGeometry(num292, num293, num294), reliefBrickMaterial);
       (mesh.position.set(
         Math.cos(angle) * radial,
         localY + 0.22 * (qeResult55 - 0.5),
@@ -2917,8 +2929,8 @@ function setSrgbTexture(texture) {
         num298 = 0.18 + 0.32 * qeResult58,
         num299 = 0.22 + 0.48 * qeResult59,
         num300 = 7.05 + 0.95 * qeResult58 - 0.32 * result70,
-        mesh16 = new THREE.Mesh(
-          new THREE.BoxGeometry(num297, num298, num299),
+        mesh16 = new Mesh(
+          new BoxGeometry(num297, num298, num299),
           meshStandardMaterial7,
         ),
         num301 = 0.16 + 0.09 * result70 + 0.07 * num296;
@@ -2935,28 +2947,28 @@ function setSrgbTexture(texture) {
         group11.add(mesh16));
     }
     const arr21 = [
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 3022356,
           map: result108.colorMap,
           bumpMap: result108.bumpMap,
           bumpScale: 0.03,
           roughness: 0.98,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 5913128,
           map: result108.colorMap,
           bumpMap: result108.bumpMap,
           bumpScale: 0.03,
           roughness: 0.96,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 7231554,
           map: result108.colorMap,
           bumpMap: result108.bumpMap,
           bumpScale: 0.025,
           roughness: 0.94,
         }),
-        new THREE.MeshStandardMaterial({
+        new MeshStandardMaterial({
           color: 4866104,
           map: result108.colorMap,
           bumpMap: result108.bumpMap,
@@ -2983,7 +2995,7 @@ function setSrgbTexture(texture) {
             : num304
               ? meshStandardMaterial8
               : meshStandardMaterial7,
-        mesh17 = new THREE.Mesh(new THREE.BoxGeometry(num305, num306, num307), tmpV15),
+        mesh17 = new Mesh(new BoxGeometry(num305, num306, num307), tmpV15),
         gtResult4 = tmpV69(cylinderGeometry3, num303);
       if (!Number.isFinite(gtResult4)) continue;
       const tmpV16 = num304 ? 3.5 + 3.5 * qeResult62 : 7.2 + 2.2 * qeResult63,
@@ -3009,9 +3021,9 @@ function setSrgbTexture(texture) {
         tmpV17 = arr21[Math.floor(qeResult67 * arr21.length)],
         tmpV18 =
           qeResult68 > 0.5
-            ? new THREE.DodecahedronGeometry(num311, 0)
-            : new THREE.BoxGeometry(1.2 * num311, 0.6 * num311, 0.9 * num311),
-        mesh18 = new THREE.Mesh(tmpV18, tmpV17),
+            ? new DodecahedronGeometry(num311, 0)
+            : new BoxGeometry(1.2 * num311, 0.6 * num311, 0.9 * num311),
+        mesh18 = new Mesh(tmpV18, tmpV17),
         gtResult5 = tmpV69(cylinderGeometry3, num310);
       if (!Number.isFinite(gtResult5)) continue;
       const num312 = 6.5 + 3 * qeResult66;
@@ -3036,7 +3048,7 @@ function setSrgbTexture(texture) {
         num316 = 0.08 + 0.22 * qeResult71,
         num317 = 0.1 + 0.28 * qeResult72,
         tmpV19 = arr21[Math.floor(qeResult70 * arr21.length)],
-        mesh19 = new THREE.Mesh(new THREE.BoxGeometry(num315, num316, num317), tmpV19),
+        mesh19 = new Mesh(new BoxGeometry(num315, num316, num317), tmpV19),
         gtResult6 = tmpV69(cylinderGeometry3, num314);
       if (!Number.isFinite(gtResult6)) continue;
       const num318 = 4.5 + 4.5 * qeResult70;
@@ -3062,7 +3074,7 @@ function setSrgbTexture(texture) {
             (ctx11.fillStyle = gradient4),
             ctx11.fillRect(0, 0, 128, 128));
         }
-        const canvasTexture10 = new THREE.CanvasTexture(canvas11);
+        const canvasTexture10 = new CanvasTexture(canvas11);
         return (setSrgbTexture(canvasTexture10), canvasTexture10);
       })(),
       plumeColumns = state.profile.counts.plumeColumns,
@@ -3077,8 +3089,8 @@ function setSrgbTexture(texture) {
         num322 = 1.4 + 1.9 * qeResult74,
         gtResult7 = tmpV69(cylinderGeometry3, num321),
         num323 = (Number.isFinite(gtResult7) ? gtResult7 : 14) + 0.45 + 2.6 * qeResult75,
-        sprite8 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite8 = new Sprite(
+          new SpriteMaterial({
             map: result109,
             color: 14932427,
             transparent: !0,
@@ -3116,8 +3128,8 @@ function setSrgbTexture(texture) {
         num326 = 1.8 + 2.4 * qeResult78,
         gtResult8 = tmpV69(cylinderGeometry3, num325),
         num327 = (Number.isFinite(gtResult8) ? gtResult8 : 14) + 0.05 + 1.1 * qeResult79,
-        sprite9 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite9 = new Sprite(
+          new SpriteMaterial({
             map: result109,
             color: 13089448,
             transparent: !0,
@@ -3160,9 +3172,9 @@ function setSrgbTexture(texture) {
         arg103.mesh.receiveShadow = !1;
       }
     });
-    const group12 = new THREE.Group();
+    const group12 = new Group();
     group4.add(group12);
-    const meshStandardMaterial9 = new THREE.MeshStandardMaterial({
+    const meshStandardMaterial9 = new MeshStandardMaterial({
         color: 10122585,
         roughness: 0.97,
         metalness: 0.01,
@@ -3173,7 +3185,7 @@ function setSrgbTexture(texture) {
         qeResult82 = tmpV65(2.03 * num458 + 9.4),
         qeResult83 = tmpV65(2.89 * num458 + 13.7),
         num329 = 0.22 + 0.78 * qeResult81,
-        mesh20 = new THREE.Mesh(new THREE.DodecahedronGeometry(num329, 0), meshStandardMaterial9),
+        mesh20 = new Mesh(new DodecahedronGeometry(num329, 0), meshStandardMaterial9),
         num330 = 12 + 14 * qeResult82,
         num331 = 10 * (qeResult83 - 0.5),
         result71 = Math.cos(num511),
@@ -3190,7 +3202,7 @@ function setSrgbTexture(texture) {
         (mesh20.receiveShadow = !state.lowPower),
         group12.add(mesh20));
     }
-    const meshStandardMaterial10 = new THREE.MeshStandardMaterial({
+    const meshStandardMaterial10 = new MeshStandardMaterial({
         color: 9398605,
         roughness: 0.96,
         metalness: 0.01,
@@ -3200,8 +3212,8 @@ function setSrgbTexture(texture) {
       const qeResult84 = tmpV65(7.17 * num459 + 4.8),
         qeResult85 = tmpV65(8.41 * num459 + 2.9),
         qeResult86 = tmpV65(9.73 * num459 + 6.1),
-        mesh21 = new THREE.Mesh(
-          new THREE.BoxGeometry(
+        mesh21 = new Mesh(
+          new BoxGeometry(
             0.28 + 0.6 * qeResult84,
             0.14 + 0.35 * qeResult85,
             0.5 + 0.8 * qeResult86,
@@ -3224,9 +3236,9 @@ function setSrgbTexture(texture) {
     }
     const tmpV80 = state.lowPower ? 4 : 6,
       arr23 = [],
-      group13 = new THREE.Group(),
-      cylinderGeometry4 = new THREE.CylinderGeometry(0.08, 0.15, 2.5, state.lowPower ? 4 : 6),
-      meshStandardMaterial11 = new THREE.MeshStandardMaterial({
+      group13 = new Group(),
+      cylinderGeometry4 = new CylinderGeometry(0.08, 0.15, 2.5, state.lowPower ? 4 : 6),
+      meshStandardMaterial11 = new MeshStandardMaterial({
         color: 5913896,
         roughness: 0.95,
         metalness: 0.01,
@@ -3263,7 +3275,7 @@ function setSrgbTexture(texture) {
         ctx12.beginPath(),
         ctx12.ellipse(32, 78, 8, 6, 0, 0, 2 * Math.PI),
         ctx12.fill());
-      const canvasTexture11 = new THREE.CanvasTexture(canvas12);
+      const canvasTexture11 = new CanvasTexture(canvas12);
       return (setSrgbTexture(canvasTexture11), canvasTexture11);
     }
     function makeHotCoreTexture() {
@@ -3280,7 +3292,7 @@ function setSrgbTexture(texture) {
         ctx13.beginPath(),
         ctx13.ellipse(16, 28, 9, 17, 0, 0, 2 * Math.PI),
         ctx13.fill());
-      const canvasTexture12 = new THREE.CanvasTexture(canvas13);
+      const canvasTexture12 = new CanvasTexture(canvas13);
       return (setSrgbTexture(canvasTexture12), canvasTexture12);
     }
     function makeEmberTexture() {
@@ -3296,7 +3308,7 @@ function setSrgbTexture(texture) {
         ctx14.beginPath(),
         ctx14.arc(16, 16, 14, 0, 2 * Math.PI),
         ctx14.fill());
-      const canvasTexture13 = new THREE.CanvasTexture(canvas14);
+      const canvasTexture13 = new CanvasTexture(canvas14);
       return (setSrgbTexture(canvasTexture13), canvasTexture13);
     }
     const _tResult = tmpV81(
@@ -3320,43 +3332,43 @@ function setSrgbTexture(texture) {
         num339 = 13.2 * Math.cos(num338),
         num340 = 13.2 * Math.sin(num338),
         result73 = Math.max(groundHeight(num339, num340), result107),
-        mesh22 = new THREE.Mesh(cylinderGeometry4, meshStandardMaterial11);
+        mesh22 = new Mesh(cylinderGeometry4, meshStandardMaterial11);
       (mesh22.position.set(num339, result73 + 2.4, num340),
         (mesh22.rotation.x = 0.08 * (tmpV65(4001 + num460) - 0.5)),
         (mesh22.rotation.z = 0.08 * (tmpV65(4011 + num460) - 0.5)),
         group13.add(mesh22));
-      const sprite10 = new THREE.Sprite(
-        new THREE.SpriteMaterial({
+      const sprite10 = new Sprite(
+        new SpriteMaterial({
           map: _tResult,
           transparent: !0,
           opacity: 0.85,
           depthWrite: !1,
-          blending: THREE.AdditiveBlending,
+          blending: AdditiveBlending,
         }),
       );
       (sprite10.position.set(num339, result73 + 3.9, num340),
         sprite10.scale.set(0.8, 1.4, 1),
         group13.add(sprite10));
-      const sprite11 = new THREE.Sprite(
-        new THREE.SpriteMaterial({
+      const sprite11 = new Sprite(
+        new SpriteMaterial({
           map: _tResult2,
           transparent: !0,
           opacity: 0.45,
           depthWrite: !1,
-          blending: THREE.AdditiveBlending,
+          blending: AdditiveBlending,
         }),
       );
       (sprite11.position.set(num339, result73 + 3.7, num340),
         sprite11.scale.set(1.6, 2.4, 1),
         group13.add(sprite11));
       const hot = hotCoreTex
-        ? new THREE.Sprite(
-            new THREE.SpriteMaterial({
+        ? new Sprite(
+            new SpriteMaterial({
               map: hotCoreTex,
               transparent: !0,
               opacity: 0.9,
               depthWrite: !1,
-              blending: THREE.AdditiveBlending,
+              blending: AdditiveBlending,
             }),
           )
         : null;
@@ -3364,15 +3376,15 @@ function setSrgbTexture(texture) {
         (hot.position.set(num339, result73 + 4.05, num340),
         hot.scale.set(0.4, 0.7, 1),
         group13.add(hot));
-      const gRing = new THREE.Mesh(
-        new THREE.RingGeometry(0.3, 2.5, 24),
-        new THREE.MeshBasicMaterial({
+      const gRing = new Mesh(
+        new RingGeometry(0.3, 2.5, 24),
+        new MeshBasicMaterial({
           color: 16752704,
           transparent: !0,
           opacity: 0.08,
-          side: THREE.DoubleSide,
+          side: DoubleSide,
           depthWrite: !1,
-          blending: THREE.AdditiveBlending,
+          blending: AdditiveBlending,
         }),
       );
       ((gRing.rotation.x = -Math.PI / 2),
@@ -3382,13 +3394,13 @@ function setSrgbTexture(texture) {
       if (!state.lowPower && emberTex) {
         const num121 = 5;
         for (let num32 = 0; num32 < num121; num32 += 1) {
-          const sprite3 = new THREE.Sprite(
-            new THREE.SpriteMaterial({
+          const sprite3 = new Sprite(
+            new SpriteMaterial({
               map: emberTex,
               transparent: !0,
               opacity: 0,
               depthWrite: !1,
-              blending: THREE.AdditiveBlending,
+              blending: AdditiveBlending,
             }),
           );
           const num8 = 0.08 + 0.08 * tmpV65(4101 + num460 * 7 + num32);
@@ -3424,7 +3436,7 @@ function setSrgbTexture(texture) {
         const num122 = result48 / Math.PI,
           num123 = 0.3 + 0.9 * num122,
           num124 = 8 + 10 * num122,
-          pointLight = new THREE.PointLight(16752704, num123, num124, 2);
+          pointLight = new PointLight(16752704, num123, num124, 2);
         (pointLight.position.set(num339, result73 + 3.8, num340),
           group13.add(pointLight),
           (cfg.light = pointLight),
@@ -3434,7 +3446,7 @@ function setSrgbTexture(texture) {
     }
     group4.add(group13);
     const tmpV82 = state.lowPower ? 4 : 8,
-      group14 = new THREE.Group();
+      group14 = new Group();
     const PLANT = plantPalette || {
       leafDeep: "#2c3c18",
       leafMid: "#4a6028",
@@ -3526,7 +3538,7 @@ function setSrgbTexture(texture) {
           ),
           ctx15.fill());
       }
-      const canvasTexture14 = new THREE.CanvasTexture(canvas15);
+      const canvasTexture14 = new CanvasTexture(canvas15);
       return (setSrgbTexture(canvasTexture14), canvasTexture14);
     }
     function tmpV84(arg109) {
@@ -3575,11 +3587,11 @@ function setSrgbTexture(texture) {
           ctx16.quadraticCurveTo((num131 + num135) / 2, (num132 + num134) / 2, num135, num134),
           ctx16.stroke());
       }
-      const canvasTexture15 = new THREE.CanvasTexture(canvas16);
+      const canvasTexture15 = new CanvasTexture(canvas16);
       return (setSrgbTexture(canvasTexture15), canvasTexture15);
     }
     const no = function (arg110, arg111) {
-      return new THREE.MeshStandardMaterial({
+      return new MeshStandardMaterial({
         color: 16777215,
         map: arg110,
         transparent: !0,
@@ -3588,10 +3600,10 @@ function setSrgbTexture(texture) {
         roughness: 0.85,
         metalness: 0,
         depthWrite: !1,
-        side: THREE.DoubleSide,
+        side: DoubleSide,
       });
     };
-    const plantShadowMaterial = new THREE.MeshBasicMaterial({
+    const plantShadowMaterial = new MeshBasicMaterial({
       color: 0,
       transparent: !0,
       opacity: 0.18,
@@ -3608,17 +3620,17 @@ function setSrgbTexture(texture) {
         gradient19.addColorStop(1, "rgba(0, 0, 0, 0)"),
         (ctx17.fillStyle = gradient19),
         ctx17.fillRect(0, 0, 64, 64));
-      const canvasTexture16 = new THREE.CanvasTexture(canvas17);
+      const canvasTexture16 = new CanvasTexture(canvas17);
       return (setSrgbTexture(canvasTexture16), canvasTexture16);
     }
     const plantShadowTex = makePlantShadowTexture();
     plantShadowTex && (plantShadowMaterial.map = plantShadowTex);
-    const plantShadowGroup = new THREE.Group();
+    const plantShadowGroup = new Group();
     group4.add(plantShadowGroup);
     const plantShadowRecords = [];
     function addPlantShadow(arg112, arg113, arg114, arg115, arg116) {
       if (!plantShadowTex) return;
-      const mesh31 = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), plantShadowMaterial);
+      const mesh31 = new Mesh(new PlaneGeometry(1, 1), plantShadowMaterial);
       ((mesh31.rotation.x = -Math.PI / 2),
         mesh31.position.set(arg112, arg113 - 0.01, arg114),
         mesh31.scale.set(1.2 * arg115, 1.2 * arg116, 1),
@@ -3635,8 +3647,8 @@ function setSrgbTexture(texture) {
         num349 = num348 * (0.65 + 0.7 * tmpV65(6004 + 1.3 * num464)),
         num350 = num348 * (0.65 + 0.7 * tmpV65(6005 + 2.1 * num464)),
         aoResult = tmpV83(8e3 + 11 * num464),
-        mesh23 = new THREE.Mesh(
-          new THREE.PlaneGeometry(1, 1),
+        mesh23 = new Mesh(
+          new PlaneGeometry(1, 1),
           no(aoResult, 0.5 + 0.3 * tmpV65(6006 + 1.7 * num464)),
         );
       (addPlantShadow(num345, num347, num346, num349, num350),
@@ -3654,7 +3666,7 @@ function setSrgbTexture(texture) {
         num468 = Math.sin(num465) * num466,
         num469 = groundHeight(num467, num468) + 0.02,
         aoResult2 = tmpV83(8500),
-        mesh32 = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), no(aoResult2, 0.6));
+        mesh32 = new Mesh(new PlaneGeometry(1, 1), no(aoResult2, 0.6));
       (addPlantShadow(num467, num469, num468, 16, 12),
         (mesh32.rotation.x = -Math.PI / 2),
         (mesh32.rotation.z = tmpV65(6202) * Math.PI * 2),
@@ -3671,8 +3683,8 @@ function setSrgbTexture(texture) {
         num354 = Math.sin(num351) * num352,
         num355 = groundHeight(num353, num354) + 0.02,
         roResult = tmpV84(9e3 + 13 * num470),
-        mesh24 = new THREE.Mesh(
-          new THREE.PlaneGeometry(1, 1),
+        mesh24 = new Mesh(
+          new PlaneGeometry(1, 1),
           no(roResult, 0.45 + 0.25 * tmpV65(6302 + 2.7 * num470)),
         );
       ((mesh24.rotation.x = -Math.PI / 2),
@@ -3722,12 +3734,12 @@ function setSrgbTexture(texture) {
       }),
       !state.lowPower)
     ) {
-      const webGLCubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
-          format: THREE.RGBAFormat,
+      const webGLCubeRenderTarget = new WebGLCubeRenderTarget(128, {
+          format: RGBAFormat,
           generateMipmaps: !0,
-          minFilter: THREE.LinearMipmapLinearFilter,
+          minFilter: LinearMipmapLinearFilter,
         }),
-        cubeCamera = new THREE.CubeCamera(0.5, 200, webGLCubeRenderTarget);
+        cubeCamera = new CubeCamera(0.5, 200, webGLCubeRenderTarget);
       (cubeCamera.position.set(0, groundHeight(0, 0) + 0.5, 0), homeScene.add(cubeCamera));
       let num472 = !1;
       const fn3 = () => {
@@ -3744,13 +3756,13 @@ function setSrgbTexture(texture) {
       };
       requestAnimationFrame(() => requestAnimationFrame(fn3));
     }
-    const mesh41 = new THREE.Mesh(
-      new THREE.RingGeometry(11.6, 18, 80),
-      new THREE.MeshBasicMaterial({
+    const mesh41 = new Mesh(
+      new RingGeometry(11.6, 18, 80),
+      new MeshBasicMaterial({
         color: 16240538,
         transparent: !0,
         opacity: 0.08,
-        side: THREE.DoubleSide,
+        side: DoubleSide,
       }),
     );
     ((mesh41.rotation.x = -Math.PI / 2), (mesh41.position.y = result107 + 0.9), group7.add(mesh41));
@@ -3759,12 +3771,12 @@ function setSrgbTexture(texture) {
       const num473 = 3.4 + 1.4 * tmpV65(arg120 + 0.17),
         num474 = 0.34 + 0.15 * tmpV65(arg120 + 0.41),
         num475 = 1.75 + 0.72 * tmpV65(arg120 + 0.63);
-      return new THREE.BoxGeometry(num473, num474, num475);
+      return new BoxGeometry(num473, num474, num475);
     }
     [10, 18, 26].forEach((arg121, arg122) => {
-      const mesh33 = new THREE.Mesh(
-        new THREE.TorusGeometry(14.6 - 1.25 * arg122, 0.1, 14, 80),
-        new THREE.MeshBasicMaterial({
+      const mesh33 = new Mesh(
+        new TorusGeometry(14.6 - 1.25 * arg122, 0.1, 14, 80),
+        new MeshBasicMaterial({
           color: 1 === arg122 ? 15914942 : 15250813,
           transparent: !0,
           opacity: 0.16 - 0.03 * arg122,
@@ -3916,10 +3928,10 @@ function setSrgbTexture(texture) {
           gradient21.addColorStop(1, "rgba(14, 8, 4, 0.38)"),
           (ctx18.fillStyle = gradient21),
           ctx18.fillRect(0, 0.85 * canvas18.height, canvas18.width, 0.15 * canvas18.height));
-        const canvasTexture17 = new THREE.CanvasTexture(canvas18);
+        const canvasTexture17 = new CanvasTexture(canvas18);
         return (
-          (canvasTexture17.wrapS = THREE.RepeatWrapping),
-          (canvasTexture17.wrapT = THREE.RepeatWrapping),
+          (canvasTexture17.wrapS = RepeatWrapping),
+          (canvasTexture17.wrapT = RepeatWrapping),
           canvasTexture17.repeat.set(2.4, 1.2),
           (canvasTexture17.anisotropy = chooseAnisotropy(2, 6)),
           setSrgbTexture(canvasTexture17),
@@ -3928,7 +3940,7 @@ function setSrgbTexture(texture) {
       })(),
       mapResult = [10126450, 8287592, 9138784, 10518632, 7365208, 9728094, 8945266, 10390128].map(
         (arg123) =>
-          new THREE.MeshStandardMaterial({
+          new MeshStandardMaterial({
             color: arg123,
             map: result110,
             roughness: 0.88 + 0.1 * Math.random(),
@@ -3954,7 +3966,7 @@ function setSrgbTexture(texture) {
       if (qeResult90 > 1 - (num366 ? 0.12 : 0.05)) continue;
       const tmpV20 = arr25[Math.floor(qeResult90 * arr25.length)],
         tmpV21 = mapResult[Math.floor(tmpV65(7.31 * num479 + 3.2) * mapResult.length)],
-        mesh25 = new THREE.Mesh(tmpV20, tmpV21),
+        mesh25 = new Mesh(tmpV20, tmpV21),
         num367 = 0.84 + 0.14 * qeResult87,
         tmpV22 = num366 && qeResult91 > 0.72,
         tmpV23 = tmpV22 ? num367 * (0.58 + 0.22 * qeResult88) : num367,
@@ -3976,8 +3988,8 @@ function setSrgbTexture(texture) {
         (mesh25.receiveShadow = !state.lowPower),
         group7.add(mesh25));
     }
-    const boxGeometry = new THREE.BoxGeometry(1.15, 1, 1.15),
-      meshStandardMaterial12 = new THREE.MeshStandardMaterial({
+    const boxGeometry = new BoxGeometry(1.15, 1, 1.15),
+      meshStandardMaterial12 = new MeshStandardMaterial({
         color: 11833972,
         roughness: 0.95,
       }),
@@ -3989,15 +4001,15 @@ function setSrgbTexture(texture) {
         num376 = Math.sin(num373) * num374,
         num377 = 4 + (num480 % 3) * 1.4,
         num378 = groundHeight(num375, num376) + 0.5 * num377,
-        mesh26 = new THREE.Mesh(boxGeometry, meshStandardMaterial12);
+        mesh26 = new Mesh(boxGeometry, meshStandardMaterial12);
       ((mesh26.scale.y = num377),
         mesh26.position.set(num375, num378, num376),
         (mesh26.castShadow = !state.lowPower),
         (mesh26.receiveShadow = !state.lowPower),
         group4.add(mesh26));
-      const mesh27 = new THREE.Mesh(
-        new THREE.OctahedronGeometry(num480 % 2 ? 0.6 : 0.5, 0),
-        new THREE.MeshStandardMaterial({
+      const mesh27 = new Mesh(
+        new OctahedronGeometry(num480 % 2 ? 0.6 : 0.5, 0),
+        new MeshStandardMaterial({
           color: num480 % 3 == 0 ? 14075049 : num480 % 3 == 1 ? 13228002 : 15316611,
           roughness: 0.4,
           metalness: 0.08,
@@ -4010,10 +4022,10 @@ function setSrgbTexture(texture) {
         group4.add(mesh27),
         arr26.push(mesh27));
     }
-    const group15 = new THREE.Group();
+    const group15 = new Group();
     group4.add(group15);
-    const boxGeometry2 = new THREE.BoxGeometry(0.65, 2.6, 0.65),
-      meshStandardMaterial13 = new THREE.MeshStandardMaterial({
+    const boxGeometry2 = new BoxGeometry(0.65, 2.6, 0.65),
+      meshStandardMaterial13 = new MeshStandardMaterial({
         color: 14074533,
         roughness: 0.5,
         metalness: 0.05,
@@ -4042,7 +4054,7 @@ function setSrgbTexture(texture) {
         color: 16113077,
       },
     ].forEach((arg125) => {
-      const mesh34 = new THREE.Mesh(boxGeometry2, meshStandardMaterial13.clone());
+      const mesh34 = new Mesh(boxGeometry2, meshStandardMaterial13.clone());
       (mesh34.material.color.setHex(arg125.color),
         mesh34.material.emissive.setHex(arg125.color),
         (mesh34.material.emissiveIntensity = 0.08),
@@ -4059,8 +4071,8 @@ function setSrgbTexture(texture) {
           qualityProfile: state.profile,
           chooseAnisotropy: chooseAnisotropy,
         }),
-        marblePreview = new THREE.Mesh(
-          new THREE.BoxGeometry(4, 4, 0.5),
+        marblePreview = new Mesh(
+          new BoxGeometry(4, 4, 0.5),
           createMarbleMaterial(marbleTextures),
         );
       (marblePreview.position.set(15, 6, 0),
@@ -4070,10 +4082,10 @@ function setSrgbTexture(texture) {
         homeScene.add(marblePreview));
     }
     // Camera-following cloud layers stay centered on the orbiting view.
-    const cloudAnchor = new THREE.Group();
+    const cloudAnchor = new Group();
     cloudAnchor.position.y = -7.5;
     homeScene.add(cloudAnchor);
-    const driftCloudGroup = new THREE.Group();
+    const driftCloudGroup = new Group();
     cloudAnchor.add(driftCloudGroup);
     cloudGroups.push(driftCloudGroup);
     setCloudGroupSceneVisibility(driftCloudGroup, true);
@@ -4109,7 +4121,7 @@ function setSrgbTexture(texture) {
             ctx19.arc(num161, num162, num163, 0, 2 * Math.PI),
             ctx19.fill());
         }
-        const canvasTexture18 = new THREE.CanvasTexture(canvas19);
+        const canvasTexture18 = new CanvasTexture(canvas19);
         return (
           setSrgbTexture(canvasTexture18),
           (canvasTexture18.anisotropy = chooseAnisotropy(1, 2)),
@@ -4125,8 +4137,8 @@ function setSrgbTexture(texture) {
         num380 = num511 + 0.82 * (qeResult92 - 0.5),
         num381 = 9.2 + 2.7 * qeResult93,
         num382 = result107 + 20.8 + 13.8 * qeResult94,
-        sprite12 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite12 = new Sprite(
+          new SpriteMaterial({
             map: driftCloudTexture,
             color: 14204571,
             transparent: !0,
@@ -4162,7 +4174,7 @@ function setSrgbTexture(texture) {
       radius: 46,
     });
     setShadowParticipation(driftCloudGroup);
-    const bufferGeometry2 = new THREE.BufferGeometry(),
+    const bufferGeometry2 = new BufferGeometry(),
       float32Array2 = new Float32Array(3 * pointFieldCount),
       float32Array3 = new Float32Array(3 * pointFieldCount);
     for (let num484 = 0; num484 < pointFieldCount; num484 += 1) {
@@ -4175,16 +4187,16 @@ function setSrgbTexture(texture) {
         (float32Array2[3 * num484 + 1] = num388),
         (float32Array2[3 * num484 + 2] = num387));
       const tmpV25 = [15316611, 16113077, 14075049, 11714754][num484 % 4],
-        color = new THREE.Color(tmpV25);
+        color = new Color(tmpV25);
       ((float32Array3[3 * num484] = color.r),
         (float32Array3[3 * num484 + 1] = color.g),
         (float32Array3[3 * num484 + 2] = color.b));
     }
-    (bufferGeometry2.setAttribute("position", new THREE.BufferAttribute(float32Array2, 3)),
-      bufferGeometry2.setAttribute("color", new THREE.BufferAttribute(float32Array3, 3)));
-    const points = new THREE.Points(
+    (bufferGeometry2.setAttribute("position", new BufferAttribute(float32Array2, 3)),
+      bufferGeometry2.setAttribute("color", new BufferAttribute(float32Array3, 3)));
+    const points = new Points(
       bufferGeometry2,
-      new THREE.PointsMaterial({
+      new PointsMaterial({
         size: state.lowPower ? 0.42 : 0.34,
         vertexColors: !0,
         transparent: !0,
@@ -4194,7 +4206,7 @@ function setSrgbTexture(texture) {
       }),
     );
     group4.add(points);
-    const emberCloudGroup = new THREE.Group();
+    const emberCloudGroup = new Group();
     (cloudAnchor.add(emberCloudGroup), cloudGroups.push(emberCloudGroup));
     setCloudGroupSceneVisibility(emberCloudGroup, true);
     const emberClouds = [],
@@ -4235,7 +4247,7 @@ function setSrgbTexture(texture) {
           ctx20.lineTo(num485 + 0.08 * canvas20.width, num486 - 0.06 * canvas20.height),
           ctx20.closePath(),
           ctx20.fill());
-        const canvasTexture19 = new THREE.CanvasTexture(canvas20);
+        const canvasTexture19 = new CanvasTexture(canvas20);
         return (
           setSrgbTexture(canvasTexture19),
           (canvasTexture19.anisotropy = chooseAnisotropy(1, 2)),
@@ -4254,8 +4266,8 @@ function setSrgbTexture(texture) {
           num391 = Math.cos(num389) * num390,
           num392 = Math.sin(num389) * num390,
           num393 = groundHeight(num391, num392) + 2.6 + 11.5 * qeResult98,
-          sprite13 = new THREE.Sprite(
-            new THREE.SpriteMaterial({
+          sprite13 = new Sprite(
+            new SpriteMaterial({
               map: emberCloudTexture,
               color: 15250813,
               transparent: !0,
@@ -4293,7 +4305,7 @@ function setSrgbTexture(texture) {
     setShadowParticipation(emberCloudGroup);
     const hazeClouds = [],
       hazeCloudCount = state.profile.counts.hazeClouds,
-      hazeCloudGroup = new THREE.Group(),
+      hazeCloudGroup = new Group(),
       hazeCloudCanvas = document.createElement("canvas");
     ((hazeCloudCanvas.width = 128), (hazeCloudCanvas.height = 128));
     const hazeCloudCtx = hazeCloudCanvas.getContext("2d");
@@ -4308,7 +4320,7 @@ function setSrgbTexture(texture) {
           (hazeCloudCtx.fillStyle = gradient7),
           hazeCloudCtx.fillRect(0, 0, 128, 128));
       }
-    const hazeCloudTexture = new THREE.CanvasTexture(hazeCloudCanvas);
+    const hazeCloudTexture = new CanvasTexture(hazeCloudCanvas);
     setSrgbTexture(hazeCloudTexture);
     for (let num489 = 0; num489 < hazeCloudCount; num489 += 1) {
       const qeResult100 = tmpV65(4101 + 1.47 * num489),
@@ -4318,8 +4330,8 @@ function setSrgbTexture(texture) {
         num397 = qeResult100 * Math.PI * 2,
         num398 = 13 + 4 * qeResult101,
         num399 = result107 + 0.5 + 6 * qeResult102,
-        sprite14 = new THREE.Sprite(
-          new THREE.SpriteMaterial({
+        sprite14 = new Sprite(
+          new SpriteMaterial({
             map: hazeCloudTexture,
             color: 12232850,
             transparent: !0,
@@ -4357,7 +4369,7 @@ function setSrgbTexture(texture) {
     // Pulsing far-cloud billows fade in and out around the skyline anchor.
     const pulseCloudCount = state.profile.counts.pulseClouds,
       pulseClouds = [],
-      pulseCloudGroup = new THREE.Group();
+      pulseCloudGroup = new Group();
     pulseCloudGroup.renderOrder = 10;
     const pulseCloudTexture = driftCloudTexture || emberCloudTexture;
     if (pulseCloudTexture) {
@@ -4376,8 +4388,8 @@ function setSrgbTexture(texture) {
             hOff = (tmpV65(6133 + seed) - 0.5) * 7,
             num9 = 11 + 9 * tmpV65(6149 + seed),
             num10 = num9 * (0.5 + 0.22 * tmpV65(6165 + seed)),
-            sprite = new THREE.Sprite(
-              new THREE.SpriteMaterial({
+            sprite = new Sprite(
+              new SpriteMaterial({
                 map: pulseCloudTexture,
                 color: 16119008,
                 transparent: !0,
@@ -4434,10 +4446,10 @@ function setSrgbTexture(texture) {
         profile: fallbackComposition,
       },
       num515 = 1.15,
-      cloudCameraVector = new THREE.Vector3(),
-      cloudViewVector = new THREE.Vector3(),
-      cloudOffsetVector = new THREE.Vector3(),
-      cloudLookTarget = new THREE.Vector3();
+      cloudCameraVector = new Vector3(),
+      cloudViewVector = new Vector3(),
+      cloudOffsetVector = new Vector3(),
+      cloudLookTarget = new Vector3();
     function resolveSceneCompositionProfile() {
       return typeof scene.getSceneCompositionProfile === "function"
         ? scene.getSceneCompositionProfile({
@@ -4493,7 +4505,7 @@ function setSrgbTexture(texture) {
           system.active = true;
           system.bucket = system.importance === "core" ? "core" : system.bucket;
         } else {
-          const center = system.getCenter(system._center || (system._center = new THREE.Vector3()));
+          const center = system.getCenter(system._center || (system._center = new Vector3()));
           system.bucket = visibilityTracker.classifySphere({
             center,
             importance: system.importance,
@@ -4546,7 +4558,7 @@ function setSrgbTexture(texture) {
         },
       ),
       tmpV89());
-    const clock = new THREE.Clock(),
+    const clock = new Clock(),
       num516 = 0.12 * Math.PI;
     // Cap touch-primary devices (phones, tablets) at ~30fps. The scene is
     // decorative; rendering every other frame keeps visuals smooth enough while
