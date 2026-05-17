@@ -1,18 +1,41 @@
 import {
   AdditiveBlending, AmbientLight, BackSide, BoxGeometry, BufferAttribute,
-  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry, Clock,
-  Color, CubeCamera, CylinderGeometry, DirectionalLight, DodecahedronGeometry,
-  DoubleSide, Float32BufferAttribute, Fog, Group, HemisphereLight,
-  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, NoToneMapping, OctahedronGeometry,
-  PCFSoftShadowMap, PerspectiveCamera, PlaneGeometry, PointLight, Points,
-  PointsMaterial, RepeatWrapping, RGBAFormat, RingGeometry, Scene,
-  ShaderMaterial, SphereGeometry, Sprite, SpriteMaterial, TetrahedronGeometry,
-  TorusGeometry, TubeGeometry, Vector2, Vector3, WebGLCubeRenderTarget,
-  WebGLRenderer,
+  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry,
+  ClampToEdgeWrapping, Clock, Color, ColorManagement, CubeCamera,
+  CylinderGeometry, DirectionalLight, DodecahedronGeometry, DoubleSide,
+  Euler, Float32BufferAttribute, Fog, Frustum, Group, HemisphereLight,
+  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4,
+  Mesh, MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping,
+  NoToneMapping, OctahedronGeometry, PCFSoftShadowMap, PerspectiveCamera,
+  PlaneGeometry, PointLight, Points, PointsMaterial, Raycaster,
+  RepeatWrapping, RGBAFormat, RingGeometry, Scene, ShaderMaterial, Sphere,
+  SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace,
+  TetrahedronGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  WebGLCubeRenderTarget, WebGLRenderer,
 } from "three";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
 import { createPostprocessPipeline } from "./postprocess.js";
+
+// Reconstruct a namespace object for dependency injection into sub-modules
+// that receive THREE as a parameter (scene/visibility.js, scene/textures.js,
+// scene/dev-mode.js, etc.) and for the dynamic-name lookup used by
+// getThreeExport. Explicit allow-list lets esbuild prove the set instead of
+// pulling all of three/* through `import * as`.
+const THREE = {
+  AdditiveBlending, AmbientLight, BackSide, BoxGeometry, BufferAttribute,
+  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry,
+  ClampToEdgeWrapping, Clock, Color, ColorManagement, CubeCamera,
+  CylinderGeometry, DirectionalLight, DodecahedronGeometry, DoubleSide,
+  Euler, Float32BufferAttribute, Fog, Frustum, Group, HemisphereLight,
+  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4,
+  Mesh, MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping,
+  NoToneMapping, OctahedronGeometry, PCFSoftShadowMap, PerspectiveCamera,
+  PlaneGeometry, PointLight, Points, PointsMaterial, Raycaster,
+  RepeatWrapping, RGBAFormat, RingGeometry, Scene, ShaderMaterial, Sphere,
+  SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace,
+  TetrahedronGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  WebGLCubeRenderTarget, WebGLRenderer,
+};
 
 // r128-parity color / light pipeline. ColorManagement.enabled=true (the r152+
 // default) treats material+light hex colors as sRGB and converts to linear
