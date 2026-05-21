@@ -6,7 +6,7 @@
     const hero = document.getElementById("hero-minimal");
     if (!hero) return;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const reduce = site.shared.reducedMotionQuery();
 
     let target = 0;
     let current = 0;
@@ -26,7 +26,7 @@
 
     function tick() {
       rafId = 0;
-      if (reduce.matches) {
+      if (reduce?.matches) {
         current = 0;
         hero.style.opacity = "1";
         hero.style.transform = "none";
@@ -59,9 +59,9 @@
       { passive: true },
     );
     window.addEventListener("scroll", onScroll, { passive: true });
-    if (typeof reduce.addEventListener === "function") {
+    if (reduce && typeof reduce.addEventListener === "function") {
       reduce.addEventListener("change", onScroll);
-    } else if (typeof reduce.addListener === "function") {
+    } else if (reduce && typeof reduce.addListener === "function") {
       reduce.addListener(onScroll);
     }
   };
