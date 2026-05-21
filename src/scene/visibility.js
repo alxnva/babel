@@ -11,7 +11,8 @@
     const inflatedSphere = new THREE.Sphere();
 
     function updateCameraState() {
-      camera.updateProjectionMatrix();
+      // Projection matrix is rebuilt on resize / composition change via
+      // applySceneComposition; per-frame rebuild here is wasted work.
       camera.updateMatrixWorld();
       projectionViewMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projectionViewMatrix);

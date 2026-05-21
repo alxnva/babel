@@ -11,10 +11,12 @@
     let target = 0;
     let current = 0;
     let rafId = 0;
+    // Cached so per-scroll computeTarget doesn't pay a layout-flushing read.
+    let viewportHeight = window.innerHeight;
 
     function computeTarget() {
       const scrollY = window.scrollY || 0;
-      return Math.min(scrollY / (0.58 * window.innerHeight), 1);
+      return Math.min(scrollY / (0.58 * viewportHeight), 1);
     }
 
     function apply(progress) {
@@ -48,6 +50,14 @@
     onScroll();
     apply(current);
 
+    window.addEventListener(
+      "resize",
+      () => {
+        viewportHeight = window.innerHeight;
+        onScroll();
+      },
+      { passive: true },
+    );
     window.addEventListener("scroll", onScroll, { passive: true });
     if (typeof reduce.addEventListener === "function") {
       reduce.addEventListener("change", onScroll);
