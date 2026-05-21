@@ -103,6 +103,21 @@
     ctx.stroke();
   }
 
+  function roundedRectPath(ctx, x, y, width, height, radius) {
+    const rr = Math.max(0, Math.min(radius, width / 2, height / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + width - rr, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + rr);
+    ctx.lineTo(x + width, y + height - rr);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - rr, y + height);
+    ctx.lineTo(x + rr, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
   // Low-poly closed book viewed from a slight 3/4 angle above.
   // Four visible faces: top cover (largest), right page-edge, front
   // page-edge, and a title band — flat-shaded, pixel-snapped, PS-era.
