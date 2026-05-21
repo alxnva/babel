@@ -111,7 +111,18 @@ test("selectSceneQualityTier resolves the full decision matrix", async () => {
       touchPrimary: true,
     }),
     "high",
-    "touch-primary flagship hardware reaches high",
+    "larger touch-primary flagship hardware reaches high",
+  );
+  assert.equal(
+    scene.selectSceneQualityTier({
+      controls,
+      navigatorInfo: { hardwareConcurrency: 8 },
+      viewport: { width: 390, height: 844 },
+      caps,
+      touchPrimary: true,
+    }),
+    "balanced",
+    "touch-primary phone viewport caps at balanced for mobile thermals",
   );
   assert.equal(
     scene.selectSceneQualityTier({

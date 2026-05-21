@@ -399,24 +399,23 @@
       typeof navigatorInfo.deviceMemory === "number" && navigatorInfo.deviceMemory <= 2;
     const cpuLimited = (navigatorInfo.hardwareConcurrency || 8) <= 4;
     const weakCaps = (caps.maxTextureSize || 0) < 4096 || (caps.maxAnisotropy || 1) < 4;
+    const shortSide = Math.min(viewport.width || 0, viewport.height || 0);
+    const longSide = Math.max(viewport.width || 0, viewport.height || 0);
+    const phoneViewport = touchPrimary && shortSide > 0 && shortSide <= 500 && longSide <= 1000;
 
     if (memoryLimited || weakCaps) return "low";
     if (cpuLimited) return "balanced";
+    if (phoneViewport) return "balanced";
 
-    // Touch-primary devices (phones, tablets) used to get blanket-capped at
-    // balanced because iOS hides deviceMemory and we couldn't tell a flagship
-    // phone from a budget one. With explicit capability signals we can: a
-    // flagship-class touch device — modern Apple silicon, recent Snapdragon —
-    // passes maxTextureSize >= 8192, maxAnisotropy >= 8, and
-    // hardwareConcurrency >= 6, and gets the full high tier. Anything weaker
-    // still caps at balanced, and the runtime governor catches misjudgments.
+    // Touch-primary devices used to get blanket-capped at balanced because iOS
+    // hides deviceMemory. Phone-shaped viewports now stay balanced for battery
+    // and thermals; larger flagship-class touch devices can still reach high.
     const flagshipCaps =
       (caps.maxTextureSize || 0) >= 8192 &&
       (caps.maxAnisotropy || 1) >= 8 &&
       (navigatorInfo.hardwareConcurrency || 0) >= 6;
     if (touchPrimary && !flagshipCaps) return "balanced";
 
-    const shortSide = Math.min(viewport.width || 0, viewport.height || 0);
     if (shortSide > 0 && shortSide < 340) return "balanced";
 
     return "high";
@@ -612,7 +611,10 @@
     };
   }
 
-  function getSceneCompositionProfile({ width = window.innerWidth, height = window.innerHeight } = {}) {
+  function getSceneCompositionProfile({
+    width = window.innerWidth,
+    height = window.innerHeight,
+  } = {}) {
     const safeWidth = Math.max(1, width || 0);
     const safeHeight = Math.max(1, height || 0);
     const isPortrait = safeHeight > safeWidth;
