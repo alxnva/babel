@@ -52,8 +52,9 @@
 
     try {
       const params = new URLSearchParams(window.location?.search || "");
-      const quality = params.get("quality");
-      return { overrideTier: quality && quality.toLowerCase() !== "auto" ? quality : null };
+      const quality = (params.get("quality") || "").toLowerCase();
+      const VALID_TIERS = ["low", "balanced", "high"];
+      return { overrideTier: VALID_TIERS.includes(quality) ? quality : null };
     } catch {
       return { overrideTier: null };
     }

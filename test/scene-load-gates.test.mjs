@@ -120,3 +120,18 @@ test("explicit quality override still allows the scene bundle on reduced-data co
   assert.equal(scripts.length, 1);
   assert.equal(getWebglProbeCount(), 1);
 });
+
+test("invalid quality override does not bypass the data-saver gate", async () => {
+  const { context, host, scripts, getWebglProbeCount } = createContext({
+    saveData: true,
+    search: "?quality=potato",
+  });
+  await loadMainWithQuality(context);
+
+  const loaded = await context.window.BabelSite.ensureSceneReady();
+
+  assert.equal(loaded, false);
+  assert.equal(host.hidden, true);
+  assert.equal(scripts.length, 0);
+  assert.equal(getWebglProbeCount(), 0, "malformed override must not bypass data-saver");
+});
