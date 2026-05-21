@@ -9,6 +9,7 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const mainSourcePath = path.join(projectRoot, "src", "main.js");
 const qualitySourcePath = path.join(projectRoot, "src", "scene", "quality.js");
+const webglProbePath = path.join(projectRoot, "src", "shared", "webgl-probe.js");
 
 function createScriptElement() {
   const listeners = new Map();
@@ -88,8 +89,10 @@ function createContext({ saveData = false, search = "", webgl = true } = {}) {
 }
 
 async function loadMainWithQuality(context) {
+  const probeSource = await readFile(webglProbePath, "utf8");
   const qualitySource = await readFile(qualitySourcePath, "utf8");
   const mainSource = await readFile(mainSourcePath, "utf8");
+  vm.runInNewContext(probeSource, context, { filename: webglProbePath });
   vm.runInNewContext(qualitySource, context, { filename: qualitySourcePath });
   vm.runInNewContext(mainSource, context, { filename: mainSourcePath });
 }

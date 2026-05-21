@@ -8,6 +8,8 @@ import vm from "node:vm";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const iconsSourcePath = path.join(projectRoot, "src", "ui", "icons.js");
+const colorSourcePath = path.join(projectRoot, "src", "shared", "color.js");
+const motionSourcePath = path.join(projectRoot, "src", "shared", "motion.js");
 
 class FakeCanvasContext {
   setTransform() {}
@@ -106,6 +108,8 @@ class FakeCanvas {
 
 test("bottom nav holy-fire proc draws without missing helper errors", async () => {
   const source = await readFile(iconsSourcePath, "utf8");
+  const colorSource = await readFile(colorSourcePath, "utf8");
+  const motionSource = await readFile(motionSourcePath, "utf8");
   const aboutButton = new FakeButton();
   const contactButton = new FakeButton();
   const aboutCanvas = new FakeCanvas(aboutButton);
@@ -141,19 +145,18 @@ test("bottom nav holy-fire proc draws without missing helper errors", async () =
     },
   };
 
-  vm.runInNewContext(
-    source,
-    {
-      window,
-      document,
-      console,
-      Math: deterministicMath,
-      performance: { now: () => 0 },
-      requestAnimationFrame: window.requestAnimationFrame,
-      Uint8ClampedArray,
-    },
-    { filename: iconsSourcePath },
-  );
+  const sharedContext = {
+    window,
+    document,
+    console,
+    Math: deterministicMath,
+    performance: { now: () => 0 },
+    requestAnimationFrame: window.requestAnimationFrame,
+    Uint8ClampedArray,
+  };
+  vm.runInNewContext(colorSource, sharedContext, { filename: colorSourcePath });
+  vm.runInNewContext(motionSource, sharedContext, { filename: motionSourcePath });
+  vm.runInNewContext(source, sharedContext, { filename: iconsSourcePath });
 
   window.BabelSite.ui.initBottomNavIcons();
 
