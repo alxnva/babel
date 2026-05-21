@@ -19,6 +19,7 @@ class FakeCanvasContext {
   moveTo() {}
   lineTo() {}
   quadraticCurveTo() {}
+  arcTo() {}
   closePath() {}
   fill() {}
   stroke() {}
