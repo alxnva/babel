@@ -17,6 +17,7 @@ Desktop.ini
 npm-debug.log*
 
 # Workspace/editor state
+.idea/
 .vscode/
 .vs/
 .claude/

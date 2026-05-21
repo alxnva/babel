@@ -42,13 +42,13 @@ CI and production deploys follow the same gate order: `npm run verify`, `npm tes
 
 ## Security baseline
 
-`_headers` is the repo's intended source of truth for Cloudflare Pages response headers. It keeps the site on a self-only CSP, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and preload-capable HSTS.
+`_headers` is the repo's intended source of truth for Cloudflare Pages response headers. It removes the Pages default wildcard CORS header, keeps the site on a self-only CSP, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and preload-capable HSTS.
 
 Cloudflare Web Analytics/RUM injection is disabled by design. Do not widen `script-src` for `static.cloudflareinsights.com` unless the privacy/CSP tradeoff is intentionally reopened.
 
-**Cloudflare dashboard can override `_headers`.** Managed Transforms (Rules → Transform Rules → Managed Transforms) and SSL/TLS → Edge Certificates → HSTS Settings both layer after the file and silently change values. Before assuming the live response matches `_headers`, fetch the apex with `curl -sSI https://alexnava.me/` and diff. Specifically watch HSTS `max-age`, `Referrer-Policy`, `X-Frame-Options`, and any injected `Access-Control-Allow-Origin`/`X-XSS-Protection`/`Expect-CT`.
+**Cloudflare dashboard can override `_headers`.** Managed Transforms (Rules → Transform Rules → Managed Transforms), Speed → Content Optimization → Speed Brain, Security → Settings → Super Bot Fight Mode → JS Detections, and SSL/TLS → Edge Certificates → HSTS Settings all layer after the file and can silently change values or inject scripts/headers. Before assuming the live response matches `_headers`, fetch the apex with `curl -sSI https://alexnava.me/` and diff. Specifically watch HSTS `max-age`, `Referrer-Policy`, `X-Frame-Options`, `/cdn-cgi/challenge-platform`, `/cdn-cgi/speculation`, and any injected `Access-Control-Allow-Origin`/`X-XSS-Protection`/`Expect-CT`. The Cloudflare HSTS dashboard currently exposes 12 months as its strongest UI value; the repo keeps the desired Pages header at two years for direct Pages output.
 
-Hostname routing and zone controls live in Cloudflare, not in this repo: keep `alexnava.me` active on Pages project `alexnava-me`, redirect `www.alexnava.me` to the apex, and either redirect production `*.pages.dev` traffic to the apex or keep it non-indexable/access-controlled. Re-confirm the Cloudflare project, DNS, certificate, WAF, and CAA state before any deploy or DNS/security setting change.
+Hostname routing and zone controls live in Cloudflare, not in this repo: keep `alexnava.me` active on Pages project `alexnava-me`, redirect `www.alexnava.me` to the apex, and keep `*.pages.dev` traffic non-indexable/access-controlled through Cloudflare dashboard controls rather than `_headers`; host-specific Pages `_headers` rules can leak onto the apex in this project shape. Re-confirm the Cloudflare project, DNS, certificate, WAF, and CAA state before any deploy or DNS/security setting change.
 
 ## Repository layout
 
