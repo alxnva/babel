@@ -44,6 +44,46 @@
     if (host) host.hidden = true;
   }
 
+  function readSceneQualityControls() {
+    const scene = site.scene || {};
+    if (typeof scene.readSceneQualityControls === "function") {
+      return scene.readSceneQualityControls(window.location?.search || "");
+    }
+
+    try {
+      const params = new URLSearchParams(window.location?.search || "");
+      const quality = (params.get("quality") || "").toLowerCase();
+      const VALID_TIERS = ["low", "balanced", "high"];
+      return { overrideTier: VALID_TIERS.includes(quality) ? quality : null };
+    } catch {
+      return { overrideTier: null };
+    }
+  }
+
+  function detectsReducedData() {
+    const scene = site.scene || {};
+    if (typeof scene.detectSaveData === "function") {
+      return scene.detectSaveData({
+        navigatorInfo: typeof navigator !== "undefined" ? navigator : {},
+      });
+    }
+
+    const connection = typeof navigator !== "undefined" ? navigator.connection : null;
+    if (connection?.saveData === true) return true;
+
+    try {
+      return window.matchMedia("(prefers-reduced-data: reduce)").matches === true;
+    } catch {
+      return false;
+    }
+  }
+
+  function shouldSkipSceneDownload() {
+    const controls = readSceneQualityControls();
+    if (controls?.overrideTier) return false;
+    return detectsReducedData();
+  }
+
   function loadScriptOnce(src) {
     const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
     if (existing) {
@@ -80,6 +120,10 @@
     if (site.scene?.initHomeScene) {
       initScene();
       return true;
+    }
+    if (shouldSkipSceneDownload()) {
+      disableSceneHost();
+      return false;
     }
     if (!hasWebGL()) {
       disableSceneHost();
