@@ -387,22 +387,21 @@ function setSrgbTexture(texture) {
       decorativeSystems.push(system);
       return system;
     }
+    // Cached at composition-change time so the per-frame getProfileCount calls
+    // (~10/frame across decorative systems) don't pay a try/catch boundary or
+    // a property-chain walk just to read this scalar.
+    let currentCountScale = 1;
+    function refreshCountScaleCache() {
+      const candidate = compositionState?.profile?.countScale;
+      currentCountScale = typeof candidate === "number" ? candidate : 1;
+    }
     function getProfileCount(key, fallback) {
       const value = state.profile.counts?.[key];
       const base = typeof value === "number" ? value : fallback;
       if (typeof base !== "number") return base;
       // Composition profile can trim active counts on small viewports where
       // fog already hides most of the affected particles.
-      const scale = getCompositionCountScale();
-      return Math.max(0, Math.floor(base * scale));
-    }
-    function getCompositionCountScale() {
-      try {
-        const candidate = compositionState?.profile?.countScale;
-        return typeof candidate === "number" ? candidate : 1;
-      } catch (_err) {
-        return 1;
-      }
+      return Math.max(0, Math.floor(base * currentCountScale));
     }
     function setRecordVisibility(records, active, limit = records.length) {
       for (let index = 0; index < records.length; index += 1) {
@@ -4488,6 +4487,7 @@ function setSrgbTexture(texture) {
     }
     function applySceneComposition(profile, reason = "runtime") {
       compositionState.profile = profile || fallbackComposition;
+      refreshCountScaleCache();
       const cameraProfile = compositionState.profile.camera || fallbackComposition.camera;
       camera.fov = cameraProfile.fov;
       camera.aspect = cfg2.width / cfg2.height;
@@ -4575,11 +4575,14 @@ function setSrgbTexture(texture) {
       if (composer) composer.setSize(cfg2.width, cfg2.height);
       if (outlinePass) outlinePass.setSize(cfg2.width, cfg2.height);
     }
+    // cfg2.height is refreshed inside tmpV89 (the resize handler) on every
+    // resize, so reading it inside the scroll handler avoids a layout-flushing
+    // window.innerHeight access per scroll event.
     (window.addEventListener("resize", tmpV89),
       window.addEventListener(
         "scroll",
         () => {
-          cfg2.scrollTarget = Math.min(window.scrollY / (1.8 * window.innerHeight), 1.25);
+          cfg2.scrollTarget = Math.min(window.scrollY / (1.8 * cfg2.height), 1.25);
         },
         {
           passive: !0,
@@ -4996,8 +4999,11 @@ function setSrgbTexture(texture) {
             Math.sin(elapsedTime * haloRecord.wobble2Freq * 0.3 + 1.7 * haloRecord.phase) *
               haloRecord.wobble2Amp;
           const violencePhase = elapsedTime * haloRecord.violenceFreq + haloRecord.violencePhase,
-            violenceBoost =
-              Math.pow(Math.max(0, Math.sin(violencePhase)), 12) * haloRecord.violenceAmp;
+            vSin = Math.max(0, Math.sin(violencePhase)),
+            vSin2 = vSin * vSin,
+            vSin4 = vSin2 * vSin2,
+            vSin8 = vSin4 * vSin4,
+            violenceBoost = vSin8 * vSin4 * haloRecord.violenceAmp;
           orbitRadius += violenceBoost;
           const orbitX = Math.cos(orbitTheta) * Math.sin(orbitPhi) * orbitRadius,
             orbitY = Math.cos(orbitPhi) * orbitRadius;
