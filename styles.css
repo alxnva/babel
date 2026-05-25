@@ -37,8 +37,8 @@
   --font-body:
     "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
     sans-serif;
-  --night-900: #060914;
-  --night-800: #10172b;
+  --night-900: #0c1016;
+  --night-800: #191d25;
   --tower-stone-900: #231d1f;
   --tower-stone-800: #342b2e;
   --tower-stone-700: #4b403f;
@@ -47,18 +47,17 @@
   --tower-stone-400: #a59386;
   --parchment-300: #e2d8cb;
   --parchment-200: #f2e8da;
-  --brass-500: #bf8a59;
-  --brass-400: #d9a46d;
-  --torch-300: #ffd2a0;
-  /* Muted antique-brass used for the hero anchor ("design."). Sits between
-     the saturated torch/brass palette and the tower-stone neutrals so
-     accents read as warm but quiet — modern, flat, in-scene. */
-  --accent-muted: #b89c7a;
+  --mist-500: #b8c1bd;
+  --mist-400: #d6ded8;
+  --line-pastel: #e6ece7;
+  /* Muted stone used for the hero anchor ("design."). It keeps the focal word
+     clear without turning accent color into a personality layer. */
+  --accent-muted: #c8d0ca;
   /* One tier below the anchor. Ambient meta text (hero kicker, copyright,
      hover labels, scene tuner) uses this so it whispers rather than
      competing with the hero word. Warm off-white — reads as legible white
      against the blue-black scene without clashing with the warm scene. */
-  --text-muted-accent: #b9b2a3;
+  --text-muted-accent: #c5c9c2;
   /* Prefix companion to the anchor. Used for "Calm by" so it reads as
      legible white against the twilight scene while still letting "design."
      be the clear focal word. One notch brighter than --text-muted-accent
@@ -70,18 +69,19 @@
   --text-secondary: var(--muted);
   --text-meta: #cbc0b3;
   --text-accent: var(--text-muted-accent);
-  --text-meta-shadow: 0 2px 8px rgba(6, 9, 20, 0.42), 0 0 10px rgba(184, 156, 122, 0.08);
+  --text-meta-shadow: 0 2px 8px rgba(7, 10, 14, 0.42), 0 0 10px rgba(198, 208, 202, 0.08);
   --shadow-deep: 0 30px 84px rgba(0, 0, 0, 0.38);
   --shadow-panel: 0 18px 48px rgba(7, 10, 20, 0.24);
   --border-soft: rgba(241, 229, 212, 0.16);
-  --border-strong: rgba(214, 172, 120, 0.34);
-  --panel-surface: linear-gradient(180deg, rgba(94, 83, 80, 0.88) 0%, rgba(39, 36, 45, 0.82) 100%);
+  --border-strong: rgba(210, 218, 212, 0.34);
+  --panel-surface: linear-gradient(180deg, rgba(85, 85, 82, 0.88) 0%, rgba(38, 40, 44, 0.82) 100%);
   --panel-sheen: linear-gradient(
     135deg,
-    rgba(255, 245, 226, 0.12) 0%,
-    rgba(216, 227, 255, 0.04) 40%,
-    rgba(255, 245, 226, 0) 72%
+    rgba(242, 244, 238, 0.12) 0%,
+    rgba(214, 222, 216, 0.05) 42%,
+    rgba(242, 244, 238, 0) 72%
   );
+  --cursor-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='28' viewBox='0 0 9 28'%3E%3Cpath d='M4.5 2V26' stroke='%23e6ece7' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") 4 14, auto;
   --max: 1180px;
 }
 
@@ -93,6 +93,13 @@ html {
   scroll-behavior: smooth;
 }
 
+html,
+body,
+a,
+button {
+  cursor: var(--cursor-line);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -102,7 +109,7 @@ body {
     "kern" 1,
     "liga" 1;
   color: var(--text-primary);
-  background: linear-gradient(180deg, var(--night-900) 0%, var(--night-800) 34%, #181521 100%);
+  background: linear-gradient(180deg, var(--night-900) 0%, var(--night-800) 34%, #1d1d21 100%);
 }
 
 body[data-panel-open="true"] {
@@ -124,10 +131,6 @@ button {
   font: inherit;
   color: inherit;
   background: transparent;
-}
-
-button:hover {
-  cursor: pointer;
 }
 
 main {
@@ -159,7 +162,7 @@ main:focus {
 }
 
 :focus-visible {
-  outline: 3px solid rgba(184, 156, 122, 0.9);
+  outline: 3px solid rgba(214, 224, 218, 0.9);
   outline-offset: 4px;
 }
 
@@ -169,9 +172,9 @@ main:focus {
   z-index: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 76% 20%, rgba(119, 133, 222, 0.14) 0%, rgba(119, 133, 222, 0) 28%),
-    radial-gradient(circle at 48% 26%, rgba(255, 215, 170, 0.18) 0%, rgba(255, 215, 170, 0) 26%),
-    radial-gradient(circle at 24% 16%, rgba(182, 146, 220, 0.07) 0%, rgba(182, 146, 220, 0) 21%),
+    radial-gradient(circle at 76% 20%, rgba(186, 202, 212, 0.12) 0%, rgba(186, 202, 212, 0) 28%),
+    radial-gradient(circle at 48% 26%, rgba(230, 224, 214, 0.15) 0%, rgba(230, 224, 214, 0) 26%),
+    radial-gradient(circle at 24% 16%, rgba(204, 207, 198, 0.08) 0%, rgba(204, 207, 198, 0) 21%),
     linear-gradient(180deg, rgba(9, 13, 24, 0.12) 0%, rgba(12, 14, 28, 0.49) 100%);
 }
 
@@ -203,8 +206,8 @@ main:focus {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 26% 18%, rgba(255, 208, 150, 0.065) 0%, rgba(255, 208, 150, 0) 21%),
-    radial-gradient(circle at 50% 31%, rgba(255, 232, 196, 0.08) 0%, rgba(255, 232, 196, 0) 26%),
+    radial-gradient(circle at 26% 18%, rgba(226, 230, 221, 0.065) 0%, rgba(226, 230, 221, 0) 21%),
+    radial-gradient(circle at 50% 31%, rgba(236, 232, 222, 0.08) 0%, rgba(236, 232, 222, 0) 26%),
     radial-gradient(ellipse 120% 58% at 50% 50%, transparent 36%, rgba(10, 12, 24, 0.49) 100%),
     linear-gradient(
       180deg,
@@ -245,6 +248,8 @@ main:focus {
 }
 
 .hero {
+  /* Fallback for browsers that don't support svh/dvh */
+  min-height: calc(100vh - 90px);
   min-height: calc(100svh - 90px);
   display: flex;
   align-items: flex-end;
@@ -284,7 +289,7 @@ main:focus {
   /* Whisper of warm halo only — enough to feel lit-from-within without
      announcing itself. The muted palette does the work of keeping the
      type inside the scene. */
-  text-shadow: 0 0 44px rgba(184, 156, 122, 0.1);
+  text-shadow: 0 0 44px rgba(198, 208, 202, 0.1);
 }
 
 .hero h1 .hero-word {
@@ -303,7 +308,7 @@ main:focus {
 
 .hero h1 .hero-word--accent {
   color: var(--accent-muted);
-  /* Muted brass on the twilight scene can lose edge definition. A barely-
+  /* Muted stone on the twilight scene can lose edge definition. A barely-
      there stroke nudges contrast up without reading as an outline. */
   -webkit-text-stroke: 0.3px rgba(30, 26, 22, 0.28);
   animation-delay: 380ms;
@@ -412,12 +417,12 @@ main:focus {
 .story-text a,
 .panel-body a {
   color: var(--parchment-200);
-  text-decoration-color: rgba(184, 156, 122, 0.5);
+  text-decoration-color: rgba(198, 208, 202, 0.48);
 }
 
 .panel-footnote a {
   color: inherit;
-  text-decoration-color: rgba(184, 156, 122, 0.4);
+  text-decoration-color: rgba(198, 208, 202, 0.4);
 }
 
 .error-cta {
@@ -431,7 +436,7 @@ main:focus {
   padding: 12px 18px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(140, 122, 96, 0.16) 0%, rgba(40, 36, 32, 0.38) 100%);
+  background: linear-gradient(180deg, rgba(144, 150, 144, 0.16) 0%, rgba(38, 39, 37, 0.38) 100%);
   color: var(--text);
   text-decoration: none;
   transition:
@@ -440,8 +445,8 @@ main:focus {
 }
 
 .back-link:hover {
-  border-color: rgba(184, 156, 122, 0.42);
-  background: linear-gradient(180deg, rgba(140, 122, 96, 0.22) 0%, rgba(40, 36, 32, 0.5) 100%);
+  border-color: rgba(198, 208, 202, 0.42);
+  background: linear-gradient(180deg, rgba(144, 150, 144, 0.22) 0%, rgba(38, 39, 37, 0.5) 100%);
 }
 
 .bottom-bar {
@@ -485,10 +490,10 @@ main:focus {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--torch-300);
+  background: var(--line-pastel);
   opacity: 0;
   transform: translate(-50%, 4px) scale(0.6);
-  box-shadow: 0 0 18px rgba(255, 210, 160, 0.8);
+  box-shadow: 0 0 18px rgba(214, 224, 218, 0.72);
   transition:
     opacity 220ms ease,
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -566,7 +571,7 @@ main:focus {
   justify-content: center;
   padding: 24px 24px max(120px, calc(100px + env(safe-area-inset-bottom)));
   background:
-    radial-gradient(circle at 50% 88%, rgba(197, 136, 74, 0.12) 0%, rgba(197, 136, 74, 0) 26%),
+    radial-gradient(circle at 50% 88%, rgba(188, 198, 190, 0.12) 0%, rgba(188, 198, 190, 0) 26%),
     rgba(10, 11, 22, 0.44);
   opacity: 0;
   pointer-events: none;
@@ -744,9 +749,8 @@ main:focus {
   user-select: none;
 }
 
-/* Wax seal — pressed brass-red disc in the lower-right of the Contact
-   sheet. Pure CSS: radial highlight + warm gradient + inner shadow for
-   the rim. Decorative; aria-hidden in markup. */
+/* Neutral seal in the lower-right of the Contact sheet. Pure CSS:
+   radial highlight + muted gradient + inner shadow for the rim. */
 .panel-parchment__seal {
   position: absolute;
   right: clamp(28px, 4vw, 56px);
@@ -756,13 +760,13 @@ main:focus {
   height: clamp(76px, 9vw, 108px);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255, 218, 174, 0.7), rgba(255, 218, 174, 0) 38%),
-    radial-gradient(circle at 70% 78%, rgba(58, 22, 12, 0.55), rgba(58, 22, 12, 0) 60%),
-    linear-gradient(155deg, #b16a44 0%, #8a4a2e 58%, #5b2c1c 100%);
+    radial-gradient(circle at 32% 28%, rgba(239, 236, 224, 0.68), rgba(239, 236, 224, 0) 38%),
+    radial-gradient(circle at 70% 78%, rgba(58, 52, 44, 0.46), rgba(58, 52, 44, 0) 60%),
+    linear-gradient(155deg, #b9afa2 0%, #91897f 58%, #615b55 100%);
   box-shadow:
-    0 12px 22px rgba(34, 16, 8, 0.34),
-    inset 0 2px 0 rgba(255, 222, 184, 0.36),
-    inset 0 -8px 14px rgba(34, 16, 8, 0.34);
+    0 12px 22px rgba(28, 25, 22, 0.28),
+    inset 0 2px 0 rgba(246, 243, 232, 0.34),
+    inset 0 -8px 14px rgba(32, 29, 26, 0.3);
   pointer-events: none;
 }
 
@@ -818,14 +822,14 @@ main:focus {
   border: 1px solid rgba(64, 47, 30, 0.22);
   border-radius: 999px;
   background:
-    linear-gradient(135deg, rgba(255, 232, 186, 0.42), rgba(126, 88, 48, 0.28)),
-    #b79563;
+    linear-gradient(135deg, rgba(238, 239, 232, 0.48), rgba(137, 132, 121, 0.3)),
+    #b6afa3;
   color: #3b2c1e;
   font-size: 21px;
   line-height: 1;
   box-shadow:
     0 10px 18px rgba(36, 24, 12, 0.22),
-    inset 0 1px 0 rgba(255, 246, 220, 0.5),
+    inset 0 1px 0 rgba(249, 247, 237, 0.5),
     inset 0 -7px 10px rgba(72, 46, 24, 0.22);
   transform: rotate(5deg);
   transition:
@@ -837,8 +841,8 @@ main:focus {
 .panel-close:hover,
 .panel-close:focus-visible {
   background:
-    linear-gradient(135deg, rgba(255, 238, 202, 0.58), rgba(142, 96, 50, 0.34)),
-    #c2a06d;
+    linear-gradient(135deg, rgba(248, 248, 240, 0.58), rgba(148, 144, 132, 0.34)),
+    #c8c1b3;
   color: #241910;
   transform: translateY(-1px) rotate(5deg);
 }
@@ -950,7 +954,7 @@ main:focus {
 @media (prefers-reduced-transparency: reduce) {
   .story-shell,
   .panel-card {
-    background: linear-gradient(180deg, rgba(87, 74, 68, 0.98) 0%, rgba(38, 35, 44, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(80, 80, 77, 0.98) 0%, rgba(38, 39, 42, 0.98) 100%);
   }
 }
 
