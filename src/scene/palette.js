@@ -53,17 +53,17 @@
   });
 
   scene.GROUND_SURFACE_MATERIAL = {
-    color: 7431518,
+    color: 0x71655e,
     roughness: 0.98,
     metalness: 0.02,
     bumpScale: { lowPower: 0.1, default: 0.28 },
   };
 
   scene.TOWER_SURFACE_MATERIALS = {
-    plinthColor: 7694689,
-    ringColor: 5589316,
-    shellColor: 12956087,
-    shellInnerColor: 5129014,
+    plinthColor: 0x756961,
+    ringColor: 0x554944,
+    shellColor: 0xc5b1b7,
+    shellInnerColor: 0x4e4336,
     shellBumpScale: { lowPower: 0.09, default: 0.24 },
   };
 })();

@@ -12,6 +12,9 @@ Candidates for future work, roughly ordered by value. Pick from here when starti
 | 4   | Gate brazier / decorative arrays through visibility tracker | `arr23` (flames) and friends in `scene/index.js` update every frame even when camera-facing away. `plumeSystem` already shows the pattern via `registerDecorativeSystem`. Per-frame: 6+ `Math.sin`, inner ember loop, `setHSL` per light. | Small |
 | 5   | Skip orbital-glow color buffer re-upload when `glowAmount` stable | `scene/index.js` rewrites the full color attribute and flags `needsUpdate` every frame, even during the long hold phase. Add a change-detection guard. | Small |
 | 6   | Dispose `CubeCamera` + `WebGLCubeRenderTarget` after the one-shot env-map bake | Lives on `homeScene` for the page lifetime; only the captured `.texture` handle is needed by the consuming materials. Verify capture timing before disposing. | Small |
+| 7   | Rename auto-generated identifiers in `src/scene/index.js` | The file currently reads as post-transform output (`arg22`, `num405`, `tmpV68`, `!0`/`!1`, comma-sequenced statements). Mechanical rename in waves; blocks deeper review of the scene module. | Large |
+| 8   | Collapse `cloneProfile`/`cloneCompositionProfile` + remove parallel fallback in `scene/index.js` | `quality.js` exports the canonical profile shape; the ~110-line inline fallback literal in `index.js` (lines ~88-201) is unreachable (quality.js is imported first by `scene-entry.js`). Field-by-field clone makes every new flag a 3-place edit. | Medium |
+| 9   | Refactor cloud visibility state in scene      | `cloudsEnabled` and `group.userData.sceneVisible` form redundant state with two helpers (`applyCloudVisibility` + `setCloudGroupSceneVisibility`) that overlap. Unify into one path; remove leftover comma-expression in `toggleClouds`. | Small |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
@@ -107,6 +110,8 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 - `src/art/panel-objects.js` — the original Three.js scene, IIFE-style; re-enable by adding `import "../art/panel-objects.js";` to `src/scene-entry.js`, then call `site.scene.initPanelObjectArt()` and `site.scene.revealPanelObject(panelId)`.
 - `src/art/panel-canvas-assets.js` — the two PSX-dither canvas paintings, exposed at `site.art.drawNotebookPanelAsset` / `site.art.drawLetterPanelAsset`. Helpers (fillPoly, applyPsxDither, etc.) are duplicated from `src/ui/icons.js` so the file is self-contained.
+
+> Both files were deleted in the Tier A simplify pass (no imports, no callers). Recover from git history if needed.
 
 ### Postprocessing pipeline
 
