@@ -28,7 +28,12 @@ function createContext({ touchPrimary = false } = {}) {
     matchMedia: () => ({ matches: touchPrimary }),
     addEventListener() {},
   };
-  const document = { addEventListener() {} };
+  const document = {
+    addEventListener() {},
+    getElementById() {
+      return null;
+    },
+  };
   return { window, document };
 }
 
@@ -56,6 +61,41 @@ test("dev-mode exposes pure helpers and starts inactive", async () => {
   assert.equal(typeof devMode._test.buildGroundedVelocity, "function");
   assert.equal(typeof devMode._test.integrateMotion, "function");
   assert.equal(typeof devMode._test.applyGroundClamp, "function");
+});
+
+test("dispose releases developer-mode attachment references", async () => {
+  const devMode = await loadDevMode(createContext());
+  const outlinePass = { enabled: true, selectedObjects: [{}] };
+  const THREE = {
+    Euler: class Euler {},
+    Raycaster: class Raycaster {},
+  };
+
+  devMode.attach({
+    THREE,
+    camera: {},
+    homeScene: {},
+    canvas: {},
+    outlinePass,
+  });
+  assert.equal(devMode._test.getAttachmentState().hasCamera, true);
+  assert.equal(devMode._test.getAttachmentState().hasRaycaster, true);
+
+  devMode.dispose();
+
+  assert.deepEqual(
+    { ...devMode._test.getAttachmentState() },
+    {
+      hasCamera: false,
+      hasCanvas: false,
+      hasHomeScene: false,
+      hasOutlinePass: false,
+      hasRaycaster: false,
+      hasThree: false,
+    },
+  );
+  assert.equal(outlinePass.enabled, false);
+  assert.equal(outlinePass.selectedObjects.length, 0);
 });
 
 test("applyMouseDelta clamps pitch using the supplied limit", async () => {
@@ -184,7 +224,10 @@ test("buildGroundedVelocity clamps diagonal magnitude to RUN_SPEED", async () =>
     false,
   );
   const mag = Math.hypot(diag.x, diag.z);
-  assert.ok(Math.abs(mag - C.RUN_SPEED) < 1e-9, `diagonal magnitude should be RUN_SPEED, got ${mag}`);
+  assert.ok(
+    Math.abs(mag - C.RUN_SPEED) < 1e-9,
+    `diagonal magnitude should be RUN_SPEED, got ${mag}`,
+  );
 });
 
 test("buildGroundedVelocity treats W+S as zero (cancel)", async () => {
@@ -395,6 +438,20 @@ test("pickFirstOutlineable skips Sprite/Points/invisible objects", async () => {
     _test.pickFirstOutlineable([{ object: sprite }, { object: points }, { object: hidden }]),
     null,
   );
+});
+
+test("setOutlineTarget enables OutlinePass only while a developer target is active", async () => {
+  const { _test } = await loadDevMode(createContext());
+  const pass = { enabled: true, selectedObjects: [{}] };
+  const target = { isMesh: true };
+
+  _test.setOutlineTarget(pass, null);
+  assert.equal(pass.enabled, false);
+  assert.equal(pass.selectedObjects.length, 0);
+
+  _test.setOutlineTarget(pass, target);
+  assert.equal(pass.enabled, true);
+  assert.equal(pass.selectedObjects[0], target);
 });
 
 test("isFormTarget gates form fields and contenteditable surfaces", async () => {

@@ -1,20 +1,75 @@
 import {
-  AdditiveBlending, AmbientLight, BackSide, BoxGeometry, BufferAttribute,
-  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry,
-  ClampToEdgeWrapping, Clock, Color, ColorManagement, CubeCamera,
-  CylinderGeometry, DirectionalLight, DodecahedronGeometry, DoubleSide,
-  Euler, Float32BufferAttribute, Fog, Frustum, Group, HemisphereLight,
-  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4,
-  Mesh, MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping,
-  NoToneMapping, OctahedronGeometry, PCFSoftShadowMap, PerspectiveCamera,
-  PlaneGeometry, PointLight, Points, PointsMaterial, Raycaster,
-  RepeatWrapping, RGBAFormat, RingGeometry, Scene, ShaderMaterial, Sphere,
-  SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace,
-  TetrahedronGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3,
-  WebGLCubeRenderTarget, WebGLRenderer,
+  AdditiveBlending,
+  AmbientLight,
+  BackSide,
+  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  CatmullRomCurve3,
+  CircleGeometry,
+  ClampToEdgeWrapping,
+  Color,
+  ColorManagement,
+  CubeCamera,
+  CylinderGeometry,
+  DirectionalLight,
+  DodecahedronGeometry,
+  DoubleSide,
+  Euler,
+  Float32BufferAttribute,
+  Fog,
+  Frustum,
+  Group,
+  HemisphereLight,
+  IcosahedronGeometry,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  MirroredRepeatWrapping,
+  NoToneMapping,
+  OctahedronGeometry,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  PlaneGeometry,
+  PointLight,
+  Points,
+  PointsMaterial,
+  Raycaster,
+  RepeatWrapping,
+  RGBAFormat,
+  RingGeometry,
+  Scene,
+  ShaderMaterial,
+  Sphere,
+  SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
+  TetrahedronGeometry,
+  TorusGeometry,
+  TubeGeometry,
+  Vector2,
+  Vector3,
+  WebGLCubeRenderTarget,
+  WebGLRenderer,
 } from "three";
-import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
-import { createPostprocessPipeline } from "./postprocess.js";
+import { createSceneAtmosphere } from "./atmosphere.js";
+import { createSceneEnvironment } from "./environment.js";
+import { createSceneRendering } from "./rendering.js";
+import {
+  createSceneFrameScheduler,
+  createSceneResizeController,
+  hasMeaningfulScalarChange,
+} from "./runtime.js";
+import {
+  createSceneSubsystemRegistry,
+  runSceneInitialization,
+} from "./subsystem.js";
+import { createSceneTower } from "./tower.js";
 
 // Reconstruct a namespace object for dependency injection into sub-modules
 // that receive THREE as a parameter (scene/visibility.js, scene/textures.js,
@@ -22,19 +77,63 @@ import { createPostprocessPipeline } from "./postprocess.js";
 // getThreeExport. Explicit allow-list lets esbuild prove the set instead of
 // pulling all of three/* through `import * as`.
 const THREE = {
-  AdditiveBlending, AmbientLight, BackSide, BoxGeometry, BufferAttribute,
-  BufferGeometry, CanvasTexture, CatmullRomCurve3, CircleGeometry,
-  ClampToEdgeWrapping, Clock, Color, ColorManagement, CubeCamera,
-  CylinderGeometry, DirectionalLight, DodecahedronGeometry, DoubleSide,
-  Euler, Float32BufferAttribute, Fog, Frustum, Group, HemisphereLight,
-  IcosahedronGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4,
-  Mesh, MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping,
-  NoToneMapping, OctahedronGeometry, PCFSoftShadowMap, PerspectiveCamera,
-  PlaneGeometry, PointLight, Points, PointsMaterial, Raycaster,
-  RepeatWrapping, RGBAFormat, RingGeometry, Scene, ShaderMaterial, Sphere,
-  SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace,
-  TetrahedronGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3,
-  WebGLCubeRenderTarget, WebGLRenderer,
+  AdditiveBlending,
+  AmbientLight,
+  BackSide,
+  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  CatmullRomCurve3,
+  CircleGeometry,
+  ClampToEdgeWrapping,
+  Color,
+  ColorManagement,
+  CubeCamera,
+  CylinderGeometry,
+  DirectionalLight,
+  DodecahedronGeometry,
+  DoubleSide,
+  Euler,
+  Float32BufferAttribute,
+  Fog,
+  Frustum,
+  Group,
+  HemisphereLight,
+  IcosahedronGeometry,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  MirroredRepeatWrapping,
+  NoToneMapping,
+  OctahedronGeometry,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  PlaneGeometry,
+  PointLight,
+  Points,
+  PointsMaterial,
+  Raycaster,
+  RepeatWrapping,
+  RGBAFormat,
+  RingGeometry,
+  Scene,
+  ShaderMaterial,
+  Sphere,
+  SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
+  TetrahedronGeometry,
+  TorusGeometry,
+  TubeGeometry,
+  Vector2,
+  Vector3,
+  WebGLCubeRenderTarget,
+  WebGLRenderer,
 };
 
 // r128-parity color / light pipeline. ColorManagement.enabled=true (the r152+
@@ -50,15 +149,6 @@ function getThreeExport(name) {
 }
 const colorManagement = getThreeExport("ColorManagement");
 if (colorManagement) colorManagement.enabled = false;
-function setRendererOutputColorSpace(renderer) {
-  const srgbColorSpace = getThreeExport("SRGBColorSpace");
-  const srgbEncoding = getThreeExport("sRGBEncoding");
-  if (srgbColorSpace && "outputColorSpace" in renderer) {
-    renderer.outputColorSpace = srgbColorSpace;
-  } else if (srgbEncoding && "outputEncoding" in renderer) {
-    renderer.outputEncoding = srgbEncoding;
-  }
-}
 function setSrgbTexture(texture) {
   const srgbColorSpace = getThreeExport("SRGBColorSpace");
   const srgbEncoding = getThreeExport("sRGBEncoding");
@@ -91,35 +181,19 @@ function setSrgbTexture(texture) {
     } = scene;
   scene.initHomeScene = function () {
     const container = document.getElementById("home-scene");
-    if (!container || !supportsWebGL()) return;
+    if (!container || !supportsWebGL()) return false;
     // Boot order:
     // 1. Renderer + fixed composition
     // 2. Camera-following atmosphere layers
     // 3. Scroll-driven animation loop
-    const cloudGroups = [];
-    let cloudsEnabled = true;
-    function setCloudGroupSceneVisibility(group, visible) {
-      if (!group) return;
-      group.userData = group.userData || {};
-      group.userData.sceneVisible = visible;
-      group.visible = cloudsEnabled && visible;
-    }
-    function applyCloudVisibility() {
-      cloudGroups.forEach((arg22) => {
-        if (arg22) {
-          const sceneVisible = arg22.userData?.sceneVisible !== false;
-          arg22.visible = cloudsEnabled && sceneVisible;
-        }
-      });
-    }
-    scene.setClouds = function (on) {
-      ((cloudsEnabled = !!on), applyCloudVisibility());
-    };
-    scene.toggleClouds = function () {
-      ((cloudsEnabled = !cloudsEnabled), applyCloudVisibility(), cloudsEnabled);
-      return cloudsEnabled;
-    };
+    let frameScheduler = null;
+    let reflectionCaptureFrame = null;
+    let reflectionRenderTarget = null;
+    let runtimeDisposed = false;
+    let sceneReadyMarked = false;
+    let webglContextAvailable = true;
     const reducedMotionMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reducedMotion = Boolean(reducedMotionMQ.matches);
     const fallbackProfile =
       typeof scene.getSceneQualityProfile === "function"
         ? scene.getSceneQualityProfile("high")
@@ -162,7 +236,7 @@ function setSrgbTexture(texture) {
             },
             lighting: {
               ambientIntensity: 0.22,
-              directionalIntensity: 3.55,
+              directionalIntensity: 2.9,
               extraDirectional: true,
               fogFar: 150,
               fogNear: 62,
@@ -251,19 +325,26 @@ function setSrgbTexture(texture) {
         ...extra,
       });
     }
+    let sceneIntersectionObserver = null;
     let sceneVisible = true;
     if (typeof IntersectionObserver === "function") {
       try {
-        const io = new IntersectionObserver(
+        sceneIntersectionObserver = new IntersectionObserver(
           (entries) => {
-            for (const ent of entries) sceneVisible = ent.isIntersecting;
+            for (const ent of entries) {
+              const nextVisible = ent.isIntersecting;
+              if (nextVisible === sceneVisible) continue;
+              sceneVisible = nextVisible;
+              if (sceneVisible) frameScheduler?.resume();
+            }
           },
           {
             threshold: 0,
           },
         );
-        io.observe(container);
+        sceneIntersectionObserver.observe(container);
       } catch (_err) {
+        sceneIntersectionObserver = null;
         sceneVisible = true;
       }
     }
@@ -301,27 +382,36 @@ function setSrgbTexture(texture) {
         sunDirection: new Vector3(...WORLD.SUN_DIRECTION).normalize(),
         sunColor: 16638446,
         shellOpacity: 0.472,
+      };
+    const subsystemRegistry = createSceneSubsystemRegistry();
+    const rendering = createSceneRendering({
+      container,
+      height: window.innerHeight,
+      lighting: lightingConfig,
+      onInvalidate() {
+        frameScheduler?.invalidate();
       },
-      homeScene = new Scene();
+      onContextLost() {
+        webglContextAvailable = false;
+        sceneReadyMarked = false;
+        container.classList?.remove("is-ready");
+      },
+      onContextRestored() {
+        webglContextAvailable = true;
+        sceneReadyMarked = false;
+        frameScheduler?.resume();
+      },
+      profile: state.profile,
+      threeExports: THREE,
+      width: window.innerWidth,
+      world: WORLD,
+    });
+    subsystemRegistry.register(rendering);
+    return runSceneInitialization(subsystemRegistry, () => {
+    const { camera, homeScene, renderer } = rendering;
     function isLowPower() {
       return state.profile.isLow;
     }
-    homeScene.fog = new Fog(
-      lightingConfig.fogColor,
-      lightingConfig.fogNear,
-      lightingConfig.fogFar,
-    );
-    const camera = new PerspectiveCamera(
-        WORLD.CAMERA_FOV,
-        window.innerWidth / window.innerHeight,
-        WORLD.CAMERA_NEAR,
-        WORLD.CAMERA_FAR,
-      ),
-      renderer = new WebGLRenderer({
-        alpha: !0,
-        antialias: state.profile.antialias,
-        powerPreference: "high-performance",
-      });
     function chooseAnisotropy(arg53, arg54) {
       const tmpV26 = state.profile.anisotropy || {
         min: arg53,
@@ -345,48 +435,16 @@ function setSrgbTexture(texture) {
       });
     }
     scene.createMarbleMaterial = createMarbleMaterial;
-    (renderer.setClearColor(0, 0),
-      setRendererOutputColorSpace(renderer),
-      (renderer.toneMapping = NoToneMapping),
-      (renderer._useLegacyLights = true),
-      (renderer.shadowMap.type = PCFSoftShadowMap),
-      container.appendChild(renderer.domElement));
-    // Postprocessing stays global and restrained; OutlinePass remains the
-    // developer-mode interaction feedback layer appended after the art passes.
-    const postprocessPipeline = createPostprocessPipeline(
-      renderer,
-      homeScene,
-      camera,
-      state.profile,
-    );
-    const composer = postprocessPipeline.composer;
-    const outlinePass = new OutlinePass(
-      new Vector2(window.innerWidth, window.innerHeight),
-      homeScene,
-      camera,
-    );
-    outlinePass.edgeStrength = 2;
-    outlinePass.edgeThickness = 1;
-    outlinePass.visibleEdgeColor.set(0xd9a46d); // --brass-400
-    outlinePass.hiddenEdgeColor.set(0x4b403f); // --tower-stone-700
-    composer.addPass(outlinePass);
     const visibilityTracker =
       typeof scene.createSceneVisibilityTracker === "function"
         ? scene.createSceneVisibilityTracker({
             THREE,
             camera: camera,
+            getVisibleDistance() {
+              return Math.min(camera.far, homeScene.fog?.far ?? camera.far);
+            },
           })
         : null;
-    const decorativeSystems = [];
-    function registerDecorativeSystem(config) {
-      const system = {
-        active: true,
-        bucket: config.importance === "core" ? "core" : "midAtmosphere",
-        ...config,
-      };
-      decorativeSystems.push(system);
-      return system;
-    }
     // Cached at composition-change time so the per-frame getProfileCount calls
     // (~10/frame across decorative systems) don't pay a try/catch boundary or
     // a property-chain walk just to read this scalar.
@@ -425,19 +483,6 @@ function setSrgbTexture(texture) {
     function applyActiveQualityProfile(profile, reason = "runtime") {
       state.profile = profile || fallbackProfile;
       state.lowPower = state.profile.isLow;
-      homeScene.fog.near = state.profile.lighting.fogNear;
-      homeScene.fog.far = state.profile.lighting.fogFar;
-      ambientLight.intensity = state.profile.lighting.ambientIntensity;
-      hemisphereLight.intensity = state.profile.lighting.hemisphereIntensity;
-      sunLight.intensity = state.profile.lighting.directionalIntensity;
-      fillLight.visible = Boolean(state.profile.lighting.extraDirectional);
-      renderer.shadowMap.enabled = Boolean(state.profile.shadows.enabled);
-      sunLight.castShadow = Boolean(state.profile.shadows.enabled);
-      if (state.profile.shadows.enabled && state.profile.shadows.mapSize > 0) {
-        ((sunLight.shadow.mapSize.width = state.profile.shadows.mapSize),
-          (sunLight.shadow.mapSize.height = state.profile.shadows.mapSize),
-          (sunLight.shadow.needsUpdate = !0));
-      }
       const effectiveCap =
         typeof qualityState.resolveDprCap === "function"
           ? qualityState.resolveDprCap(state.profile)
@@ -449,8 +494,7 @@ function setSrgbTexture(texture) {
               })
             : state.profile.dprCap || 1;
       const pixelRatio = Math.min(window.devicePixelRatio || 1, effectiveCap || 1);
-      renderer.setPixelRatio(pixelRatio);
-      if (postprocessPipeline) postprocessPipeline.setQualityProfile(state.profile);
+      subsystemRegistry.applyQuality(state.profile, { pixelRatio });
       updateSceneDebug({
         reason,
         pixelRatio,
@@ -458,36 +502,19 @@ function setSrgbTexture(texture) {
     }
     const sceneRoot = new Group();
     homeScene.add(sceneRoot);
-    const ambientLight = new AmbientLight(
-        lightingConfig.ambientColor,
-        lightingConfig.ambientIntensity,
-      ),
-      hemisphereLight = new HemisphereLight(
-        lightingConfig.hemisphereSkyColor,
-        lightingConfig.hemisphereGroundColor,
-        lightingConfig.hemisphereIntensity,
-      ),
-      sunLight = new DirectionalLight(
-        lightingConfig.directionalColor,
-        lightingConfig.directionalIntensity,
-      ),
-      fillLight = new DirectionalLight(9086928, 0.6);
-    sunLight.position.set(
-      lightingConfig.directionalPosition.x,
-      lightingConfig.directionalPosition.y,
-      lightingConfig.directionalPosition.z,
-    );
-    sunLight.shadow.camera.left = -WORLD.SHADOW_CAMERA_HALF_EXTENT;
-    sunLight.shadow.camera.right = WORLD.SHADOW_CAMERA_HALF_EXTENT;
-    sunLight.shadow.camera.top = WORLD.SHADOW_CAMERA_HALF_EXTENT;
-    sunLight.shadow.camera.bottom = -WORLD.SHADOW_CAMERA_HALF_EXTENT;
-    sunLight.shadow.camera.near = WORLD.SHADOW_CAMERA_NEAR;
-    sunLight.shadow.camera.far = WORLD.SHADOW_CAMERA_FAR;
-    sunLight.shadow.bias = -0.00045;
-    sunLight.shadow.normalBias = 0.028;
-    sunLight.shadow.radius = 2.6;
-    fillLight.position.set(...WORLD.FILL_LIGHT_POSITION);
-    homeScene.add(ambientLight, hemisphereLight, sunLight, fillLight);
+    const atmosphereSystem = createSceneAtmosphere({
+      onInvalidate() {
+        frameScheduler?.invalidate();
+      },
+      parent: homeScene,
+      profile: state.profile,
+      qualityDebug,
+      visibilityTracker,
+    });
+    subsystemRegistry.register(atmosphereSystem);
+    const registerDecorativeSystem = atmosphereSystem.registerDecorativeSystem;
+    scene.setClouds = (on) => atmosphereSystem.setClouds(on);
+    scene.toggleClouds = () => atmosphereSystem.toggleClouds();
     applyActiveQualityProfile(
       typeof qualityState.getProfile === "function" ? qualityState.getProfile() : fallbackProfile,
       "initial",
@@ -561,7 +588,9 @@ function setSrgbTexture(texture) {
         ].join("\n"),
       }),
     );
-    ((skyShell.renderOrder = -1), (skyShell.material.depthWrite = !1), homeScene.add(skyShell));
+    ((skyShell.renderOrder = -1),
+      (skyShell.material.depthWrite = !1),
+      atmosphereSystem.root.add(skyShell));
     var moonPosition = new Vector3(...WORLD.MOON_POSITION),
       orbitalGlowGroup = new Group();
     function createOrbitalGlowTexture(arg55, arg56, arg57, arg58) {
@@ -607,7 +636,7 @@ function setSrgbTexture(texture) {
       var canvasTexture = new CanvasTexture(canvas);
       return (setSrgbTexture(canvasTexture), canvasTexture);
     }
-    (orbitalGlowGroup.position.copy(moonPosition), homeScene.add(orbitalGlowGroup));
+    (orbitalGlowGroup.position.copy(moonPosition), atmosphereSystem.root.add(orbitalGlowGroup));
     var sprite15 = new Sprite(
       new SpriteMaterial({
         map: createOrbitalGlowTexture(256, 200, 60, 10),
@@ -793,8 +822,8 @@ function setSrgbTexture(texture) {
         phase: (1.618 * num500) % (2 * Math.PI),
         wobble2Amp: 0.1 + 0.5 * Math.abs(Math.sin(5.1 * num500)),
         wobble2Freq: 1.2 + 2.5 * Math.abs(Math.sin(2.9 * num500)),
-        violenceAmp: 1.5 + 4 * result98,
-        violenceFreq: 0.3 + 0.6 * result98,
+        violenceAmp: 0.45 + 0.9 * result98,
+        violenceFreq: 0.22 + 0.38 * result98,
         violencePhase: 2.3 * num500,
         colorSpeed: 0.15 + 0.35 * Math.abs(Math.sin(3.8 * num500)),
         colorPhase: (0.73 * num500) % (2 * Math.PI),
@@ -889,14 +918,14 @@ function setSrgbTexture(texture) {
       radius: 42,
     });
     setShadowParticipation(orbitalGlowGroup);
-    const group4 = new Group();
-    sceneRoot.add(group4);
-    const circleGeometry = new CircleGeometry(
-        WORLD.GROUND_RADIUS,
-        circleSegments,
-        0,
-        2 * Math.PI,
-      ),
+    const environmentSystem = createSceneEnvironment({
+      groundHeight,
+      parent: sceneRoot,
+      profile: state.profile,
+    });
+    subsystemRegistry.register(environmentSystem);
+    const group4 = environmentSystem.root;
+    const circleGeometry = new CircleGeometry(WORLD.GROUND_RADIUS, circleSegments, 0, 2 * Math.PI),
       position9 = circleGeometry.attributes.position;
     for (let num425 = 0; num425 < position9.count; num425 += 1) {
       const result56 = position9.getX(num425),
@@ -1121,10 +1150,7 @@ function setSrgbTexture(texture) {
         qeResult30 = tmpV65(num200 + 39),
         num201 = 0.03 + 0.12 * qeResult27,
         result62 = Math.floor(4 * qeResult30),
-        mesh8 = new Mesh(
-          arr14[result62](num201),
-          arr13[Math.floor(qeResult30 * arr13.length)],
-        ),
+        mesh8 = new Mesh(arr14[result62](num201), arr13[Math.floor(qeResult30 * arr13.length)]),
         num202 = num509 + (qeResult28 - 0.5) * Math.PI * 2,
         num203 = 8 + 90 * qeResult29,
         num204 = Math.cos(num202) * num203,
@@ -1224,11 +1250,7 @@ function setSrgbTexture(texture) {
       })());
     const group6 = new Group();
     group4.add(group6);
-    const sphereGeometry = new SphereGeometry(
-        1,
-        state.lowPower ? 10 : 16,
-        state.lowPower ? 8 : 12,
-      ),
+    const sphereGeometry = new SphereGeometry(1, state.lowPower ? 10 : 16, state.lowPower ? 8 : 12),
       cylinderGeometry2 = new CylinderGeometry(0.04, 0.08, 0.65, 5),
       canvas21 = document.createElement("canvas");
     ((canvas21.width = state.lowPower ? 64 : 128), (canvas21.height = state.lowPower ? 64 : 128));
@@ -1661,12 +1683,7 @@ function setSrgbTexture(texture) {
             emissiveIntensity: 0.05,
           }),
           mesh29 = new Mesh(
-            new CylinderGeometry(
-              0.9 * arg76,
-              1.25 * arg76,
-              8.2 * arg76,
-              state.lowPower ? 7 : 12,
-            ),
+            new CylinderGeometry(0.9 * arg76, 1.25 * arg76, 8.2 * arg76, state.lowPower ? 7 : 12),
             meshStandardMaterial2,
           );
         ((mesh29.position.y = 4.1 * arg76),
@@ -1675,12 +1692,7 @@ function setSrgbTexture(texture) {
           (mesh29.receiveShadow = !state.lowPower),
           group3.add(mesh29));
         const mesh30 = new Mesh(
-          new CylinderGeometry(
-            0.45 * arg76,
-            0.72 * arg76,
-            5.8 * arg76,
-            state.lowPower ? 6 : 11,
-          ),
+          new CylinderGeometry(0.45 * arg76, 0.72 * arg76, 5.8 * arg76, state.lowPower ? 6 : 11),
           meshStandardMaterial3,
         );
         (mesh30.position.set(0.45 * arg76, 9 * arg76, -0.12 * arg76),
@@ -1862,7 +1874,12 @@ function setSrgbTexture(texture) {
         const result87 = groundHeight(arg74, arg75);
         (group3.position.set(arg74, result87, arg75), group4.add(group3));
       })(-42, 28, state.lowPower ? 1.25 : 1.5));
-    const group7 = new Group();
+    const towerSystem = createSceneTower({
+      parent: group4,
+      profile: state.profile,
+    });
+    subsystemRegistry.register(towerSystem);
+    const group7 = towerSystem.root;
     function tmpV65(arg77) {
       const num433 = 43758.5453123 * Math.sin(12.9898 * arg77);
       return num433 - Math.floor(num433);
@@ -1908,9 +1925,8 @@ function setSrgbTexture(texture) {
         canvasTexture7
       );
     }
-    group4.add(group7);
     const group8 = new Group();
-    sceneRoot.add(group8);
+    atmosphereSystem.root.add(group8);
     const arr16 = [],
       upperGlowSprites = state.profile.counts.upperGlowSprites;
     for (let num435 = 0; num435 < upperGlowSprites; num435 += 1) {
@@ -1960,7 +1976,7 @@ function setSrgbTexture(texture) {
     });
     setShadowParticipation(group8);
     const group9 = new Group();
-    sceneRoot.add(group9);
+    atmosphereSystem.root.add(group9);
     const arr17 = [];
     function tmpV67(arg79, arg80, arg81, arg82) {
       arg82 = arg82 || "mid";
@@ -2097,7 +2113,7 @@ function setSrgbTexture(texture) {
             transparent: !0,
             opacity: 0.55 + 0.28 * qeResult38,
             depthWrite: !1,
-            fog: !1,
+            fog: !0,
             rotation: 0.6 * (qeResult39 - 0.5),
           }),
         );
@@ -2274,6 +2290,7 @@ function setSrgbTexture(texture) {
         }
       }
     }
+    environmentSystem.setGroundPlantRecords(arr19);
     const result108 = createTowerTextures({
       THREE: THREE,
       lowPower: state.lowPower,
@@ -2822,10 +2839,7 @@ function setSrgbTexture(texture) {
         num281 = 1.15 + 0.88 * qeResult44,
         num282 = 0.54 + 0.68 * qeResult45,
         num283 = 0.9 + 0.66 * qeResult46,
-        mesh14 = new Mesh(
-          new BoxGeometry(num281, num282, num283),
-          meshStandardMaterial7,
-        ),
+        mesh14 = new Mesh(new BoxGeometry(num281, num282, num283), meshStandardMaterial7),
         gtResult = tmpV69(cylinderGeometry3, num277);
       if (!Number.isFinite(gtResult)) continue;
       const num284 = gtResult - 0.72,
@@ -2878,10 +2892,7 @@ function setSrgbTexture(texture) {
         num289 = 0.3 + 0.2 * qeResult49,
         num290 = 0.35 + 0.25 * qeResult50,
         num291 = 7.6 + 0.35 * (qeResult48 - 0.5),
-        mesh15 = new Mesh(
-          new BoxGeometry(num288, num289, num290),
-          meshStandardMaterial7,
-        );
+        mesh15 = new Mesh(new BoxGeometry(num288, num289, num290), meshStandardMaterial7);
       (mesh15.position.set(
         Math.cos(num287) * num291,
         gtResult2 - 0.1 - 0.18 * qeResult47,
@@ -2956,10 +2967,7 @@ function setSrgbTexture(texture) {
         num298 = 0.18 + 0.32 * qeResult58,
         num299 = 0.22 + 0.48 * qeResult59,
         num300 = 7.05 + 0.95 * qeResult58 - 0.32 * result70,
-        mesh16 = new Mesh(
-          new BoxGeometry(num297, num298, num299),
-          meshStandardMaterial7,
-        ),
+        mesh16 = new Mesh(new BoxGeometry(num297, num298, num299), meshStandardMaterial7),
         num301 = 0.16 + 0.09 * result70 + 0.07 * num296;
       (mesh16.position.set(
         Math.cos(num295) * num300,
@@ -3270,6 +3278,18 @@ function setSrgbTexture(texture) {
         roughness: 0.95,
         metalness: 0.01,
       });
+    function setBrazierRecordVisibility(record, visible) {
+      const stableVisible = Boolean(visible);
+      record.stand.visible = stableVisible;
+      record.flameCore.visible = stableVisible;
+      record.flameOuter.visible = stableVisible;
+      if (record.flameHot) record.flameHot.visible = stableVisible;
+      if (record.groundRing) record.groundRing.visible = stableVisible;
+      if (record.light) record.light.visible = stableVisible;
+      record.embers.forEach((ember) => {
+        ember.mesh.visible = stableVisible;
+      });
+    }
     function tmpV81(arg104, arg105, arg106, arg107) {
       const canvas12 = document.createElement("canvas");
       ((canvas12.width = 64), (canvas12.height = 96));
@@ -3364,6 +3384,9 @@ function setSrgbTexture(texture) {
         (mesh22.rotation.x = 0.08 * (tmpV65(4001 + num460) - 0.5)),
         (mesh22.rotation.z = 0.08 * (tmpV65(4011 + num460) - 0.5)),
         group13.add(mesh22));
+      const visibilityAnchor = new Group();
+      visibilityAnchor.position.set(num339, result73 + 2.4, num340);
+      group13.add(visibilityAnchor);
       const sprite10 = new Sprite(
         new SpriteMaterial({
           map: _tResult,
@@ -3445,6 +3468,7 @@ function setSrgbTexture(texture) {
         }
       }
       const cfg = {
+        stand: mesh22,
         flameCore: sprite10,
         flameOuter: sprite11,
         flameHot: hot,
@@ -3455,6 +3479,7 @@ function setSrgbTexture(texture) {
         baseZ: num340,
         baseGroundY: result73 + 0.05,
         phase: tmpV65(4021 + num460) * Math.PI * 2,
+        visibilityAnchor,
       };
       if (!state.lowPower) {
         const result47 = Math.atan2(18, 24);
@@ -3469,9 +3494,21 @@ function setSrgbTexture(texture) {
           (cfg.light = pointLight),
           (cfg.baseIntensity = num123));
       }
+      cfg.visibilitySystem = registerDecorativeSystem({
+        getCenter(target) {
+          return visibilityAnchor.getWorldPosition(target);
+        },
+        importance: "nearAtmosphere",
+        name: `brazier-${num460}`,
+        radius: 4.5,
+        setVisible(visible) {
+          setBrazierRecordVisibility(cfg, visible);
+        },
+      });
       arr23.push(cfg);
     }
     group4.add(group13);
+    setShadowParticipation(group13);
     const tmpV82 = state.lowPower ? 4 : 8,
       group14 = new Group();
     const PLANT = plantPalette || {
@@ -3761,27 +3798,36 @@ function setSrgbTexture(texture) {
       }),
       !state.lowPower)
     ) {
-      const webGLCubeRenderTarget = new WebGLCubeRenderTarget(128, {
+      reflectionRenderTarget = new WebGLCubeRenderTarget(128, {
           format: RGBAFormat,
           generateMipmaps: !0,
           minFilter: LinearMipmapLinearFilter,
         }),
-        cubeCamera = new CubeCamera(0.5, 200, webGLCubeRenderTarget);
+        cubeCamera = new CubeCamera(0.5, 200, reflectionRenderTarget);
+      rendering.trackRenderTarget(reflectionRenderTarget);
       (cubeCamera.position.set(0, groundHeight(0, 0) + 0.5, 0), homeScene.add(cubeCamera));
       let num472 = !1;
       const fn3 = () => {
-        num472 ||
+        !runtimeDisposed &&
+          !num472 &&
           ((num472 = !0),
           (group14.visible = !1),
           cubeCamera.update(renderer, homeScene),
           (group14.visible = !0),
           group14.children.forEach((arg5) => {
-            ((arg5.material.envMap = webGLCubeRenderTarget.texture),
+            ((arg5.material.envMap = reflectionRenderTarget.texture),
               (arg5.material.envMapIntensity = 0.88),
               (arg5.material.needsUpdate = !0));
           }));
       };
-      requestAnimationFrame(() => requestAnimationFrame(fn3));
+      reflectionCaptureFrame = requestAnimationFrame(() => {
+        reflectionCaptureFrame = null;
+        if (runtimeDisposed) return;
+        reflectionCaptureFrame = requestAnimationFrame(() => {
+          reflectionCaptureFrame = null;
+          fn3();
+        });
+      });
     }
     const mesh41 = new Mesh(
       new RingGeometry(11.6, 18, 80),
@@ -3814,6 +3860,7 @@ function setSrgbTexture(texture) {
         group7.add(mesh33),
         arr24.push(mesh33));
     });
+    towerSystem.setOrbitDecor({ ground: mesh41, rings: arr24 });
     const result110 = (function () {
         const canvas18 = document.createElement("canvas");
         ((canvas18.width = state.lowPower ? 256 : 512),
@@ -4049,6 +4096,7 @@ function setSrgbTexture(texture) {
         group4.add(mesh27),
         arr26.push(mesh27));
     }
+    environmentSystem.setCrystalRecords(arr26);
     const group15 = new Group();
     group4.add(group15);
     const boxGeometry2 = new BoxGeometry(0.65, 2.6, 0.65),
@@ -4090,6 +4138,7 @@ function setSrgbTexture(texture) {
         (mesh34.castShadow = !state.lowPower),
         group15.add(mesh34));
     });
+    environmentSystem.setMonolithGroup(group15);
     const preview = new URLSearchParams(window.location.search || "").get("preview");
     if (preview === "marble" && typeof createMarbleTextures === "function") {
       const marbleTextures = createMarbleTextures({
@@ -4098,10 +4147,7 @@ function setSrgbTexture(texture) {
           qualityProfile: state.profile,
           chooseAnisotropy: chooseAnisotropy,
         }),
-        marblePreview = new Mesh(
-          new BoxGeometry(4, 4, 0.5),
-          createMarbleMaterial(marbleTextures),
-        );
+        marblePreview = new Mesh(new BoxGeometry(4, 4, 0.5), createMarbleMaterial(marbleTextures));
       (marblePreview.position.set(15, 6, 0),
         (marblePreview.rotation.y = Math.PI / 2),
         (marblePreview.castShadow = !state.lowPower),
@@ -4111,11 +4157,11 @@ function setSrgbTexture(texture) {
     // Camera-following cloud layers stay centered on the orbiting view.
     const cloudAnchor = new Group();
     cloudAnchor.position.y = -7.5;
-    homeScene.add(cloudAnchor);
+    atmosphereSystem.root.add(cloudAnchor);
+    atmosphereSystem.setCloudAnchor(cloudAnchor);
     const driftCloudGroup = new Group();
     cloudAnchor.add(driftCloudGroup);
-    cloudGroups.push(driftCloudGroup);
-    setCloudGroupSceneVisibility(driftCloudGroup, true);
+    atmosphereSystem.registerCloudGroup(driftCloudGroup, true);
     const driftClouds = [],
       driftCloudTexture = (function () {
         const canvas19 = document.createElement("canvas");
@@ -4233,9 +4279,10 @@ function setSrgbTexture(texture) {
       }),
     );
     group4.add(points);
+    atmosphereSystem.setPointField(points);
     const emberCloudGroup = new Group();
-    (cloudAnchor.add(emberCloudGroup), cloudGroups.push(emberCloudGroup));
-    setCloudGroupSceneVisibility(emberCloudGroup, true);
+    cloudAnchor.add(emberCloudGroup);
+    atmosphereSystem.registerCloudGroup(emberCloudGroup, true);
     const emberClouds = [],
       emberCloudTexture = (function () {
         const canvas20 = document.createElement("canvas");
@@ -4380,8 +4427,8 @@ function setSrgbTexture(texture) {
           cycleHeight: 6 + 3 * qeResult102,
         }));
     }
-    (cloudAnchor.add(hazeCloudGroup), cloudGroups.push(hazeCloudGroup));
-    setCloudGroupSceneVisibility(hazeCloudGroup, true);
+    cloudAnchor.add(hazeCloudGroup);
+    atmosphereSystem.registerCloudGroup(hazeCloudGroup, true);
     const hazeCloudSystem = registerDecorativeSystem({
       getCenter(target) {
         return hazeCloudGroup.getWorldPosition(target);
@@ -4422,7 +4469,7 @@ function setSrgbTexture(texture) {
                 transparent: !0,
                 opacity: 0,
                 depthWrite: !1,
-                fog: !1,
+                fog: !0,
               }),
             );
           (sprite.scale.set(num9, num10, 1), pulseCloudGroup.add(sprite));
@@ -4448,10 +4495,8 @@ function setSrgbTexture(texture) {
         });
       }
     }
-    (cloudAnchor.add(pulseCloudGroup),
-      cloudGroups.push(pulseCloudGroup),
-      setCloudGroupSceneVisibility(pulseCloudGroup, true),
-      applyCloudVisibility());
+    cloudAnchor.add(pulseCloudGroup);
+    atmosphereSystem.registerCloudGroup(pulseCloudGroup, true);
     const pulseCloudSystem = registerDecorativeSystem({
       getCenter(target) {
         return pulseCloudGroup.getWorldPosition(target);
@@ -4488,13 +4533,6 @@ function setSrgbTexture(texture) {
     function applySceneComposition(profile, reason = "runtime") {
       compositionState.profile = profile || fallbackComposition;
       refreshCountScaleCache();
-      const cameraProfile = compositionState.profile.camera || fallbackComposition.camera;
-      camera.fov = cameraProfile.fov;
-      camera.aspect = cfg2.width / cfg2.height;
-      camera.updateProjectionMatrix();
-      group4.position.y = compositionState.profile.sceneOffsetY;
-      cloudAnchor.position.y = compositionState.profile.cloudAnchorY;
-      group7.scale.setScalar(compositionState.profile.towerScale || 1);
       updateSceneDebug({
         composition: compositionState.profile.name,
         compositionReason: reason,
@@ -4522,98 +4560,62 @@ function setSrgbTexture(texture) {
         result96 = clamp01((result95 - arg129) / arg130);
       return Math.max(minOpacity, Math.min(result92, result96));
     }
-    function updateDecorativeVisibility() {
-      const debugSystems = qualityDebug ? {} : null;
-      let cloudVisibilityDirty = false;
-      if (visibilityTracker) {
-        visibilityTracker.updateCameraState();
-      }
-      decorativeSystems.forEach((system) => {
-        if (!visibilityTracker || system.importance === "core") {
-          system.active = true;
-          system.bucket = system.importance === "core" ? "core" : system.bucket;
-        } else {
-          const center = system.getCenter(system._center || (system._center = new Vector3()));
-          system.bucket = visibilityTracker.classifySphere({
-            center,
-            importance: system.importance,
-            previousBucket: system.bucket,
-            radius: system.radius || 0,
-          });
-          system.active = visibilityTracker.shouldUpdateBucket(system.bucket);
-        }
-        if (system.group) {
-          if (system.isCloudGroup) {
-            setCloudGroupSceneVisibility(system.group, system.active);
-            cloudVisibilityDirty = true;
-          } else {
-            system.group.visible = visibilityTracker
-              ? visibilityTracker.shouldRenderBucket(system.bucket)
-              : system.active;
-          }
-        }
-        if (debugSystems) {
-          debugSystems[system.name] = {
-            active: system.active,
-            bucket: system.bucket,
-          };
-        }
-      });
-      if (cloudVisibilityDirty) {
-        applyCloudVisibility();
-      }
-      if (debugSystems) {
-        qualityDebug.systems = debugSystems;
-      }
-    }
-    function tmpV89() {
-      ((cfg2.width = window.innerWidth),
-        (cfg2.height = window.innerHeight),
+    function applySceneSize({ width, height }) {
+      ((cfg2.width = width),
+        (cfg2.height = height),
         applySceneComposition(resolveSceneCompositionProfile(), "resize"),
-        applyActiveQualityProfile(state.profile, "resize"),
-        renderer.setSize(cfg2.width, cfg2.height));
-      if (composer) composer.setSize(cfg2.width, cfg2.height);
-      if (outlinePass) outlinePass.setSize(cfg2.width, cfg2.height);
+        applyActiveQualityProfile(state.profile, "resize"));
+      subsystemRegistry.resize({
+        cameraFov:
+          compositionState.profile.camera?.fov ?? fallbackComposition.camera.fov,
+        composition: compositionState.profile,
+        height,
+        width,
+      });
+      frameScheduler?.invalidate();
     }
+    const resizeController = createSceneResizeController({
+      onResize: applySceneSize,
+      readSize() {
+        return {
+          height: window.innerHeight,
+          pixelRatio: window.devicePixelRatio || 1,
+          width: window.innerWidth,
+        };
+      },
+    });
     // cfg2.height is refreshed inside tmpV89 (the resize handler) on every
     // resize, so reading it inside the scroll handler avoids a layout-flushing
     // window.innerHeight access per scroll event.
-    (window.addEventListener("resize", tmpV89),
-      window.addEventListener(
-        "scroll",
-        () => {
-          cfg2.scrollTarget = Math.min(window.scrollY / (1.8 * cfg2.height), 1.25);
-        },
-        {
-          passive: !0,
-        },
-      ),
-      tmpV89());
-    const clock = new Clock(),
-      num516 = 0.12 * Math.PI;
-    // Cap touch-primary devices (phones, tablets) at ~30fps. The scene is
-    // decorative; rendering every other frame keeps visuals smooth enough while
-    // roughly halving GPU + main-thread frame work, which is the single
-    // biggest lever on battery + sustained perf for mobile browsers.
-    const halveMobileFrames = scene.detectTouchPrimary();
-    let frameTick = 0;
-    let sceneReadyMarked = false;
-    !(function tmpV54() {
-      if ((requestAnimationFrame(tmpV54), document.hidden || !sceneVisible)) return;
-      if (halveMobileFrames && ++frameTick & 1) return;
-      const result97 = Math.min(0.1, clock.getDelta()),
-        elapsedTime = clock.elapsedTime;
+    const onWindowResize = () => resizeController.resize();
+    const onWindowScroll = () => {
+      cfg2.scrollTarget = Math.min(window.scrollY / (1.8 * cfg2.height), 1.25);
+      frameScheduler?.invalidate();
+    };
+    window.addEventListener("resize", onWindowResize);
+    window.addEventListener("scroll", onWindowScroll, {
+      passive: !0,
+    });
+    resizeController.update({ force: true });
+    const num516 = 0.12 * Math.PI;
+    function updateSceneFrame({
+      deltaSeconds: result97,
+      elapsedSeconds: elapsedTime,
+      sampleDeltaSeconds,
+    }) {
       const adaptiveProfile =
         typeof qualityState.sample === "function"
-          ? qualityState.sample(1e3 * result97, 1e3 * elapsedTime)
+          ? qualityState.sample(1e3 * sampleDeltaSeconds, 1e3 * elapsedTime)
           : null;
       adaptiveProfile &&
         adaptiveProfile.tier !== state.profile.tier &&
         applyActiveQualityProfile(adaptiveProfile, "adaptive");
       const activeProfile = state.profile,
         cameraProfile = compositionState.profile.camera || fallbackComposition.camera,
-        tmpV55 = reducedMotionMQ.matches ? 0.25 : 1;
-      cfg2.scroll += 0.025 * (cfg2.scrollTarget - cfg2.scroll);
+        tmpV55 = 1;
+      cfg2.scroll = reducedMotion
+        ? cfg2.scrollTarget
+        : cfg2.scroll + 0.025 * (cfg2.scrollTarget - cfg2.scroll);
       const tmpV56 = activeProfile.isLow ? 0.055 : 0.06,
         num490 = elapsedTime * (0.95 * tmpV56) * tmpV55,
         num491 = 0.09 * Math.sin(3 * num490) + 0.05 * Math.sin(2 * num490),
@@ -4633,28 +4635,12 @@ function setSrgbTexture(texture) {
         (cloudAnchor.position.z = camera.position.z),
         cloudLookTarget.set(0, num495, 0),
         scene.devMode?.active ? null : camera.lookAt(0, num495, 0),
-        updateDecorativeVisibility(),
-        (mesh41.material.opacity = 0.12 + 0.02 * Math.sin(1.3 * elapsedTime) * tmpV55),
-        arr24.forEach((arg44, arg45) => {
-          ((arg44.rotation.z = elapsedTime * (0.1 + 0.02 * arg45) * tmpV55),
-            (arg44.material.opacity =
-              0.12 +
-              0.018 * arg45 +
-              0.03 +
-              0.02 * Math.sin(elapsedTime * (1.2 + 0.3 * arg45)) * tmpV55));
+        subsystemRegistry.update({
+          elapsedSeconds: elapsedTime,
+          reducedMotion,
+          render: false,
+          visibilityScale: num515,
         }),
-        arr26.forEach((arg46, arg47) => {
-          ((arg46.rotation.y += 0.0035 + 12e-5 * arg47),
-            (arg46.position.y =
-              groundHeight(arg46.position.x, arg46.position.z) +
-              3.55 +
-              0.06 * Math.sin(1.4 * elapsedTime + arg47) * tmpV55));
-        }),
-        group15.children.forEach((arg48, arg49) => {
-          arg48.rotation.y += 0.002 + 5e-4 * arg49;
-        }),
-        (points.rotation.y = 0.02 * elapsedTime * tmpV55),
-        (points.material.opacity = (state.lowPower ? 0.42 : 0.5) * num515),
         driftCloudSystem.active
           ? (() => {
               const limit = getProfileCount("driftClouds", driftClouds.length);
@@ -4731,12 +4717,6 @@ function setSrgbTexture(texture) {
               });
             })()
           : setRecordVisibility(arr17, !1),
-        arr19.forEach((arg50, arg51) => {
-          const num402 = elapsedTime * (0.9 + (arg51 % 7) * 0.05) * tmpV55 + arg50.phase;
-          ((arg50.mesh.position.y = arg50.baseY + Math.sin(num402) * arg50.amp),
-            (arg50.mesh.material.opacity =
-              (state.lowPower ? 0.26 : 0.33) + 0.03 * Math.sin(0.7 * num402)));
-        }),
         emberCloudSystem.active
           ? (() => {
               const limit = getProfileCount("emberClouds", emberClouds.length);
@@ -4763,94 +4743,100 @@ function setSrgbTexture(texture) {
             })()
           : setRecordVisibility(emberClouds, !1),
         arr23.forEach((arg52) => {
-          const phase = arg52.phase,
-            result77 = Math.sin(6 * elapsedTime + phase),
-            result78 = Math.sin(9.3 * elapsedTime + 1.7 * phase),
-            result79 = Math.sin(14.1 * elapsedTime + 0.8 * phase),
-            result80 = Math.sin(3.2 * elapsedTime + 2.1 * phase),
-            result81 = Math.sin(22 * elapsedTime + 3.1 * phase),
-            result82 = Math.sin(0.8 * elapsedTime + 0.6 * phase),
-            num403 =
-              0.12 * result77 +
-              0.08 * result78 +
-              0.05 * result79 +
-              0.04 * result81 +
-              0.06 * result82,
-            num404 =
-              0.06 * Math.sin(2.5 * elapsedTime + phase) +
-              0.03 * Math.sin(4.8 * elapsedTime + 1.4 * phase);
-          ((arg52.flameCore.material.opacity = 0.8 * Math.max(0.45, 0.7 + num403 + 0.1 * result79)),
-            (arg52.flameCore.position.y = arg52.baseFlameY + 0.08 * result77 + 0.04 * result78),
-            (arg52.flameCore.position.x = arg52.baseX + num404),
-            (arg52.flameCore.position.z =
-              arg52.baseZ + 0.03 * Math.sin(3.1 * elapsedTime + 0.9 * phase)));
-          const result83 = Math.min(
-            1.22,
-            Math.max(0.78, 1 + 0.15 * result77 + 0.08 * result79 + 0.05 * result82),
-          );
-          (arg52.flameCore.scale.set(
-            0.8 * Math.min(1.2, Math.max(0.82, 1 + 0.12 * result78)),
-            1.4 * result83,
-            1,
-          ),
-            (arg52.flameOuter.material.opacity =
-              0.8 * Math.max(0.22, 0.35 + 0.08 * result80 + 0.06 * result77 + 0.04 * result82)),
-            (arg52.flameOuter.position.y = arg52.baseFlameY - 0.2 + 0.06 * result80),
-            (arg52.flameOuter.position.x = arg52.baseX + 0.6 * num404),
-            (arg52.flameOuter.position.z =
-              arg52.baseZ + 0.02 * Math.sin(2.2 * elapsedTime + 1.2 * phase)),
-            arg52.flameOuter.scale.set(
-              1.6 * Math.min(1.18, Math.max(0.9, 1 + 0.1 * result80)),
-              2.4 * Math.min(1.18, Math.max(0.9, 1 + 0.1 * result77)),
-              1,
-            ));
-          if (arg52.flameHot) {
-            const hotOp = Math.max(
-              0.55,
-              0.78 + 0.12 * result77 + 0.08 * result81 + 0.04 * result82,
-            );
-            ((arg52.flameHot.material.opacity = 0.95 * hotOp),
-              arg52.flameHot.position.set(
-                arg52.baseX + 0.4 * num404,
-                arg52.baseFlameY + 0.15 + 0.06 * result77,
-                arg52.baseZ + 0.02 * Math.sin(3.1 * elapsedTime + 0.9 * phase),
-              ));
-            const hotScale = Math.min(1.18, Math.max(0.82, 1 + 0.1 * result77));
-            arg52.flameHot.scale.set(
-              0.4 * hotScale,
-              0.7 * Math.min(1.2, Math.max(0.8, result83)),
-              1,
-            );
-          }
-          if (arg52.groundRing) {
-            const ringOp = 0.07 + 0.045 * Math.max(0, 0.5 + 0.5 * result77) + 0.03 * result82;
-            arg52.groundRing.material.opacity = ringOp;
-            const ringScale = 1 + 0.08 * result77 + 0.05 * result82;
-            arg52.groundRing.scale.set(ringScale, ringScale, 1);
-          }
-          if (arg52.embers && arg52.embers.length) {
-            arg52.embers.forEach((arg2) => {
-              const num43 = elapsedTime * arg2.speed + arg2.phase,
-                num44 = (num43 * 0.25) % 1;
-              arg2.mesh.position.set(
-                arg52.baseX + arg2.driftX * num44 + 0.08 * Math.sin(3.4 * num43),
-                arg52.baseFlameY + 0.3 + 2.6 * num44,
-                arg52.baseZ + arg2.driftZ * num44 + 0.08 * Math.cos(2.7 * num43),
+          if (!arg52.visibilitySystem.active) return;
+              const phase = arg52.phase,
+                result77 = Math.sin(6 * elapsedTime + phase),
+                result78 = Math.sin(9.3 * elapsedTime + 1.7 * phase),
+                result79 = Math.sin(14.1 * elapsedTime + 0.8 * phase),
+                result80 = Math.sin(3.2 * elapsedTime + 2.1 * phase),
+                result81 = Math.sin(22 * elapsedTime + 3.1 * phase),
+                result82 = Math.sin(0.8 * elapsedTime + 0.6 * phase),
+                num403 =
+                  0.12 * result77 +
+                  0.08 * result78 +
+                  0.05 * result79 +
+                  0.04 * result81 +
+                  0.06 * result82,
+                num404 =
+                  0.06 * Math.sin(2.5 * elapsedTime + phase) +
+                  0.03 * Math.sin(4.8 * elapsedTime + 1.4 * phase);
+              ((arg52.flameCore.material.opacity =
+                0.8 * Math.max(0.45, 0.7 + num403 + 0.1 * result79)),
+                (arg52.flameCore.position.y = arg52.baseFlameY + 0.08 * result77 + 0.04 * result78),
+                (arg52.flameCore.position.x = arg52.baseX + num404),
+                (arg52.flameCore.position.z =
+                  arg52.baseZ + 0.03 * Math.sin(3.1 * elapsedTime + 0.9 * phase)));
+              const result83 = Math.min(
+                1.22,
+                Math.max(0.78, 1 + 0.15 * result77 + 0.08 * result79 + 0.05 * result82),
               );
-              const result9 = Math.max(0, (1 - num44) * (0.7 + 0.3 * Math.sin(5 * num43)));
-              arg2.mesh.material.opacity = result9;
-              const num45 = arg2.size * (0.6 + 0.8 * (1 - num44));
-              arg2.mesh.scale.set(num45, num45, 1);
-            });
-          }
-          if (arg52.light) {
-            const tmpV6 = arg52.baseIntensity || 0.4,
-              result55 = Math.max(0, 0.5 + 0.5 * result77);
-            ((arg52.light.intensity =
-              0.8 * (tmpV6 + num403 * tmpV6 * 1.8 + result79 * tmpV6 * 0.35)),
-              (arg52.light.position.y = arg52.baseFlameY + 0.06 * result77),
-              arg52.light.color.setHSL((20 + 12 * result55) / 360, 0.82, 0.52 + 0.06 * result55));
-          }
+              (arg52.flameCore.scale.set(
+                0.8 * Math.min(1.2, Math.max(0.82, 1 + 0.12 * result78)),
+                1.4 * result83,
+                1,
+              ),
+                (arg52.flameOuter.material.opacity =
+                  0.8 * Math.max(0.22, 0.35 + 0.08 * result80 + 0.06 * result77 + 0.04 * result82)),
+                (arg52.flameOuter.position.y = arg52.baseFlameY - 0.2 + 0.06 * result80),
+                (arg52.flameOuter.position.x = arg52.baseX + 0.6 * num404),
+                (arg52.flameOuter.position.z =
+                  arg52.baseZ + 0.02 * Math.sin(2.2 * elapsedTime + 1.2 * phase)),
+                arg52.flameOuter.scale.set(
+                  1.6 * Math.min(1.18, Math.max(0.9, 1 + 0.1 * result80)),
+                  2.4 * Math.min(1.18, Math.max(0.9, 1 + 0.1 * result77)),
+                  1,
+                ));
+              if (arg52.flameHot) {
+                const hotOp = Math.max(
+                  0.55,
+                  0.78 + 0.12 * result77 + 0.08 * result81 + 0.04 * result82,
+                );
+                ((arg52.flameHot.material.opacity = 0.95 * hotOp),
+                  arg52.flameHot.position.set(
+                    arg52.baseX + 0.4 * num404,
+                    arg52.baseFlameY + 0.15 + 0.06 * result77,
+                    arg52.baseZ + 0.02 * Math.sin(3.1 * elapsedTime + 0.9 * phase),
+                  ));
+                const hotScale = Math.min(1.18, Math.max(0.82, 1 + 0.1 * result77));
+                arg52.flameHot.scale.set(
+                  0.4 * hotScale,
+                  0.7 * Math.min(1.2, Math.max(0.8, result83)),
+                  1,
+                );
+              }
+              if (arg52.groundRing) {
+                const ringOp = 0.07 + 0.045 * Math.max(0, 0.5 + 0.5 * result77) + 0.03 * result82;
+                arg52.groundRing.material.opacity = ringOp;
+                const ringScale = 1 + 0.08 * result77 + 0.05 * result82;
+                arg52.groundRing.scale.set(ringScale, ringScale, 1);
+              }
+              if (arg52.embers && arg52.embers.length) {
+                arg52.embers.forEach((arg2) => {
+                  const num43 = elapsedTime * arg2.speed + arg2.phase,
+                    num44 = (num43 * 0.25) % 1;
+                  arg2.mesh.position.set(
+                    arg52.baseX + arg2.driftX * num44 + 0.08 * Math.sin(3.4 * num43),
+                    arg52.baseFlameY + 0.3 + 2.6 * num44,
+                    arg52.baseZ + arg2.driftZ * num44 + 0.08 * Math.cos(2.7 * num43),
+                  );
+                  const result9 = Math.max(0, (1 - num44) * (0.7 + 0.3 * Math.sin(5 * num43)));
+                  arg2.mesh.material.opacity = result9;
+                  const num45 = arg2.size * (0.6 + 0.8 * (1 - num44));
+                  arg2.mesh.scale.set(num45, num45, 1);
+                });
+              }
+              if (arg52.light) {
+                const tmpV6 = arg52.baseIntensity || 0.4,
+                  result55 = Math.max(0, 0.5 + 0.5 * result77);
+                ((arg52.light.intensity =
+                  0.8 * (tmpV6 + num403 * tmpV6 * 1.8 + result79 * tmpV6 * 0.35)),
+                  (arg52.light.position.y = arg52.baseFlameY + 0.06 * result77),
+                  arg52.light.color.setHSL(
+                    (20 + 12 * result55) / 360,
+                    0.82,
+                    0.52 + 0.06 * result55,
+                  ));
+              }
         }),
         plumeSystem.active
           ? (() => {
@@ -5002,8 +4988,7 @@ function setSrgbTexture(texture) {
             vSin = Math.max(0, Math.sin(violencePhase)),
             vSin2 = vSin * vSin,
             vSin4 = vSin2 * vSin2,
-            vSin8 = vSin4 * vSin4,
-            violenceBoost = vSin8 * vSin4 * haloRecord.violenceAmp;
+            violenceBoost = smoothstep01(vSin4) * haloRecord.violenceAmp;
           orbitRadius += violenceBoost;
           const orbitX = Math.cos(orbitTheta) * Math.sin(orbitPhi) * orbitRadius,
             orbitY = Math.cos(orbitPhi) * orbitRadius;
@@ -5014,7 +4999,7 @@ function setSrgbTexture(texture) {
           );
           const haloScale =
               haloRecord.baseScale * (0.85 + 0.15 * Math.sin(1.5 * elapsedTime + haloRecord.phase)),
-            violenceScale = violenceBoost > 0.5 ? 0.15 : 0;
+            violenceScale = Math.min(0.06, 0.045 * violenceBoost);
           (haloRecord.sprite.scale.set(haloScale + violenceScale, haloScale + violenceScale, 1),
             (haloRecord.sprite.material.opacity =
               (0 === haloRecord.layer ? 0.28 : 1 === haloRecord.layer ? 0.18 : 0.1) +
@@ -5053,19 +5038,26 @@ function setSrgbTexture(texture) {
             glowAmount = 1 - (cyclePhase - growTime - holdTime) / shrinkTime;
           }
           orbitalRecord.mesh.material.opacity = 0.55;
-          const colorArray = orbitalRecord.geo.attributes.color.array;
-          for (let colorIndex = 0; colorIndex < orbitalRecord.heightFracs.length; colorIndex += 1) {
-            const heightFrac = orbitalRecord.heightFracs[colorIndex];
-            let colorFade = clamp01((glowAmount - heightFrac) / 0.15 + 0.5);
-            colorFade = colorFade * colorFade * (3 - 2 * colorFade);
-            ((colorArray[3 * colorIndex + 0] =
-              orbitalRecord.baseColors[3 * colorIndex + 0] * colorFade),
-              (colorArray[3 * colorIndex + 1] =
-                orbitalRecord.baseColors[3 * colorIndex + 1] * colorFade),
-              (colorArray[3 * colorIndex + 2] =
-                orbitalRecord.baseColors[3 * colorIndex + 2] * colorFade));
+          if (hasMeaningfulScalarChange(orbitalRecord.lastGlowAmount, glowAmount)) {
+            const colorArray = orbitalRecord.geo.attributes.color.array;
+            for (
+              let colorIndex = 0;
+              colorIndex < orbitalRecord.heightFracs.length;
+              colorIndex += 1
+            ) {
+              const heightFrac = orbitalRecord.heightFracs[colorIndex];
+              let colorFade = clamp01((glowAmount - heightFrac) / 0.15 + 0.5);
+              colorFade = colorFade * colorFade * (3 - 2 * colorFade);
+              ((colorArray[3 * colorIndex + 0] =
+                orbitalRecord.baseColors[3 * colorIndex + 0] * colorFade),
+                (colorArray[3 * colorIndex + 1] =
+                  orbitalRecord.baseColors[3 * colorIndex + 1] * colorFade),
+                (colorArray[3 * colorIndex + 2] =
+                  orbitalRecord.baseColors[3 * colorIndex + 2] * colorFade));
+            }
+            orbitalRecord.lastGlowAmount = glowAmount;
+            orbitalRecord.geo.attributes.color.needsUpdate = !0;
           }
-          orbitalRecord.geo.attributes.color.needsUpdate = !0;
         }
       } else {
         setRecordVisibility(arr10, !1);
@@ -5074,20 +5066,85 @@ function setSrgbTexture(texture) {
         });
       }
       skyShell.material.uniforms.uTime.value = elapsedTime;
-      composer.render();
+      rendering.update();
       if (!sceneReadyMarked) {
         sceneReadyMarked = true;
         if (container && container.classList) container.classList.add("is-ready");
       }
-    })();
+    }
+    const touchFrameStride =
+      typeof scene.detectTouchPrimary === "function" && scene.detectTouchPrimary() ? 2 : 1;
+    frameScheduler = createSceneFrameScheduler({
+      frameStride: touchFrameStride,
+      isRenderable() {
+        return !document.hidden && sceneVisible && webglContextAvailable;
+      },
+      onUpdate: updateSceneFrame,
+      reducedMotion,
+    });
+    const onReducedMotionChange = (event) => {
+      reducedMotion = Boolean(event?.matches);
+      frameScheduler.setReducedMotion(reducedMotion);
+    };
+    if (typeof reducedMotionMQ.addEventListener === "function") {
+      reducedMotionMQ.addEventListener("change", onReducedMotionChange);
+    } else if (typeof reducedMotionMQ.addListener === "function") {
+      reducedMotionMQ.addListener(onReducedMotionChange);
+    }
+    const onDocumentVisibilityChange = () => {
+      if (!document.hidden) frameScheduler.resume();
+    };
+    document.addEventListener("visibilitychange", onDocumentVisibilityChange);
     if (scene.devMode && typeof scene.devMode.attach === "function") {
       scene.devMode.attach({
         THREE,
         camera,
         homeScene,
         canvas: renderer.domElement,
-        outlinePass,
+        ensureOutlinePass: rendering.ensureOutlinePass,
+        onActivityChange(active) {
+          frameScheduler.setForceAnimation(active);
+        },
       });
     }
+    scene.disposeHomeSceneRuntime = function disposeHomeSceneRuntime() {
+      if (runtimeDisposed) return false;
+      runtimeDisposed = true;
+      sceneReadyMarked = false;
+      container.classList?.remove("is-ready");
+      window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener("scroll", onWindowScroll);
+      document.removeEventListener("visibilitychange", onDocumentVisibilityChange);
+      if (typeof reducedMotionMQ.removeEventListener === "function") {
+        reducedMotionMQ.removeEventListener("change", onReducedMotionChange);
+      } else if (typeof reducedMotionMQ.removeListener === "function") {
+        reducedMotionMQ.removeListener(onReducedMotionChange);
+      }
+      sceneIntersectionObserver?.disconnect();
+      sceneIntersectionObserver = null;
+      if (
+        reflectionCaptureFrame !== null &&
+        typeof cancelAnimationFrame === "function"
+      ) {
+        cancelAnimationFrame(reflectionCaptureFrame);
+      }
+      reflectionCaptureFrame = null;
+      resizeController.dispose();
+      frameScheduler.dispose();
+      if (scene.devMode && typeof scene.devMode.dispose === "function") {
+        scene.devMode.dispose();
+      }
+      subsystemRegistry.dispose();
+      const disposedResources = rendering.disposeResult;
+      reflectionRenderTarget = null;
+      frameScheduler = null;
+      scene.setClouds = () => false;
+      scene.toggleClouds = () => false;
+      scene.disposeHomeSceneRuntime = () => false;
+      return disposedResources;
+    };
+    frameScheduler.start();
+    return true;
+    });
   };
 })();

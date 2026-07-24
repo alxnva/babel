@@ -134,3 +134,23 @@ test("shouldRenderBucket and shouldUpdateBucket treat only backsideDecor as skip
   assert.equal(tracker.shouldRenderBucket("backsideDecor"), false);
   assert.equal(tracker.shouldUpdateBucket("backsideDecor"), false);
 });
+
+test("decor beyond the current fog distance is neither rendered nor updated", async () => {
+  const scene = await loadVisibility();
+  const camera = framedCamera();
+  const tracker = scene.createSceneVisibilityTracker({
+    THREE,
+    camera,
+    getVisibleDistance: () => 40,
+  });
+  tracker.updateCameraState();
+
+  assert.equal(
+    tracker.classifySphere({
+      center: new THREE.Vector3(0, 0, -50),
+      radius: 2,
+      importance: "midAtmosphere",
+    }),
+    "backsideDecor",
+  );
+});
