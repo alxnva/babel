@@ -298,6 +298,31 @@ test("Cloudflare audit is scheduled, manual, least-privilege, and sanitized", as
   );
 });
 
+test("canonical Pages hostname workflow is exact, protected, and idempotent", async () => {
+  const workflow = await readProjectFile(".github/workflows/cloudflare-canonical-hostname.yml");
+  const script = await readProjectFile(
+    ".github/scripts/configure-cloudflare-canonical-redirect.mjs",
+  );
+
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /environment:\s*\n\s+name:\s*production/);
+  assert.match(workflow, /refs\/heads\/main/);
+  assert.match(workflow, /CONFIRM.*alexnava-me\.pages\.dev/s);
+  assert.match(workflow, /secrets\.CLOUDFLARE_REDIRECTS_API_TOKEN/);
+  assert.match(workflow, /Verify apex remains direct and indexable/);
+
+  assert.match(script, /const LIST_NAME = "alexnava_pages_hostname_redirects"/);
+  assert.match(script, /const RULE_REF = "canonicalize_alexnava_pages_hostname"/);
+  assert.match(script, /source_url:\s*SOURCE_URL/);
+  assert.match(script, /target_url:\s*TARGET_URL/);
+  assert.match(script, /status_code:\s*301/);
+  assert.match(script, /include_subdomains:\s*false/);
+  assert.match(script, /subpath_matching:\s*true/);
+  assert.match(script, /preserve_path_suffix:\s*true/);
+  assert.match(script, /preserve_query_string:\s*true/);
+  assert.match(script, /Refusing to overwrite unexpected entries/);
+});
+
 test("operations document CodeQL default setup without a duplicate workflow", async () => {
   const workflowDir = path.join(projectRoot, ".github", "workflows");
   const workflowFiles = await readdir(workflowDir);

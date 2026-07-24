@@ -41,4 +41,5 @@ dist/
 scripts/
 !.github/scripts/
 !.github/scripts/*.sh
+!.github/scripts/*.mjs
 vendor/

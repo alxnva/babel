@@ -98,6 +98,7 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Added responsive tower posters as the eager scene visual and intentional static fallback for reduced data/motion, unavailable WebGL, and software-rendered WebGL, while retaining live 3D on capable phones and explicit diagnostics.
 - Added high-severity dependency gates, hard-threshold Lighthouse runs retained as GitHub Actions artifacts, review-gated preview and main-only production GitHub environments, environment-scoped Cloudflare workflows with the legacy repository-secret fallback retained pending token rotation, retrying content/header smoke checks, a sanitized weekly audit, and an operations/rollback runbook.
 - Tightened CSP, aligned HSTS to one year, and separated seven-day stable-asset revalidation from immutable hashed JS/CSS. The attempted Pages-hostname noindex fallback was later removed because Pages `_headers` cannot safely scope rules by hostname; exact-host canonicalization remains a Cloudflare Bulk Redirect task.
+- Added a protected, idempotent Cloudflare workflow for the exact production Pages-hostname Bulk Redirect. It preserves paths and query strings, excludes branch-preview subdomains, and refuses to overwrite unexpected account redirect state.
 
 ### Panel frame unification — re-do as Option A
 
