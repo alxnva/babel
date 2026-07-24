@@ -165,18 +165,19 @@ if (redirectRulesets.length === 0) {
     (rule) => rule.action_parameters?.from_list?.name === LIST_NAME,
   );
 
-  if (matchingRules.length > 1 || listRules.some(({ ref }) => ref !== RULE_REF)) {
+  if (matchingRules.length > 1 || listRules.length > 1) {
     throw new Error("Refusing to continue: conflicting rules already reference the redirect list.");
   }
 
-  if (matchingRules.length === 0) {
+  const managedRule = matchingRules[0] ?? listRules[0];
+  if (!managedRule) {
     await cloudflare(`/accounts/${accountId}/rulesets/${ruleset.id}/rules`, {
       method: "POST",
       body: desiredRule,
     });
     console.log("Enabled the canonical redirect list in the existing account ruleset.");
   } else {
-    await cloudflare(`/accounts/${accountId}/rulesets/${ruleset.id}/rules/${matchingRules[0].id}`, {
+    await cloudflare(`/accounts/${accountId}/rulesets/${ruleset.id}/rules/${managedRule.id}`, {
       method: "PATCH",
       body: desiredRule,
     });

@@ -321,6 +321,13 @@ test("canonical Pages hostname workflow is exact, protected, and idempotent", as
   assert.match(script, /preserve_path_suffix:\s*true/);
   assert.match(script, /preserve_query_string:\s*true/);
   assert.match(script, /Refusing to overwrite unexpected entries/);
+  assert.match(script, /listRules\.length > 1/);
+  assert.match(script, /const managedRule = matchingRules\[0\] \?\? listRules\[0\]/);
+  assert.match(
+    script,
+    /rulesets\/\$\{ruleset\.id\}\/rules\/\$\{managedRule\.id\}/,
+    "the workflow should adopt a matching dashboard-created rule instead of duplicating it",
+  );
 });
 
 test("operations document CodeQL default setup without a duplicate workflow", async () => {
