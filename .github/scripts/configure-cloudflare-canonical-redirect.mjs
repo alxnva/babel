@@ -165,7 +165,11 @@ if (redirectRulesets.length === 0) {
     (rule) => rule.action_parameters?.from_list?.name === LIST_NAME,
   );
 
-  if (matchingRules.length > 1 || listRules.length > 1) {
+  const splitRules =
+    matchingRules.length === 1 &&
+    listRules.length === 1 &&
+    matchingRules[0].id !== listRules[0].id;
+  if (matchingRules.length > 1 || listRules.length > 1 || splitRules) {
     throw new Error("Refusing to continue: conflicting rules already reference the redirect list.");
   }
 

@@ -322,6 +322,7 @@ test("canonical Pages hostname workflow is exact, protected, and idempotent", as
   assert.match(script, /preserve_query_string:\s*true/);
   assert.match(script, /Refusing to overwrite unexpected entries/);
   assert.match(script, /listRules\.length > 1/);
+  assert.match(script, /matchingRules\[0\]\.id !== listRules\[0\]\.id/);
   assert.match(script, /const managedRule = matchingRules\[0\] \?\? listRules\[0\]/);
   assert.match(
     script,
