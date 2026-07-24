@@ -225,7 +225,7 @@ test("Lighthouse uses repository artifacts and hard performance-quality budgets"
 
   assert.equal(collect.numberOfRuns, 3);
   assert.deepEqual(collect.url, ["http://localhost/"]);
-  assert.equal(assertionConfig.aggregationMethod, "pessimistic");
+  assert.equal(assertionConfig.aggregationMethod, "median");
   assert.deepEqual(assertions["categories:performance"], ["error", { minScore: 0.8 }]);
   assert.deepEqual(assertions["categories:accessibility"], ["error", { minScore: 1 }]);
   assert.deepEqual(assertions["categories:best-practices"], ["error", { minScore: 0.95 }]);
@@ -251,10 +251,7 @@ test("Cloudflare audit is scheduled, manual, least-privilege, and sanitized", as
   assert.match(workflow, /index\("alexnava\.me"\)/);
   assert.match(workflow, /jq[\s\S]*?project:[\s\S]*?production_branch/);
   assert.match(workflow, /extract_final_header_block\(\)/);
-  assert.match(
-    workflow,
-    /extract_final_header_block "\$raw_headers" "\$final_headers"/,
-  );
+  assert.match(workflow, /extract_final_header_block "\$raw_headers" "\$final_headers"/);
   assert.match(workflow, /--max-redirs 0/);
   assert.doesNotMatch(workflow, /--location\b/);
   assert.match(workflow, /apex_status[\s\S]*?\[ "\$apex_status" != "200" \]/);

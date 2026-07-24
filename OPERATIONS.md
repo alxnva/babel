@@ -14,7 +14,7 @@ npm.cmd test
 npm.cmd run build:dist
 ```
 
-`npm run audit:ci` fails on high or critical npm advisories. Lighthouse runs three times and hard-fails below performance 0.80, accessibility 1.00, best practices 0.95, or SEO 1.00, and above LCP 2500 ms, CLS 0.10, or TBT 200 ms. Lighthouse reports are retained as GitHub Actions artifacts instead of Lighthouse temporary public storage.
+`npm run audit:ci` fails on high or critical npm advisories. Lighthouse runs three times, asserts against the median to absorb runner warm-up variance, and hard-fails below performance 0.80, accessibility 1.00, best practices 0.95, or SEO 1.00, and above LCP 2500 ms, CLS 0.10, or TBT 200 ms. Lighthouse reports are retained as GitHub Actions artifacts instead of Lighthouse temporary public storage.
 
 ## Scene delivery policy
 
