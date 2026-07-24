@@ -6,12 +6,12 @@
     <title>alex nava — calm by design</title>
     <meta
       name="description"
-      content="Alex Nava designs and builds interfaces, tools, and product systems with a calm, tactile approach."
+      content="Alex Nava designs and builds calm interfaces, tools, and product systems."
     />
     <meta property="og:title" content="alex nava — calm by design" />
     <meta
       property="og:description"
-      content="Alex Nava designs and builds interfaces, tools, and product systems with a calm, tactile approach."
+      content="Alex Nava designs and builds calm interfaces, tools, and product systems."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://alexnava.me/" />
@@ -23,7 +23,7 @@
     <meta name="twitter:title" content="alex nava — calm by design" />
     <meta
       name="twitter:description"
-      content="Alex Nava designs and builds interfaces, tools, and product systems with a calm, tactile approach."
+      content="Alex Nava designs and builds calm interfaces, tools, and product systems."
     />
     <meta name="twitter:image" content="https://alexnava.me/og.png" />
     <meta name="twitter:image:alt" content="Alex Nava — Calm by design." />
@@ -38,7 +38,7 @@
     <link rel="canonical" href="https://alexnava.me/" />
     <link rel="stylesheet" href="/styles.css?v=648" />
     <link rel="preload" href="/scripts/app.js?v=648" as="script" />
-    <link rel="prefetch" href="/scripts/scene.js?v=648" as="script" data-scene-script />
+    <meta name="babel:scene-script" content="/scripts/scene.js?v=648" data-scene-script />
     <link
       rel="preload"
       href="/fonts/instrument-sans-400.woff2"
@@ -66,6 +66,23 @@
 
     <div class="scene-shell" aria-hidden="true">
       <div id="home-scene" class="scene-canvas"></div>
+      <picture class="scene-poster" aria-hidden="true">
+        <source
+          media="(orientation: portrait)"
+          srcset="/images/scene-poster-portrait.webp"
+          width="900"
+          height="1600"
+        />
+        <img
+          src="/images/scene-poster-landscape.webp"
+          alt=""
+          width="1600"
+          height="900"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
       <div class="scene-vignette"></div>
     </div>
     <div class="site-shell" aria-hidden="true"></div>
@@ -85,9 +102,8 @@
           <p class="eyebrow">About</p>
           <h2>Alex Nava.</h2>
           <p class="story-text">
-            I design and build interfaces, tools, and product systems that stay calm when the work
-            gets messy. The interactive scene needs JavaScript, but the intent is the same either
-            way.
+            Alex Nava designs and builds calm interfaces, tools, and product systems. The
+            interactive scene needs JavaScript, but the intent is the same either way.
           </p>
           <p class="story-text">
             <a href="mailto:alexonava@gmail.com">alexonava@gmail.com</a>
@@ -135,14 +151,16 @@
         <div class="panel-parchment__sheet">
           <span class="panel-parchment__watermark" aria-hidden="true">A</span>
           <div class="panel-parchment__content">
-            <p class="eyebrow" data-scramble>About</p>
-            <h2 id="panel-about-title" data-scramble>What I make.</h2>
-            <p class="panel-body" data-scramble>
-              I design and build interfaces, tools, and product systems that stay calm under
-              pressure. This site is intentionally spare; the work behind it is tactile, technical,
-              and product-shaped.
+            <p class="eyebrow">About</p>
+            <h2 id="panel-about-title">What I make.</h2>
+            <p class="panel-body panel-lead">
+              Alex Nava designs and builds calm interfaces, tools, and product systems.
             </p>
-            <p class="panel-footnote" data-scramble>
+            <p class="panel-body panel-body--followup">
+              This site is intentionally spare; the work behind it is tactile, technical, and
+              product-shaped.
+            </p>
+            <p class="panel-footnote">
               Scene study rendered with
               <a href="https://threejs.org" target="_blank" rel="noopener noreferrer">Three.js</a>
               (MIT).
@@ -164,9 +182,9 @@
         <button class="panel-close" aria-label="Close">&times;</button>
         <div class="panel-parchment__sheet">
           <div class="panel-parchment__content">
-            <p class="eyebrow" data-scramble>Contact</p>
-            <h2 id="panel-contact-title" data-scramble>Email works best.</h2>
-            <p class="panel-body" data-scramble>
+            <p class="eyebrow">Contact</p>
+            <h2 id="panel-contact-title">Email works best.</h2>
+            <p class="panel-body">
               <a href="mailto:alexonava@gmail.com">alexonava@gmail.com</a>
             </p>
           </div>

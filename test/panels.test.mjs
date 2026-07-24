@@ -65,7 +65,10 @@ class FakeElement {
     }
 
     for (const [key, value] of Object.entries(this.dataset)) {
-      this.setAttribute(`data-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value);
+      this.setAttribute(
+        `data-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`,
+        value,
+      );
     }
   }
 
@@ -244,7 +247,7 @@ function matchesSimpleSelector(element, selector) {
   if (selector === "a[href]") {
     return element.tagName === "A" && element.hasAttribute("href");
   }
-  if (selector === "[tabindex]:not([tabindex=\"-1\"])") {
+  if (selector === '[tabindex]:not([tabindex="-1"])') {
     return element.hasAttribute("tabindex") && element.getAttribute("tabindex") !== "-1";
   }
   if (selector === "main") {
@@ -284,13 +287,28 @@ function createSiteDom({ reduceMotion = true } = {}) {
       attributes: { href: "#main" },
     }),
   );
-  const sceneShell = append(document.body, new FakeElement(document, "div", { classNames: ["scene-shell"] }));
-  append(sceneShell, new FakeElement(document, "div", { classNames: ["scene-canvas"], id: "home-scene" }));
+  const sceneShell = append(
+    document.body,
+    new FakeElement(document, "div", { classNames: ["scene-shell"] }),
+  );
+  append(
+    sceneShell,
+    new FakeElement(document, "div", { classNames: ["scene-canvas"], id: "home-scene" }),
+  );
   append(sceneShell, new FakeElement(document, "div", { classNames: ["scene-vignette"] }));
-  const siteShell = append(document.body, new FakeElement(document, "div", { classNames: ["site-shell"] }));
-  const main = append(document.body, new FakeElement(document, "main", { id: "main", attributes: { tabindex: "-1" } }));
+  const siteShell = append(
+    document.body,
+    new FakeElement(document, "div", { classNames: ["site-shell"] }),
+  );
+  const main = append(
+    document.body,
+    new FakeElement(document, "main", { id: "main", attributes: { tabindex: "-1" } }),
+  );
   append(main, new FakeElement(document, "section", { classNames: ["hero", "section"] }));
-  const bottomBar = append(document.body, new FakeElement(document, "nav", { classNames: ["bottom-bar"] }));
+  const bottomBar = append(
+    document.body,
+    new FakeElement(document, "nav", { classNames: ["bottom-bar"] }),
+  );
   const aboutButton = append(
     bottomBar,
     new FakeElement(document, "button", {
@@ -303,8 +321,14 @@ function createSiteDom({ reduceMotion = true } = {}) {
       },
     }),
   );
-  append(aboutButton, new FakeElement(document, "canvas", { classNames: ["btn-icon"], id: "btn-icon-about" }));
-  append(aboutButton, new FakeElement(document, "span", { classNames: ["btn-icon-label"], textContent: "About" }));
+  append(
+    aboutButton,
+    new FakeElement(document, "canvas", { classNames: ["btn-icon"], id: "btn-icon-about" }),
+  );
+  append(
+    aboutButton,
+    new FakeElement(document, "span", { classNames: ["btn-icon-label"], textContent: "About" }),
+  );
   const contactButton = append(
     bottomBar,
     new FakeElement(document, "button", {
@@ -317,9 +341,18 @@ function createSiteDom({ reduceMotion = true } = {}) {
       },
     }),
   );
-  append(contactButton, new FakeElement(document, "canvas", { classNames: ["btn-icon"], id: "btn-icon-contact" }));
-  append(contactButton, new FakeElement(document, "span", { classNames: ["btn-icon-label"], textContent: "Contact" }));
-  const copyright = append(document.body, new FakeElement(document, "p", { classNames: ["site-copyright"] }));
+  append(
+    contactButton,
+    new FakeElement(document, "canvas", { classNames: ["btn-icon"], id: "btn-icon-contact" }),
+  );
+  append(
+    contactButton,
+    new FakeElement(document, "span", { classNames: ["btn-icon-label"], textContent: "Contact" }),
+  );
+  const copyright = append(
+    document.body,
+    new FakeElement(document, "p", { classNames: ["site-copyright"] }),
+  );
 
   const aboutOverlay = append(
     document.body,
@@ -334,7 +367,10 @@ function createSiteDom({ reduceMotion = true } = {}) {
       },
     }),
   );
-  const aboutCard = append(aboutOverlay, new FakeElement(document, "div", { classNames: ["panel-card"] }));
+  const aboutCard = append(
+    aboutOverlay,
+    new FakeElement(document, "div", { classNames: ["panel-card"] }),
+  );
   const aboutClose = append(
     aboutCard,
     new FakeElement(document, "button", {
@@ -363,7 +399,10 @@ function createSiteDom({ reduceMotion = true } = {}) {
       },
     }),
   );
-  const contactCard = append(contactOverlay, new FakeElement(document, "div", { classNames: ["panel-card"] }));
+  const contactCard = append(
+    contactOverlay,
+    new FakeElement(document, "div", { classNames: ["panel-card"] }),
+  );
   const contactClose = append(
     contactCard,
     new FakeElement(document, "button", {
@@ -418,6 +457,8 @@ test("modal open/close locks the page, marks background inert, and restores focu
   elements.aboutButton.dispatchEvent(createEvent("click"));
 
   assert.equal(elements.aboutOverlay.hidden, false);
+  assert.equal(elements.aboutOverlay.inert, false);
+  assert.equal(elements.aboutOverlay.getAttribute("aria-hidden"), null);
   assert.equal(elements.aboutButton.getAttribute("aria-expanded"), "true");
   assert.equal(document.body.getAttribute("data-panel-open"), "true");
   assert.equal(document.activeElement, elements.aboutClose);
@@ -431,6 +472,8 @@ test("modal open/close locks the page, marks background inert, and restores focu
   document.dispatchEvent(createEvent("keydown", { key: "Escape" }));
 
   assert.equal(elements.aboutOverlay.hidden, true);
+  assert.equal(elements.aboutOverlay.inert, true);
+  assert.equal(elements.aboutOverlay.getAttribute("aria-hidden"), "true");
   assert.equal(elements.aboutButton.getAttribute("aria-expanded"), "false");
   assert.equal(document.body.getAttribute("data-panel-open"), null);
   assert.equal(document.activeElement, elements.aboutButton);
@@ -440,6 +483,25 @@ test("modal open/close locks the page, marks background inert, and restores focu
   assert.equal(elements.main.inert, false);
   assert.equal(elements.bottomBar.inert, false);
   assert.equal(elements.copyright.inert, false);
+});
+
+test("a closing dialog becomes inert and aria-hidden before its visual transition ends", async () => {
+  const { window, document, elements } = createSiteDom({ reduceMotion: false });
+  await loadPanels(window, document);
+
+  elements.aboutButton.dispatchEvent(createEvent("click"));
+  elements.aboutClose.dispatchEvent(createEvent("click"));
+
+  assert.equal(elements.aboutOverlay.hidden, false, "the exit transition can remain visible");
+  assert.equal(elements.aboutOverlay.inert, true);
+  assert.equal(elements.aboutOverlay.getAttribute("aria-hidden"), "true");
+  assert.equal(document.body.getAttribute("data-panel-open"), null);
+  assert.equal(document.activeElement, elements.aboutButton);
+
+  elements.aboutOverlay.dispatchEvent(
+    createEvent("transitionend", { target: elements.aboutOverlay }),
+  );
+  assert.equal(elements.aboutOverlay.hidden, true);
 });
 
 test("focus stays trapped within the active panel", async () => {
@@ -464,12 +526,22 @@ test("focus stays trapped within the active panel", async () => {
   assert.equal(document.activeElement, elements.contactLink);
 });
 
-test("mobile label and body-scroll rules exist in the stylesheet", async () => {
+test("coarse-pointer labels and scroll-safe panel rules exist in the stylesheet", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /body\[data-panel-open="true"\]\s*\{[^}]*overflow:\s*hidden;/);
   assert.match(
     styles,
-    /@media \(max-width: 640px\)\s*\{[\s\S]*?\.btn-icon-label\s*\{[\s\S]*?transform:\s*translate\(-50%, 0\);[\s\S]*?opacity:\s*1;/,
+    /@media \(hover: none\), \(pointer: coarse\)\s*\{[\s\S]*?\.btn-icon-label\s*\{[\s\S]*?transform:\s*translate\(-50%, 0\);[\s\S]*?opacity:\s*1;/,
   );
+  assert.match(styles, /\.panel-overlay\s*\{[^}]*overflow-y:\s*auto;/);
+  assert.match(styles, /\.panel-close\s*\{[^}]*position:\s*sticky;/);
+  assert.doesNotMatch(styles, /max-height:\s*calc\(100svh\s*-\s*132px\)/);
+});
+
+test("panel interaction code does not mutate copy with random scramble effects", async () => {
+  const source = await readFile(panelsSourcePath, "utf8");
+
+  assert.doesNotMatch(source, /scramble/i);
+  assert.doesNotMatch(source, /Math\.random/);
 });
