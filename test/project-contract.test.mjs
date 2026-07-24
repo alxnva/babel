@@ -251,7 +251,10 @@ test("Cloudflare audit is scheduled, manual, least-privilege, and sanitized", as
   assert.match(workflow, /index\("alexnava\.me"\)/);
   assert.match(workflow, /jq[\s\S]*?project:[\s\S]*?production_branch/);
   assert.match(workflow, /extract_final_header_block\(\)/);
-  assert.match(workflow, /extract_final_header_block "\$raw_file" "\$final_file"/);
+  assert.match(
+    workflow,
+    /extract_final_header_block "\$raw_headers" "\$final_headers"/,
+  );
   assert.match(workflow, /--max-redirs 0/);
   assert.doesNotMatch(workflow, /--location\b/);
   assert.match(workflow, /apex_status[\s\S]*?\[ "\$apex_status" != "200" \]/);
@@ -284,7 +287,7 @@ test("Cloudflare audit is scheduled, manual, least-privilege, and sanitized", as
   );
   assert.match(workflow, /www_status[\s\S]*?\[ "\$www_status" != "301" \]/);
   assert.match(workflow, /location:\[\[:space:\]\]\*https:\/\/alexnava\\\.me\/\[\[:space:\]\]\*\$/);
-  assert.match(workflow, /sanitize_headers "\$www_headers_raw" "\$www_headers"/);
+  assert.match(workflow, /sanitize_headers "www" "\$www_raw_headers"/);
   assert.match(workflow, /Public DNS\/TLS reachability/);
   assert.doesNotMatch(workflow, /cat "\$raw_project"/);
   assert.doesNotMatch(workflow, /set -x/);
