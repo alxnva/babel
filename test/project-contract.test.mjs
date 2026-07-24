@@ -321,11 +321,16 @@ test("static headers separate immutable fingerprints from revalidated stable ass
   for (const directive of ["form-action 'none'", "frame-src 'none'", "worker-src 'none'"]) {
     assert.match(headers, new RegExp(directive.replace(" ", "\\s+")));
   }
-  assert.match(
+  assert.doesNotMatch(
     headers,
-    /https:\/\/alexnava-me\.pages\.dev\/\*\r?\n\s+X-Robots-Tag:\s*noindex, nofollow/,
+    /X-Robots-Tag/i,
+    "static Pages headers cannot safely scope X-Robots-Tag by hostname",
   );
-  assert.doesNotMatch(headers, /^\/\*\r?\n(?:  .*\r?\n)*  X-Robots-Tag:/m);
+  assert.doesNotMatch(
+    headers,
+    /^https?:\/\//m,
+    "absolute URL patterns are not supported in the Pages _headers file",
+  );
   for (const stablePath of [
     "/favicon.svg",
     "/icon.svg",

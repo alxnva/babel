@@ -97,7 +97,7 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Extracted tested frame/resize lifecycle helpers; added true reduced-motion dirty rendering with live toggles, corrected touch quality sampling, coalesced no-op resize, target-only developer outlines, fog-aware culling, brazier update gating, stable orbital-buffer uploads, restrained high-tier lighting/bloom, and improved short-landscape framing.
 - Added responsive tower posters as the eager scene visual and intentional static fallback for reduced data/motion, unavailable WebGL, and software-rendered WebGL, while retaining live 3D on capable phones and explicit diagnostics.
 - Added high-severity dependency gates, hard-threshold Lighthouse runs retained as GitHub Actions artifacts, review-gated preview and main-only production GitHub environments, environment-scoped Cloudflare workflows with the legacy repository-secret fallback retained pending token rotation, retrying content/header smoke checks, a sanitized weekly audit, and an operations/rollback runbook.
-- Tightened CSP, aligned HSTS to one year, separated seven-day stable-asset revalidation from immutable hashed JS/CSS, and added the exact Pages hostname noindex fallback.
+- Tightened CSP, aligned HSTS to one year, and separated seven-day stable-asset revalidation from immutable hashed JS/CSS. The attempted Pages-hostname noindex fallback was later removed because Pages `_headers` cannot safely scope rules by hostname; exact-host canonicalization remains a Cloudflare Bulk Redirect task.
 
 ### Panel frame unification — re-do as Option A
 
