@@ -7,7 +7,7 @@ Candidates for future work, roughly ordered by value. Pick from here when starti
 | #   | Task                                                                           | Why it matters                                                                                                                                                | Size     |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | 1   | Define a site mission / positioning statement                                  | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                                              | Thinking |
-| 2   | Continue breaking up `src/scene/index.js`                                      | Runtime and rendering lifecycles are extracted; tower, environment, and atmosphere assembly still need a careful behavior-preserving split.                 | Medium   |
+| 2   | Continue breaking up `src/scene/index.js`                                      | Runtime and rendering lifecycles are extracted; tower, environment, and atmosphere assembly still need a careful behavior-preserving split.                   | Medium   |
 | 3   | Address scene-interactions audit findings                                      | See `ART/scene-interactions.md`.                                                                                                                              | Medium   |
 | 4   | Dispose `CubeCamera` + `WebGLCubeRenderTarget` after the one-shot env-map bake | Lives on `homeScene` for the page lifetime; only the captured `.texture` handle is needed by the consuming materials. Verify capture timing before disposing. | Small    |
 
@@ -169,3 +169,11 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 - Scoped Cloudflare deploy secrets to only the workflow steps that validate or deploy with Wrangler.
 - Split the browser payload into a lightweight UI boot bundle and a deferred Three.js scene bundle loaded after first paint.
 - Kept source docs aligned with the generated `scripts/app.HASH.js` plus `scripts/scene.HASH.js` output shape.
+
+### Unified dark gothic loading ritual
+
+**Implemented for preview review.** Added a CSS-driven, 1.1-second homepage entrance that combines
+cold fog, an engraved ember-lit tower seal, two restrained braziers, the Alex Nava wordmark, and a
+timed brass progress stroke. The ritual is decorative and self-hiding, has reduced-motion and
+forced-colors treatments, adds no external asset or dependency, and leaves the responsive poster
+and deferred Three.js capability gates unchanged. See `ART/loading-ritual.md`.
