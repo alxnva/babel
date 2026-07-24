@@ -159,7 +159,14 @@
         },
         { once: true },
       );
-      script.addEventListener("error", reject, { once: true });
+      script.addEventListener(
+        "error",
+        (error) => {
+          script.remove();
+          reject(error);
+        },
+        { once: true },
+      );
       document.head.appendChild(script);
     });
   }

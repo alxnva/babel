@@ -11,15 +11,18 @@ const mainSourcePath = path.join(projectRoot, "src", "main.js");
 const qualitySourcePath = path.join(projectRoot, "src", "scene", "quality.js");
 const webglProbePath = path.join(projectRoot, "src", "shared", "webgl-probe.js");
 
-function createScriptElement() {
+function createScriptElement(onRemove) {
   const listeners = new Map();
   return {
     dataset: {},
     addEventListener(type, handler) {
       listeners.set(type, handler);
     },
-    dispatch(type) {
-      listeners.get(type)?.();
+    dispatch(type, event) {
+      listeners.get(type)?.(event);
+    },
+    remove() {
+      onRemove?.(this);
     },
   };
 }
@@ -52,8 +55,10 @@ function createMutableChangeTarget(initialMatches = false) {
 
 function createContext({
   height = 720,
+  logger = console,
   reducedMotion = false,
   saveData = false,
+  scriptOutcomes = ["load"],
   sceneUrl = "/scripts/scene.js",
   search = "",
   softwareRenderer = "",
@@ -81,6 +86,7 @@ function createContext({
     },
   };
   let contextLossCount = 0;
+  let scriptAppendCount = 0;
   let webglProbeCount = 0;
   const window = {
     BabelSite: {},
@@ -103,16 +109,27 @@ function createContext({
     readyState: "loading",
     head: {
       appendChild(script) {
+        scriptAppendCount += 1;
         scripts.push(script);
-        window.BabelSite.scene.initHomeScene = () => true;
-        script.dispatch("load");
+        const outcome = scriptOutcomes.shift() || "load";
+        if (outcome === "load") {
+          window.BabelSite.scene.initHomeScene = () => true;
+          script.dispatch("load");
+        } else {
+          script.dispatch("error", new Error("Simulated scene script failure"));
+        }
       },
     },
     addEventListener(type, handler) {
       if (type === "DOMContentLoaded") domContentLoadedListeners.add(handler);
     },
     createElement(tagName) {
-      if (tagName === "script") return createScriptElement();
+      if (tagName === "script") {
+        return createScriptElement((script) => {
+          const index = scripts.indexOf(script);
+          if (index !== -1) scripts.splice(index, 1);
+        });
+      }
       return {
         getContext(type) {
           if (type === "webgl" || type === "experimental-webgl") {
@@ -156,6 +173,10 @@ function createContext({
           },
         };
       }
+      const dynamicScriptMatch = selector.match(/^script\[data-dynamic-src="(.+)"\]$/);
+      if (dynamicScriptMatch) {
+        return scripts.find((script) => script.dataset.dynamicSrc === dynamicScriptMatch[1]) || null;
+      }
       return null;
     },
   };
@@ -165,7 +186,7 @@ function createContext({
       window,
       document,
       navigator,
-      console,
+      console: logger,
       URLSearchParams,
       requestAnimationFrame: window.requestAnimationFrame,
       setTimeout() {},
@@ -182,6 +203,7 @@ function createContext({
     },
     motionQuery,
     scripts,
+    getScriptAppendCount: () => scriptAppendCount,
     getContextLossCount: () => contextLossCount,
     getWebglProbeCount: () => webglProbeCount,
   };
@@ -332,6 +354,23 @@ test("scene loader reads the inert metadata content as the deferred bundle URL",
   assert.equal(loaded, true);
   assert.equal(scripts.length, 1);
   assert.equal(scripts[0].src, "/scripts/scene.content-hash.js");
+});
+
+test("scene loader removes a failed script so a later call can retry", async () => {
+  const harness = createContext({
+    logger: { warn() {} },
+    scriptOutcomes: ["error", "load"],
+  });
+  await loadMainWithQuality(harness.context);
+
+  assert.equal(await harness.context.window.BabelSite.ensureSceneReady(), false);
+  assert.equal(harness.host.hidden, true);
+  assert.equal(harness.scripts.length, 0, "the failed script is removed from the document");
+
+  assert.equal(await harness.context.window.BabelSite.ensureSceneReady(), true);
+  assert.equal(harness.host.hidden, false);
+  assert.equal(harness.scripts.length, 1);
+  assert.equal(harness.getScriptAppendCount(), 2);
 });
 
 test("invalid quality override does not bypass the data-saver gate", async () => {
