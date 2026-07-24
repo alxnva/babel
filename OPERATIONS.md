@@ -55,7 +55,7 @@ Production releases serialize without canceling an in-progress upload or its ver
 
 ## Response-header contract
 
-`_headers` is the tracked baseline. HTML revalidates immediately. Unhashed stable assets, including fonts, icons, and scene posters, revalidate after seven days. Content-hashed CSS and JavaScript are immutable for one year. The exact production Pages hostname, `alexnava-me.pages.dev`, carries a `noindex` fallback; Cloudflare supplies `noindex` on preview deployments by default.
+`_headers` is the tracked baseline. HTML revalidates immediately. Unhashed stable assets, including fonts, icons, and scene posters, revalidate after seven days. Content-hashed CSS and JavaScript are immutable for one year. Do not add absolute-host patterns to `_headers`: Cloudflare Pages applies those rules by path, so an intended `pages.dev`-only `X-Robots-Tag` can leak onto the apex. Cloudflare supplies `noindex` on branch preview deployments by default.
 
 After an approved production deploy, compare live headers with `_headers`:
 
@@ -64,7 +64,7 @@ curl.exe -sSI https://alexnava.me/
 curl.exe -sSI https://alexnava-me.pages.dev/
 ```
 
-Confirm CSP, one-year HSTS, framing protections, MIME sniffing protection, COOP/CORP, cache policy, and `X-Robots-Tag` on the Pages hostname. Cloudflare dashboard transforms may override or append headers.
+Confirm CSP, one-year HSTS, framing protections, MIME sniffing protection, COOP/CORP, cache policy, and that the apex does not return `X-Robots-Tag: noindex`. The Pages hostname must be canonicalized with an exact-host Cloudflare Bulk Redirect; Cloudflare dashboard transforms may override or append headers.
 
 ## Scheduled Cloudflare audit
 
@@ -72,7 +72,7 @@ Confirm CSP, one-year HSTS, framing protections, MIME sniffing protection, COOP/
 
 The workflow allowlists Pages project fields before writing output, extracts only each request's final response-header block, filters it to the security/cache set, and validates the apex marker and header baseline. The apex must return `200` directly with the effective host exactly `alexnava.me`; redirects are an audit failure. The exact Pages hostname must either return `200` with noindex or redirect its root with `301`/`308` to exactly `https://alexnava.me/`, then pass a separate path-and-query preservation check, so the audit remains compatible with a Cloudflare Bulk Redirect. Raw API responses and credentials are never uploaded. Sanitized reports are retained as GitHub Actions artifacts for 14 days.
 
-The exact-host Cloudflare Bulk Redirect is not yet configured; the tracked `X-Robots-Tag: noindex, nofollow` rule is the active interim control. The audit's HTTPS requests verify public reachability through DNS and TLS, not a full inventory of DNS records or certificate configuration.
+The exact-host Cloudflare Bulk Redirect is not yet configured. A static `_headers` noindex fallback is intentionally not used because Pages cannot safely scope it by hostname and previously exposed `noindex` on the apex. Until the Bulk Redirect is configured, the scheduled audit remains expected to flag the production Pages hostname. The audit's HTTPS requests verify public reachability through DNS and TLS, not a full inventory of DNS records or certificate configuration.
 
 ## Rollback
 

@@ -9,9 +9,6 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
 
-https://alexnava-me.pages.dev/*
-  X-Robots-Tag: noindex, nofollow
-
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 
