@@ -110,6 +110,54 @@ test("decorative regions are hidden from assistive tech and main content stays p
   assert.match(html, /<main[^>]*id="main"[^>]*tabindex="-1"/);
 });
 
+test("the loading ritual is decorative, self-contained, timed, and motion-safe", async () => {
+  const html = await readIndexHtml();
+  const styles = await readStyles();
+  const ritualStart = html.indexOf('<div class="loading-ritual"');
+  const sceneStart = html.indexOf('<div class="scene-shell"', ritualStart);
+  const ritual = html.slice(ritualStart, sceneStart);
+
+  assert.ok(ritualStart >= 0, "loading ritual is present");
+  assert.ok(sceneStart > ritualStart, "loading ritual precedes the scene");
+  assert.match(ritual, /aria-hidden="true"/);
+  assert.match(ritual, /<svg[\s\S]*class="loading-ritual__seal"/);
+  assert.match(ritual, /class="loading-ritual__tower"/);
+  assert.equal((ritual.match(/class="loading-ritual__brazier /g) || []).length, 2);
+  assert.match(ritual, /class="loading-ritual__name">alex nava</);
+  assert.match(ritual, /class="loading-ritual__motto">Calm by design\.</);
+  assert.match(ritual, /class="loading-ritual__progress-fill"/);
+  assert.doesNotMatch(ritual, /<(?:a|button|input|select|textarea)\b/i);
+  assert.doesNotMatch(ritual, /\ssrc=/i, "the ritual adds no external media asset");
+  assert.doesNotMatch(ritual, /https?:\/\//i);
+
+  assert.match(styles, /--loading-ritual-duration:\s*1100ms/);
+  assert.match(
+    styles,
+    /\.loading-ritual\s*\{[\s\S]*?animation:\s*loading-ritual-exit 250ms[^;]*850ms both;/,
+  );
+  assert.match(
+    styles,
+    /@keyframes loading-ritual-exit[\s\S]*?to\s*\{[^}]*visibility:\s*hidden;[^}]*opacity:\s*0;/,
+    "CSS hides the ritual without waiting for JavaScript",
+  );
+  assert.match(
+    styles,
+    /\.loading-ritual__brazier\s*\{[\s\S]*?animation:\s*loading-ritual-brazier-awaken 360ms[^;]*420ms forwards;/,
+  );
+  assert.match(
+    styles,
+    /\.loading-ritual__progress-fill\s*\{[\s\S]*?animation:\s*loading-ritual-progress 740ms[^;]*160ms forwards;/,
+  );
+  assert.match(
+    styles,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.loading-ritual\s*\{[^}]*animation:\s*loading-ritual-exit 120ms linear 250ms both;/,
+  );
+  assert.match(
+    styles,
+    /@media \(forced-colors: active\)[\s\S]*?\.loading-ritual\s*\{[^}]*background:\s*Canvas;/,
+  );
+});
+
 test("the decorative scene poster is eager, responsive, and only fades for a ready scene", async () => {
   const html = await readIndexHtml();
   const styles = await readStyles();

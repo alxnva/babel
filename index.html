@@ -64,6 +64,87 @@
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
 
+    <div class="loading-ritual" aria-hidden="true">
+      <div class="loading-ritual__fog loading-ritual__fog--far"></div>
+      <div class="loading-ritual__fog loading-ritual__fog--near"></div>
+
+      <div class="loading-ritual__content">
+        <svg
+          class="loading-ritual__seal"
+          viewBox="0 0 240 240"
+          role="presentation"
+          focusable="false"
+        >
+          <defs>
+            <line id="loading-ritual-tick" x1="120" y1="27" x2="120" y2="35"></line>
+          </defs>
+
+          <circle
+            class="loading-ritual__ring loading-ritual__ring--outer"
+            cx="120"
+            cy="120"
+            r="92"
+          />
+          <circle
+            class="loading-ritual__ring loading-ritual__ring--inner"
+            cx="120"
+            cy="120"
+            r="76"
+          />
+
+          <g class="loading-ritual__ticks">
+            <use href="#loading-ritual-tick"></use>
+            <use href="#loading-ritual-tick" transform="rotate(30 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(60 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(90 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(120 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(150 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(180 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(210 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(240 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(270 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(300 120 120)"></use>
+            <use href="#loading-ritual-tick" transform="rotate(330 120 120)"></use>
+          </g>
+
+          <g class="loading-ritual__tower">
+            <path d="M89 176h62"></path>
+            <path d="M96 176V98l9-11V68l15-17 15 17v19l9 11v78"></path>
+            <path d="M120 51V34"></path>
+            <path d="M108 112h24"></path>
+            <path d="M105 87h30"></path>
+            <path d="M109 176v-42h22v42"></path>
+            <path d="M115 72h10v13h-10z"></path>
+            <path d="M115 116h10v12h-10z"></path>
+            <path d="M103 105h8v12h-8z"></path>
+            <path d="M129 105h8v12h-8z"></path>
+          </g>
+
+          <g class="loading-ritual__brazier loading-ritual__brazier--left">
+            <path class="loading-ritual__brazier-stand" d="M70 174h18m-14-4h10l3-8H71z"></path>
+            <path class="loading-ritual__flame" d="M79 161c-6-7 4-10 0-18 8 5 10 12 4 18z"></path>
+          </g>
+          <g class="loading-ritual__brazier loading-ritual__brazier--right">
+            <path class="loading-ritual__brazier-stand" d="M152 174h18m-14-4h10l3-8h-16z"></path>
+            <path class="loading-ritual__flame" d="M161 161c-6-7 4-10 0-18 8 5 10 12 4 18z"></path>
+          </g>
+
+          <g class="loading-ritual__ember-orbit">
+            <circle class="loading-ritual__ember" cx="120" cy="28" r="2.5"></circle>
+          </g>
+        </svg>
+
+        <div class="loading-ritual__identity">
+          <p class="loading-ritual__name">alex nava</p>
+          <p class="loading-ritual__motto">Calm by design.</p>
+        </div>
+
+        <div class="loading-ritual__progress">
+          <span class="loading-ritual__progress-fill"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="scene-shell" aria-hidden="true">
       <div id="home-scene" class="scene-canvas"></div>
       <picture class="scene-poster" aria-hidden="true">
