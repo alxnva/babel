@@ -6,6 +6,7 @@ Source for [alexnava.me](https://alexnava.me/), a static portfolio site built wi
 
 - Plain HTML, CSS, and vanilla JavaScript
 - Three.js r160 imported from `three`, bundled into a deferred `dist/scripts/scene.HASH.js`, and tree-shaken by esbuild
+- Responsive WebP tower posters under `images/` for first paint and the intentional static scene path
 - Instrument Sans + Cormorant Garamond woff2 subsets, self-hosted under `fonts/`
 - Minimal esbuild step: edit readable source in `src/`, generate deploy output into `dist/`
 - Lightweight `node:test` coverage for scene/runtime/UI verification under `test/`
@@ -30,6 +31,7 @@ The source repository does not track generated JS bundles. `dist/` is the only g
 npm run build       # build dist/ from source
 npm run build:dist  # same as build; explicit deploy-oriented entrypoint
 npm run preview     # build dist/ and serve it through Wrangler Pages locally
+npm run audit:ci    # fail on high or critical npm advisories
 npm run verify      # compile-check all JS entry points without writing files
 npm test            # run the node:test suite in test/
 npm run watch       # watch src/ and rebuild dist/scripts
@@ -38,17 +40,21 @@ npm run format      # prettier-format src/, *.html, *.css, *.md
 
 Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `scripts/scene.HASH.js`, `css/styles.HASH.css`); the UI boot script and deferred Three.js scene script are separate bundles, so rerun `npm run build:dist` after changes — the hash moves automatically and cached HTML revalidates against the new path.
 
-CI and production deploys follow the same gate order: `npm run verify`, `npm test`, then `npm run build:dist`.
+The eager, decorative tower poster is the scene's first visual. Capable hardware, including phones, then loads and crossfades to the live scene. The UI keeps the poster static and does not download the scene bundle when reduced data or reduced motion is requested, WebGL is unavailable, or the WebGL renderer is software-only. `?quality=low|balanced|high` and `?sceneDebug=1` explicitly request the live scene through preference/software gates, but cannot bypass unavailable WebGL.
+
+CI and production deploys follow the same gate order: `npm run audit:ci`, `npm run verify`, `npm test`, then `npm run build:dist`.
 
 ## Security baseline
 
-`_headers` is the repo's intended source of truth for Cloudflare Pages response headers. It removes the Pages default wildcard CORS header, keeps the site on a self-only CSP, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and preload-capable HSTS.
+`_headers` is the repo's intended source of truth for Cloudflare Pages response headers. It removes the Pages default wildcard CORS header, keeps the site on a self-only CSP with forms, frames, and workers disabled, blocks framing with both `frame-ancestors 'none'` and `X-Frame-Options: DENY`, sends `nosniff`, restrictive permissions, COOP/CORP, and one-year preload-capable HSTS.
 
 Cloudflare Web Analytics/RUM injection is disabled by design. Do not widen `script-src` for `static.cloudflareinsights.com` unless the privacy/CSP tradeoff is intentionally reopened.
 
-**Cloudflare dashboard can override `_headers`.** Managed Transforms (Rules → Transform Rules → Managed Transforms), Speed → Content Optimization → Speed Brain, Security → Settings → Super Bot Fight Mode → JS Detections, and SSL/TLS → Edge Certificates → HSTS Settings all layer after the file and can silently change values or inject scripts/headers. Before assuming the live response matches `_headers`, fetch the apex with `curl -sSI https://alexnava.me/` and diff. Specifically watch HSTS `max-age`, `Referrer-Policy`, `X-Frame-Options`, `/cdn-cgi/challenge-platform`, `/cdn-cgi/speculation`, and any injected `Access-Control-Allow-Origin`/`X-XSS-Protection`/`Expect-CT`. The Cloudflare HSTS dashboard currently exposes 12 months as its strongest UI value; the repo keeps the desired Pages header at two years for direct Pages output.
+**Cloudflare dashboard can override `_headers`.** Managed Transforms (Rules → Transform Rules → Managed Transforms), Speed → Content Optimization → Speed Brain, Security → Settings → Super Bot Fight Mode → JS Detections, and SSL/TLS → Edge Certificates → HSTS Settings all layer after the file and can silently change values or inject scripts/headers. Before assuming the live response matches `_headers`, fetch the apex and exact Pages hostname and diff them against the tracked contract. Specifically watch HSTS `max-age`, CSP, `Referrer-Policy`, `X-Frame-Options`, `/cdn-cgi/challenge-platform`, `/cdn-cgi/speculation`, and any injected `Access-Control-Allow-Origin`/`X-XSS-Protection`/`Expect-CT`.
 
-Hostname routing and zone controls live in Cloudflare, not in this repo: keep `alexnava.me` active on Pages project `alexnava-me`, redirect `www.alexnava.me` to the apex, and keep `*.pages.dev` traffic non-indexable/access-controlled through Cloudflare dashboard controls rather than `_headers`; host-specific Pages `_headers` rules can leak onto the apex in this project shape. Re-confirm the Cloudflare project, DNS, certificate, WAF, and CAA state before any deploy or DNS/security setting change.
+Hostname routing and zone controls live in Cloudflare, not in this repo: keep `alexnava.me` active on Pages project `alexnava-me`, redirect `www.alexnava.me` to the apex, and keep preview traffic access-controlled where needed. `_headers` adds an exact `alexnava-me.pages.dev` noindex fallback; Cloudflare also adds noindex to preview deployments by default. Re-confirm the Cloudflare project, DNS, certificate, WAF, and CAA state before any deploy or DNS/security setting change.
+
+GitHub CodeQL default setup is enabled as the repository's code scanner, avoiding a duplicate advanced-setup workflow. See [OPERATIONS.md](OPERATIONS.md) for release gates, environment-scoped credentials, smoke checks, the sanitized weekly Cloudflare audit, and rollback procedure.
 
 ## Repository layout
 
@@ -59,11 +65,13 @@ Hostname routing and zone controls live in Cloudflare, not in this repo: keep `a
 | `src/`                    | Authoritative JavaScript source for UI and scene bundles |
 | `dist/`                   | Generated publish directory for Cloudflare Pages         |
 | `fonts/*.woff2`           | Self-hosted font subsets                                 |
+| `images/*.webp`           | Responsive static tower posters                          |
 | `404.html`                | Not-found page                                           |
 | `og.png`                  | Social share image for Open Graph and Twitter cards      |
 | `_headers` / `_redirects` | Static hosting config kept with the site                 |
 | `build.mjs`               | esbuild + asset assembly script                          |
 | `package.json`            | Build, deploy, and formatting scripts                    |
+| `OPERATIONS.md`           | Release, audit, credential, smoke, and rollback runbook  |
 
 ## Reporting issues and discussing changes
 
@@ -74,12 +82,12 @@ Hostname routing and zone controls live in Cloudflare, not in this repo: keep `a
 ## Deployment
 
 - Direct Upload deploys target Cloudflare Pages project `alexnava-me`.
-- Deploy commands require Wrangler authentication. Use `wrangler login`, or provide `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in environments such as CI.
+- Deploy commands require Wrangler authentication. The review-gated `preview` and main-only `production` GitHub environments exist. The remaining credential migration is to store separate environment secrets named `CLOUDFLARE_PAGES_API_TOKEN` plus a shared repository variable named `CLOUDFLARE_ACCOUNT_ID`; current runs can still fall back to the legacy repository secrets until both new paths validate.
 - Use `npm run deploy:preview` to publish `dist/` to the Pages preview alias.
-- Use `npm run deploy:prod` to publish `dist/` to the Pages production hostname.
+- Production has no direct local npm deploy command. The protected `main` branch requires an explicitly approved pull request; merging it triggers the `Deploy Pages` workflow that owns the release gates and Cloudflare upload. Approved reruns use that workflow's manual dispatch on `main`.
 - Cloudflare Pages should publish `dist/`, not the repo root.
 - The build copies `LICENSE` into `dist/` so released assets ship with the project license text.
-- GitHub Actions can deploy production builds from `main` when `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets are configured.
+- GitHub Actions production deploys from `main` hard-fail on missing credentials and use one checked-in script to verify the deployment URL, apex marker/security headers, hashed-asset parity, a real 404, and the `www` redirect. A post-upload failure rolls back to the captured successful canonical deployment, verifies it with the same script, and leaves the workflow failed. Preview runs skip cleanly when credentials are unavailable and always publish to a `preview-*` branch alias.
 
 ## License
 

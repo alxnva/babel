@@ -1,0 +1,249 @@
+name: Cloudflare Audit
+
+on:
+  schedule:
+    - cron: "17 15 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+    steps:
+      - name: Check out repository
+        # actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Capture sanitized Pages project metadata
+        shell: bash
+        env:
+          CLOUDFLARE_AUDIT_API_TOKEN: ${{ secrets.CLOUDFLARE_AUDIT_API_TOKEN }}
+          CLOUDFLARE_PAGES_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN_LEGACY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID_VARIABLE: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID_LEGACY: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p cloudflare-audit
+
+          token="${CLOUDFLARE_AUDIT_API_TOKEN:-${CLOUDFLARE_PAGES_API_TOKEN:-$CLOUDFLARE_API_TOKEN_LEGACY}}"
+          account_id="${CLOUDFLARE_ACCOUNT_ID_VARIABLE:-$CLOUDFLARE_ACCOUNT_ID_LEGACY}"
+          if [ -z "$token" ] || [ -z "$account_id" ]; then
+            echo "::error::Cloudflare audit requires a read token and CLOUDFLARE_ACCOUNT_ID."
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_AUDIT_API_TOKEN" ]; then
+            echo "::warning::Use a dedicated CLOUDFLARE_AUDIT_API_TOKEN with Pages Read for least privilege."
+          fi
+
+          raw_project="$RUNNER_TEMP/cloudflare-pages-project.json"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --header "Authorization: Bearer $token" \
+            --header "Content-Type: application/json" \
+            --output "$raw_project" \
+            "https://api.cloudflare.com/client/v4/accounts/$account_id/pages/projects/alexnava-me"
+
+          jq -e '
+            .success == true and
+            .result.name == "alexnava-me" and
+            .result.production_branch == "main" and
+            ((.result.domains // []) | index("alexnava.me")) != null
+          ' "$raw_project" >/dev/null
+
+          jq \
+            --arg checked_at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            '{
+              checked_at: $checked_at,
+              project: {
+                name: .result.name,
+                subdomain: .result.subdomain,
+                production_branch: .result.production_branch,
+                domains: ((.result.domains // []) | sort),
+                created_on: .result.created_on
+              }
+            }' \
+            "$raw_project" > cloudflare-audit/pages-project.json
+
+      - name: Capture and verify sanitized live headers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          extract_final_header_block() {
+            local raw_headers="$1"
+            local final_headers="$2"
+
+            tr -d '\r' < "$raw_headers" |
+              awk '
+                /^HTTP\// {
+                  block = $0 ORS
+                  capture = 1
+                  next
+                }
+                capture {
+                  block = block $0 ORS
+                  if ($0 == "") {
+                    final = block
+                    block = ""
+                    capture = 0
+                  }
+                }
+                END {
+                  if (block != "") {
+                    final = block
+                  }
+                  printf "%s", final
+                }' > "$final_headers"
+          }
+
+          sanitize_headers() {
+            local label="$1"
+            local raw_headers="$2"
+            local final_headers="$RUNNER_TEMP/${label}-final-headers.txt"
+
+            extract_final_header_block "$raw_headers" "$final_headers"
+            awk 'BEGIN { IGNORECASE=1 }
+                /^HTTP\// ||
+                /^(cache-control|content-security-policy|cross-origin-opener-policy|cross-origin-resource-policy|location|permissions-policy|referrer-policy|strict-transport-security|x-content-type-options|x-frame-options|x-robots-tag):/ {
+                  print
+                }' "$final_headers" > "cloudflare-audit/${label}-headers.txt"
+          }
+
+          apex_raw_headers="$RUNNER_TEMP/apex-headers.txt"
+          apex_body="$RUNNER_TEMP/apex-body.html"
+          apex_meta="$(
+            curl \
+              --silent \
+              --show-error \
+              --max-redirs 0 \
+              --retry 3 \
+              --retry-all-errors \
+              --dump-header "$apex_raw_headers" \
+              --output "$apex_body" \
+              --write-out '%{http_code} %{url_effective}' \
+              "https://alexnava.me/"
+          )"
+          sanitize_headers "apex" "$apex_raw_headers"
+          read -r apex_status apex_effective_url <<< "$apex_meta"
+          apex_effective_host="${apex_effective_url#*://}"
+          apex_effective_host="${apex_effective_host%%/*}"
+          apex_effective_host="${apex_effective_host%%:*}"
+          if [ "$apex_status" != "200" ] ||
+            [ "$apex_effective_host" != "alexnava.me" ] ||
+            [ "$apex_effective_url" != "https://alexnava.me/" ]; then
+            echo "::error::apex must return 200 directly from https://alexnava.me/ without redirecting."
+            exit 1
+          fi
+          grep -Fq "Calm by design." "$apex_body"
+
+          pages_raw_headers="$RUNNER_TEMP/pages-dev-headers.txt"
+          pages_body="$RUNNER_TEMP/pages-dev-body.html"
+          pages_status="$(
+            curl \
+              --silent \
+              --show-error \
+              --retry 3 \
+              --retry-all-errors \
+              --dump-header "$pages_raw_headers" \
+              --output "$pages_body" \
+              --write-out '%{http_code}' \
+              "https://alexnava-me.pages.dev/"
+          )"
+          sanitize_headers "pages-dev" "$pages_raw_headers"
+
+          apex_headers="cloudflare-audit/apex-headers.txt"
+          pages_headers="cloudflare-audit/pages-dev-headers.txt"
+          grep -Eq '^HTTP/[^ ]+[[:space:]]+200([[:space:]]|$)' "$apex_headers"
+          grep -Eiq "^content-security-policy:.*form-action 'none'.*frame-src 'none'.*worker-src 'none'" "$apex_headers"
+          grep -Eiq '^strict-transport-security:[[:space:]]*max-age=31536000' "$apex_headers"
+          grep -Eiq '^x-content-type-options:[[:space:]]*nosniff' "$apex_headers"
+
+          if [ "$pages_status" = "200" ]; then
+            grep -Fq "Calm by design." "$pages_body"
+            grep -Eiq '^x-robots-tag:.*noindex' "$pages_headers"
+            pages_result="200 with X-Robots-Tag noindex"
+          elif { [ "$pages_status" = "301" ] || [ "$pages_status" = "308" ]; } &&
+            grep -Eiq '^location:[[:space:]]*https://alexnava\.me/[[:space:]]*$' "$pages_headers"; then
+            canonical_headers="$RUNNER_TEMP/pages-dev-canonical-headers.txt"
+            canonical_status="$(
+              curl \
+                --silent \
+                --show-error \
+                --retry 3 \
+                --retry-all-errors \
+                --dump-header "$canonical_headers" \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                "https://alexnava-me.pages.dev/__babel-canonical-check?source=cloudflare-audit&keep=1"
+            )"
+            canonical_final_headers="$RUNNER_TEMP/pages-dev-canonical-final-headers.txt"
+            extract_final_header_block "$canonical_headers" "$canonical_final_headers"
+            if { [ "$canonical_status" != "301" ] && [ "$canonical_status" != "308" ]; } ||
+              ! grep -Eiq '^location:[[:space:]]*https://alexnava\.me/__babel-canonical-check\?source=cloudflare-audit&keep=1[[:space:]]*$' "$canonical_final_headers"; then
+              echo "::error::pages.dev canonical redirect must preserve path and query."
+              exit 1
+            fi
+            pages_result="$pages_status canonical redirect to apex"
+          else
+            echo "::error::pages.dev must return 200 with noindex or 301/308 to the apex."
+            exit 1
+          fi
+
+          www_raw_headers="$RUNNER_TEMP/www-headers.txt"
+          www_status="$(
+            curl \
+              --silent \
+              --show-error \
+              --retry 3 \
+              --retry-all-errors \
+              --dump-header "$www_raw_headers" \
+              --output /dev/null \
+              --write-out '%{http_code}' \
+              "https://www.alexnava.me/"
+          )"
+          sanitize_headers "www" "$www_raw_headers"
+          www_headers="cloudflare-audit/www-headers.txt"
+          if [ "$www_status" != "301" ] ||
+            ! grep -Eiq '^location:[[:space:]]*https://alexnava\.me/[[:space:]]*$' "$www_headers"; then
+            echo "::error::www must return 301 with Location: https://alexnava.me/"
+            exit 1
+          fi
+
+          {
+            printf '# Cloudflare audit\n\n'
+            printf -- '- Checked: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            printf -- '- Repository revision: `%s`\n' "$GITHUB_SHA"
+            printf -- '- Pages project: `alexnava-me`\n'
+            printf -- '- Production branch: `main`\n'
+            printf -- '- Public DNS/TLS reachability, apex marker, and security headers: pass\n'
+            printf -- '- www exact 301 redirect: pass\n'
+            printf -- '- Exact pages.dev canonicalization: %s\n' "$pages_result"
+          } > cloudflare-audit/summary.md
+          cat cloudflare-audit/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload sanitized audit artifact
+        if: always()
+        # actions/upload-artifact@v6.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: cloudflare-audit-${{ github.run_id }}
+          path: cloudflare-audit/
+          if-no-files-found: warn
+          retention-days: 14

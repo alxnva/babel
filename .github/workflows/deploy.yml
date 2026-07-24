@@ -11,26 +11,35 @@ permissions:
 
 concurrency:
   group: pages-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://alexnava.me/
     steps:
       - name: Check out repository
-        # actions/checkout@v4
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        # actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        # actions/setup-node@v6
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        # actions/setup-node@v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit production dependency graph
+        run: npm run audit:ci
 
       - name: Verify source entry points
         run: npm run verify
@@ -41,26 +50,138 @@ jobs:
       - name: Build deployable site
         run: npm run build:dist
 
-      - name: Check deploy secrets
-        id: cloudflare
+      - name: Check production deploy credentials
         shell: bash
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN_LEGACY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID_VARIABLE: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID_LEGACY: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          set -euo pipefail
+          export CLOUDFLARE_API_TOKEN="${CLOUDFLARE_PAGES_API_TOKEN:-$CLOUDFLARE_API_TOKEN_LEGACY}"
+          export CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID_VARIABLE:-$CLOUDFLARE_ACCOUNT_ID_LEGACY}"
+
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare deploy secrets are not configured; skipping deploy."
-          elif ! npx wrangler pages project list >/dev/null 2>&1; then
-            echo "::error::Cloudflare deploy credentials are set but invalid. Regenerate CLOUDFLARE_API_TOKEN and update the repo secret."
+            echo "::error::Production deploy requires a valid Cloudflare Pages token and account ID. Configure the production environment values or retain the documented legacy fallback during migration."
             exit 1
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "$CLOUDFLARE_PAGES_API_TOKEN" ]; then
+            echo "::warning::Using legacy CLOUDFLARE_API_TOKEN; migrate it to the production environment as CLOUDFLARE_PAGES_API_TOKEN."
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID_VARIABLE" ]; then
+            echo "::warning::Using legacy CLOUDFLARE_ACCOUNT_ID secret; migrate it to a production environment variable."
+          fi
+          if ! npx wrangler pages project list >/dev/null 2>&1; then
+            echo "::error::Cloudflare deploy credentials are set but invalid. Check the production CLOUDFLARE_PAGES_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable."
+            exit 1
           fi
 
-      - name: Deploy to Cloudflare Pages
-        if: steps.cloudflare.outputs.ready == 'true'
+      - name: Capture current production rollback target
+        id: previous
+        shell: bash
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler pages deploy dist --project-name=alexnava-me --branch=main
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          project_response="$RUNNER_TEMP/cloudflare-project-before-deploy.json"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --output "$project_response" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/alexnava-me"
+
+          jq -e '
+            .success == true and
+            .result.canonical_deployment.environment == "production" and
+            .result.canonical_deployment.latest_stage.status == "success" and
+            (.result.canonical_deployment.id | type == "string") and
+            (.result.canonical_deployment.url | type == "string")
+          ' "$project_response" >/dev/null
+
+          deployment_id="$(jq -r '.result.canonical_deployment.id' "$project_response")"
+          deployment_url="$(jq -r '.result.canonical_deployment.url' "$project_response")"
+          if [[ ! "$deployment_id" =~ ^[A-Za-z0-9-]{8,64}$ ]]; then
+            echo "::error::Cloudflare returned an invalid canonical production deployment ID."
+            exit 1
+          fi
+          if [[ ! "$deployment_url" =~ ^https://[a-z0-9-]+\.alexnava-me\.pages\.dev/?$ ]]; then
+            echo "::error::Cloudflare returned an unexpected canonical production deployment URL."
+            exit 1
+          fi
+
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=${deployment_url%/}" >> "$GITHUB_OUTPUT"
+          echo "Rollback target: $deployment_id (${deployment_url%/})"
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          output="$(npx wrangler pages deploy dist --project-name=alexnava-me --branch=main 2>&1)"
+          printf '%s\n' "$output"
+          url="$(printf '%s' "$output" | grep -oE 'https://[a-z0-9-]+\.alexnava-me\.pages\.dev' | tail -1)"
+          if [ -z "$url" ]; then
+            echo "::error::Could not parse the production deployment URL from Wrangler output."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke-check deployed site
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: bash .github/scripts/smoke-pages.sh "$DEPLOYMENT_URL"
+
+      - name: Roll back failed production deployment
+        if: failure() && steps.deploy.outcome == 'success'
+        id: rollback
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIOUS_DEPLOYMENT_ID: ${{ steps.previous.outputs.deployment_id }}
+        run: |
+          set -euo pipefail
+          rollback_response="$RUNNER_TEMP/cloudflare-rollback.json"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --request POST \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --output "$rollback_response" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/alexnava-me/deployments/$PREVIOUS_DEPLOYMENT_ID/rollback"
+
+          jq -e --arg deployment_id "$PREVIOUS_DEPLOYMENT_ID" '
+            .success == true and
+            .result.id == $deployment_id and
+            .result.environment == "production" and
+            .result.latest_stage.status == "success"
+          ' "$rollback_response" >/dev/null
+          echo "::warning::Cloudflare accepted rollback to production deployment $PREVIOUS_DEPLOYMENT_ID."
+
+      - name: Verify rolled-back production
+        if: failure() && steps.deploy.outcome == 'success' && steps.rollback.outcome == 'success'
+        shell: bash
+        env:
+          PREVIOUS_DEPLOYMENT_URL: ${{ steps.previous.outputs.deployment_url }}
+        run: |
+          bash .github/scripts/smoke-pages.sh "$PREVIOUS_DEPLOYMENT_URL"
+          echo "::error::The new production deployment failed smoke checks; the previous deployment was restored and verified."
+          exit 1

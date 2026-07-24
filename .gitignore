@@ -30,6 +30,8 @@ npm-debug.log*
 *.zip
 *.png
 !og.png
+.lighthouseci/
+.tmp-lighthouse-*/
 
 # Node / build
 node_modules/
@@ -37,4 +39,6 @@ dist/
 .cache/
 .wrangler/
 scripts/
+!.github/scripts/
+!.github/scripts/*.sh
 vendor/

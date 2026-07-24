@@ -40,12 +40,13 @@ npm run preview
 npm run format
 ```
 
-Deploy commands require Wrangler auth and should only be run with explicit approval:
+Preview deploys require Wrangler auth and should only be run with explicit approval:
 
 ```powershell
 npm run deploy:preview
-npm run deploy:prod
 ```
+
+Production has no direct local npm deploy command. The protected `main` branch requires a pull request; an approved merge triggers `.github/workflows/deploy.yml`. An approved retry must dispatch that workflow on `main`.
 
 ## File map
 

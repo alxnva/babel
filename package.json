@@ -8,6 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "audit:ci": "npm audit --audit-level=high",
     "build": "node build.mjs",
     "build:dist": "node build.mjs --dist",
     "preview": "npm run build:dist && wrangler pages dev dist --port 4173",
@@ -15,12 +16,11 @@
     "test": "node --test",
     "watch": "node build.mjs --watch",
     "deploy:preview": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me --branch=preview",
-    "deploy:prod": "npm run build:dist && wrangler pages deploy dist --project-name=alexnava-me --branch=main",
     "format": "prettier --write \"src/**/*.js\" \"*.html\" \"*.css\" \"*.md\""
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
-    "prettier": "^3.3.3",
+    "prettier": "^3.9.6",
     "three": "^0.160.0",
     "wrangler": "^4.114.0"
   }
