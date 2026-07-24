@@ -4,14 +4,12 @@
 
 Candidates for future work, roughly ordered by value. Pick from here when starting a new task.
 
-| #   | Task                                          | Why it matters                                                                                                           | Size     |
-| --- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
-| 1   | Define a site mission / positioning statement | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                         | Thinking |
-| 2   | Break up `src/scene/index.js`                 | At ~135 KB it's the last outsized module in `src/`. Split once the visual design is stable enough for a deeper refactor. | Medium   |
-| 3   | Address scene-interactions audit findings     | See `ART/scene-interactions.md`.                                                                                         | Medium   |
-| 4   | Gate brazier / decorative arrays through visibility tracker | `arr23` (flames) and friends in `scene/index.js` update every frame even when camera-facing away. `plumeSystem` already shows the pattern via `registerDecorativeSystem`. Per-frame: 6+ `Math.sin`, inner ember loop, `setHSL` per light. | Small |
-| 5   | Skip orbital-glow color buffer re-upload when `glowAmount` stable | `scene/index.js` rewrites the full color attribute and flags `needsUpdate` every frame, even during the long hold phase. Add a change-detection guard. | Small |
-| 6   | Dispose `CubeCamera` + `WebGLCubeRenderTarget` after the one-shot env-map bake | Lives on `homeScene` for the page lifetime; only the captured `.texture` handle is needed by the consuming materials. Verify capture timing before disposing. | Small |
+| #   | Task                                                                           | Why it matters                                                                                                                                                | Size     |
+| --- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | Define a site mission / positioning statement                                  | The "calm by design" tagline exists but there's no articulated mission guiding content decisions                                                              | Thinking |
+| 2   | Continue breaking up `src/scene/index.js`                                      | Runtime and rendering lifecycles are extracted; tower, environment, and atmosphere assembly still need a careful behavior-preserving split.                 | Medium   |
+| 3   | Address scene-interactions audit findings                                      | See `ART/scene-interactions.md`.                                                                                                                              | Medium   |
+| 4   | Dispose `CubeCamera` + `WebGLCubeRenderTarget` after the one-shot env-map bake | Lives on `homeScene` for the page lifetime; only the captured `.texture` handle is needed by the consuming materials. Verify capture timing before disposing. | Small    |
 
 > **Thinking** = not ready to build yet, needs more clarity before it becomes a task.
 
@@ -89,6 +87,17 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 ---
 
 ## Completed tasks
+
+### Production-readiness and calm-interaction pass
+
+**Implemented and regression-tested 2026-07-23.**
+
+- Removed text scramble and random bottom-navigation fire while keeping `Calm by design.` visible at first paint with a restrained positional reveal.
+- Clarified the About lead, preserved coarse-pointer labels in short landscape, raised microcopy and contrast floors, made panels scroll-safe, and hid/inerted closing dialogs immediately.
+- Extracted tested frame/resize lifecycle helpers; added true reduced-motion dirty rendering with live toggles, corrected touch quality sampling, coalesced no-op resize, target-only developer outlines, fog-aware culling, brazier update gating, stable orbital-buffer uploads, restrained high-tier lighting/bloom, and improved short-landscape framing.
+- Added responsive tower posters as the eager scene visual and intentional static fallback for reduced data/motion, unavailable WebGL, and software-rendered WebGL, while retaining live 3D on capable phones and explicit diagnostics.
+- Added high-severity dependency gates, hard-threshold Lighthouse runs retained as GitHub Actions artifacts, review-gated preview and main-only production GitHub environments, environment-scoped Cloudflare workflows with the legacy repository-secret fallback retained pending token rotation, retrying content/header smoke checks, a sanitized weekly audit, and an operations/rollback runbook.
+- Tightened CSP, aligned HSTS to one year, separated seven-day stable-asset revalidation from immutable hashed JS/CSS, and added the exact Pages hostname noindex fallback.
 
 ### Panel frame unification — re-do as Option A
 

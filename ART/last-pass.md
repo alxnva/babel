@@ -1,6 +1,6 @@
 # Last-pass cleanup + audit — spec v1
 
-**Status:** Spec drafted; awaiting review.
+**Status:** Implemented; status reconciled and regression-tested 2026-07-23.
 **Owner once approved:** Codex executes from this spec.
 **Reviewer:** project owner.
 **Depends on:** `ART/postprocess-pipeline.md` (shipped 2026-05-05). Slider removal already landed on this branch.
@@ -13,7 +13,7 @@ Close out the post-postprocess polish window with four focused tasks, three impl
 
 1. **Scene-zoom internal cleanup** — mechanical, ships first.
 2. **DPR cap lift for flagship touch** — small, high payoff on iPhone 16 Pro / modern Android flagships.
-3. **Panel frame unification** — *gated, optional.* Only execute if the reviewer green-lights this section explicitly. If skipped, leave the About + Contact panel CSS untouched.
+3. **Panel frame unification** — _gated, optional._ Only execute if the reviewer green-lights this section explicitly. If skipped, leave the About + Contact panel CSS untouched.
 4. **Interaction / physics audit** — discovery pass. Output is `ART/scene-interactions.md`; **no code changes.**
 
 If any earlier item produces an unexpected result, **stop and surface a question** before continuing — do not pile on fixes (project rule: don't compound fixes).
@@ -51,20 +51,20 @@ After the bake, `getSceneCompositionProfile()` should return the same numeric va
 
 ### Then delete
 
-| Symbol | File | Action |
-|---|---|---|
-| `SCENE_TUNER_DEFAULTS` | `src/scene/quality.js` | Remove |
-| `applySceneTunerZoom` | `src/scene/quality.js` | Remove |
-| `clampSceneTunerZoom` | `src/scene/quality.js` | Remove |
-| `getSceneTunerDefaults` | `src/scene/quality.js` | Remove from `scene.*` exports |
-| `manualZoom` field on composition profiles | `src/scene/quality.js` | Remove |
-| `zoom` parameter on `getSceneCompositionProfile` | `src/scene/quality.js` | Remove |
-| `setSceneZoom` | `src/scene/index.js` | Remove |
-| `getSceneZoom` | `src/scene/index.js` | Remove |
-| `getSceneZoomRange` | `src/scene/index.js` | Remove |
-| `compositionState.zoom` | `src/scene/index.js` | Remove (and the surrounding zoom-resolution logic) |
-| `applySceneTunerZoom widens portrait framing…` test | `test/scene-quality.test.mjs` | Remove |
-| `clampSceneTunerZoom rejects NaN…` test | `test/scene-quality.test.mjs` | Remove |
+| Symbol                                              | File                          | Action                                             |
+| --------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
+| `SCENE_TUNER_DEFAULTS`                              | `src/scene/quality.js`        | Remove                                             |
+| `applySceneTunerZoom`                               | `src/scene/quality.js`        | Remove                                             |
+| `clampSceneTunerZoom`                               | `src/scene/quality.js`        | Remove                                             |
+| `getSceneTunerDefaults`                             | `src/scene/quality.js`        | Remove from `scene.*` exports                      |
+| `manualZoom` field on composition profiles          | `src/scene/quality.js`        | Remove                                             |
+| `zoom` parameter on `getSceneCompositionProfile`    | `src/scene/quality.js`        | Remove                                             |
+| `setSceneZoom`                                      | `src/scene/index.js`          | Remove                                             |
+| `getSceneZoom`                                      | `src/scene/index.js`          | Remove                                             |
+| `getSceneZoomRange`                                 | `src/scene/index.js`          | Remove                                             |
+| `compositionState.zoom`                             | `src/scene/index.js`          | Remove (and the surrounding zoom-resolution logic) |
+| `applySceneTunerZoom widens portrait framing…` test | `test/scene-quality.test.mjs` | Remove                                             |
+| `clampSceneTunerZoom rejects NaN…` test             | `test/scene-quality.test.mjs` | Remove                                             |
 
 The `composition profiles reframe portrait phones toward the tower` test in `scene-runtime.test.mjs` should still pass without changes — the post-bake numbers should match what the test asserts (it uses inequality assertions, not exact values).
 
@@ -85,7 +85,7 @@ The `composition profiles reframe portrait phones toward the tower` test in `sce
 
 ### Task
 
-Modify `resolveEffectiveDprCap` so the 1.25 cap applies only to *non-flagship* touch devices. When the device passes the same `flagshipCaps` check (`maxTextureSize >= 8192`, `maxAnisotropy >= 8`, `hardwareConcurrency >= 6`), return the profile's full `dprCap`.
+Modify `resolveEffectiveDprCap` so the 1.25 cap applies only to _non-flagship_ touch devices. When the device passes the same `flagshipCaps` check (`maxTextureSize >= 8192`, `maxAnisotropy >= 8`, `hardwareConcurrency >= 6`), return the profile's full `dprCap`.
 
 The function currently takes `{ touchPrimary, navigatorInfo }`. Extend the signature to also accept `caps` (the WebGL caps object passed in elsewhere in the same flow). Threadcaps through from the call site in `createSceneQualityState`.
 
@@ -102,7 +102,7 @@ Manual check on at least one flagship phone if available: `?quality=high` should
 
 ---
 
-## 3. Panel frame unification *(optional — gated)*
+## 3. Panel frame unification _(optional — gated)_
 
 ### Status
 
@@ -126,11 +126,11 @@ Contact panel gains a notebook spread structure with a binding column. Letter co
 
 ### Files Codex may touch (option A)
 
-| File | Modification |
-|---|---|
-| `index.html` | Restructure `#panel-contact` to match `#panel-about` shape (single shared frame). Remove the quill SVG. |
+| File         | Modification                                                                                                                                                                                                    |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html` | Restructure `#panel-contact` to match `#panel-about` shape (single shared frame). Remove the quill SVG.                                                                                                         |
 | `styles.css` | Add a shared `.panel-card-parchment` (or similar) class consolidating the parchment paper treatment. Reduce `.panel-letter*` and `.panel-notebook*` classes to surface variants. Remove `.panel-letter__quill`. |
-| `STYLE.md` | Add one line under "Interaction" noting the panel frame is shared across surfaces. |
+| `STYLE.md`   | Add one line under "Interaction" noting the panel frame is shared across surfaces.                                                                                                                              |
 
 ### Files Codex may touch (option B)
 
@@ -151,7 +151,7 @@ Symmetric — apply notebook structure to `panel-letter`. Same kind of consolida
 
 ---
 
-## 4. Interaction / physics audit *(discovery — no code edits)*
+## 4. Interaction / physics audit _(discovery — no code edits)_
 
 ### Goal
 
@@ -228,7 +228,7 @@ Same guards as the previous specs, repeated because formatter spillover keeps ha
 
 ## Bundle budget
 
-Scene bundle current ceiling: **820 kB** (set by the postprocess pipeline spec). This last-pass should *reduce* both bundles (slider plumbing removal in section 1 deletes code with no replacement). If either bundle grows, surface why in the handoff.
+Scene bundle current ceiling: **820 kB** (set by the postprocess pipeline spec). This last-pass should _reduce_ both bundles (slider plumbing removal in section 1 deletes code with no replacement). If either bundle grows, surface why in the handoff.
 
 ## Out of scope across all sections
 

@@ -206,14 +206,10 @@ test("quality profiles expose the postprocess tier matrix", async () => {
     [true, false, true, true],
   );
   assert.deepEqual(
-    [
-      low.postprocessGrading,
-      low.postprocessBloom,
-      low.postprocessVignette,
-      low.postprocessGrain,
-    ],
+    [low.postprocessGrading, low.postprocessBloom, low.postprocessVignette, low.postprocessGrain],
     [true, false, false, false],
   );
+  assert.equal(high.lighting.directionalIntensity, 2.9);
 });
 
 test("readWebGLQualityCaps falls back when probing fails and reports parameters when it succeeds", async () => {
@@ -266,7 +262,7 @@ test("composition profiles bake the removed default scene zoom", async () => {
     ["compact", { width: 900, height: 844 }, [48.52, 11.68, 74.8, 0.144]],
     ["desktop", { width: 1440, height: 900 }, [48.52, 11.68, 65.8, 0.144]],
     ["portraitPhone", { width: 390, height: 844 }, [50.32, 12.44, 72.3, 0.124]],
-    ["landscapePhone", { width: 844, height: 390 }, [54.52, 10.08, 71.8, 0.144]],
+    ["landscapePhone", { width: 844, height: 390 }, [55.8, 10.8, 63.2, 0.144]],
     ["tabletPortrait", { width: 810, height: 1080 }, [48.52, 12.38, 71.8, 0.134]],
   ];
 
@@ -418,10 +414,7 @@ test("getSceneCompositionProfile picks the right profile across device classes",
   const scene = await loadQuality(createContext());
 
   // Phone portrait (iPhone 14): 390x844.
-  assert.equal(
-    scene.getSceneCompositionProfile({ width: 390, height: 844 }).name,
-    "portraitPhone",
-  );
+  assert.equal(scene.getSceneCompositionProfile({ width: 390, height: 844 }).name, "portraitPhone");
   // Phone landscape (iPhone 14 rotated): 844x390.
   assert.equal(
     scene.getSceneCompositionProfile({ width: 844, height: 390 }).name,
@@ -434,20 +427,11 @@ test("getSceneCompositionProfile picks the right profile across device classes",
   );
   // Tablet landscape (iPad rotated): 1080x810 — wider than compact threshold only
   // for very large tablets, so this falls into compact framing.
-  assert.equal(
-    scene.getSceneCompositionProfile({ width: 1080, height: 810 }).name,
-    "compact",
-  );
+  assert.equal(scene.getSceneCompositionProfile({ width: 1080, height: 810 }).name, "compact");
   // Small laptop: 1280x800.
-  assert.equal(
-    scene.getSceneCompositionProfile({ width: 1280, height: 800 }).name,
-    "desktop",
-  );
+  assert.equal(scene.getSceneCompositionProfile({ width: 1280, height: 800 }).name, "desktop");
   // Desktop: 1920x1080.
-  assert.equal(
-    scene.getSceneCompositionProfile({ width: 1920, height: 1080 }).name,
-    "desktop",
-  );
+  assert.equal(scene.getSceneCompositionProfile({ width: 1920, height: 1080 }).name, "desktop");
 });
 
 test("landscapePhone and tabletPortrait profiles carry touch-friendly count trims", async () => {
@@ -461,6 +445,14 @@ test("landscapePhone and tabletPortrait profiles carry touch-friendly count trim
   );
   assert.ok(tablet.countScale < 1, "tablet portrait trims counts for thermal headroom");
   assert.ok(tablet.countScale > landscape.countScale, "tablet keeps more detail than phone");
+  assert.ok(
+    landscape.camera.heightBase > 21,
+    "short landscape framing raises the camera enough to keep the tower composed",
+  );
+  assert.ok(
+    landscape.camera.orbitBase < 65,
+    "short landscape framing moves closer instead of shrinking the tower",
+  );
 });
 
 test("createSceneQualityState exposes profile, governor, and live sample handoff", async () => {

@@ -11,6 +11,10 @@ async function readIndexHtml() {
   return readFile(path.join(projectRoot, "index.html"), "utf8");
 }
 
+async function readStyles() {
+  return readFile(path.join(projectRoot, "styles.css"), "utf8");
+}
+
 function collectMatches(regex, source) {
   const out = [];
   for (const match of source.matchAll(regex)) out.push(match[1]);
@@ -50,8 +54,16 @@ test("bottom-bar buttons have accessible names and are labeled or wrapped with a
   assert.ok(buttonBlocks.length >= 2, "expected at least two bottom-bar buttons");
   for (const block of buttonBlocks) {
     assert.match(block, /aria-label="[^"]+"/, `bottom-bar button is missing aria-label: ${block}`);
-    assert.match(block, /aria-expanded="(true|false)"/, "bottom-bar button tracks aria-expanded state");
-    assert.match(block, /aria-controls="[^"]+"/, "bottom-bar button references the panel it toggles");
+    assert.match(
+      block,
+      /aria-expanded="(true|false)"/,
+      "bottom-bar button tracks aria-expanded state",
+    );
+    assert.match(
+      block,
+      /aria-controls="[^"]+"/,
+      "bottom-bar button references the panel it toggles",
+    );
   }
 });
 
@@ -69,9 +81,14 @@ test("modal overlays declare dialog semantics and start hidden", async () => {
 
 test("about and contact panels share the parchment frame and each carry one ornament", async () => {
   const html = await readIndexHtml();
-  const sharedFrames = html.match(/class="[^"]*\bpanel-parchment\b[^"]*\bpanel-surface\b[^"]*"/g) || [];
+  const sharedFrames =
+    html.match(/class="[^"]*\bpanel-parchment\b[^"]*\bpanel-surface\b[^"]*"/g) || [];
 
-  assert.equal(sharedFrames.length, 2, "both panels use the shared panel-parchment + panel-surface frame");
+  assert.equal(
+    sharedFrames.length,
+    2,
+    "both panels use the shared panel-parchment + panel-surface frame",
+  );
   assert.match(html, /class="panel-parchment__watermark"/, "About carries the watermark ornament");
   assert.match(html, /class="panel-parchment__seal"/, "Contact carries the wax-seal ornament");
   assert.doesNotMatch(html, /panel-object-stage/, "the 3D panel-object stage is removed");
@@ -93,6 +110,32 @@ test("decorative regions are hidden from assistive tech and main content stays p
   assert.match(html, /<main[^>]*id="main"[^>]*tabindex="-1"/);
 });
 
+test("the decorative scene poster is eager, responsive, and only fades for a ready scene", async () => {
+  const html = await readIndexHtml();
+  const styles = await readStyles();
+  const picture = html.match(/<picture class="scene-poster"[\s\S]*?<\/picture>/)?.[0] || "";
+  const image = picture.match(/<img[\s\S]*?\/>/)?.[0] || "";
+
+  assert.match(picture, /aria-hidden="true"/);
+  assert.match(picture, /media="\(orientation: portrait\)"/);
+  assert.match(picture, /srcset="\/images\/scene-poster-portrait\.webp"/);
+  assert.match(image, /src="\/images\/scene-poster-landscape\.webp"/);
+  assert.match(image, /alt=""/);
+  assert.match(image, /loading="eager"/);
+  assert.match(image, /fetchpriority="high"/);
+  assert.match(image, /decoding="async"/);
+  assert.match(styles, /\.scene-canvas\.is-ready \+ \.scene-poster\s*\{\s*opacity:\s*0;/);
+  assert.doesNotMatch(
+    styles,
+    /\.scene-shell\s*\{[^}]*animation:/,
+    "the first-paint poster must not wait on a shell opacity animation",
+  );
+  assert.match(
+    styles,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.scene-canvas,\s*\.scene-poster\s*\{[^}]*transition:\s*none;/,
+  );
+});
+
 test("external links open in a new tab only when they declare rel=noopener", async () => {
   const html = await readIndexHtml();
   const externalAnchors = html.match(/<a[^>]*target="_blank"[^>]*>/g) || [];
@@ -100,4 +143,62 @@ test("external links open in a new tab only when they declare rel=noopener", asy
   for (const anchor of externalAnchors) {
     assert.match(anchor, /rel="[^"]*noopener[^"]*"/, `target="_blank" without noopener: ${anchor}`);
   }
+});
+
+test("hero and About copy remain calm, immediate, and free of scramble hooks", async () => {
+  const html = await readIndexHtml();
+  const hero = html.match(/<section id="home"[\s\S]*?<\/section>/)?.[0] || "";
+  const heroText = hero
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  assert.equal(heroText, "Calm by design.");
+  assert.match(html, /Alex Nava designs and builds calm interfaces, tools, and product systems\./);
+  assert.doesNotMatch(html, /data-scramble/);
+});
+
+test("description metadata matches the About lead and scene discovery uses inert metadata", async () => {
+  const html = await readIndexHtml();
+  const description = "Alex Nava designs and builds calm interfaces, tools, and product systems.";
+  const descriptionAttributes =
+    html.match(
+      /content="Alex Nava designs and builds calm interfaces, tools, and product systems\."/g,
+    ) || [];
+  const sceneMeta = html.match(/<meta[^>]*name="babel:scene-script"[^>]*>/)?.[0] || "";
+
+  assert.equal(descriptionAttributes.length, 3);
+  assert.ok(html.includes(description));
+  assert.match(sceneMeta, /content="\/scripts\/scene\.js\?v=648"/);
+  assert.match(sceneMeta, /\sdata-scene-script(?:\s|\/?>)/);
+  assert.doesNotMatch(html, /<link[^>]*data-scene-script/);
+  assert.doesNotMatch(html, /rel="prefetch"[^>]*scene\.js/);
+});
+
+test("first-paint hero, action cursors, microcopy, and short-landscape labels stay legible", async () => {
+  const styles = await readStyles();
+
+  assert.doesNotMatch(
+    styles,
+    /@keyframes hero-rise\s*\{\s*from\s*\{\s*opacity:\s*0/,
+    "the hero must not begin hidden",
+  );
+  assert.match(styles, /a,\s*button\s*\{\s*cursor:\s*pointer;/);
+  assert.doesNotMatch(
+    styles,
+    /font-size:\s*(?:[0-9](?:\.[0-9]+)?|1[01](?:\.[0-9]+)?)px/,
+    "user-facing microcopy must not fall below 12px",
+  );
+  assert.match(
+    styles,
+    /@media \(orientation: landscape\) and \(max-height: 500px\)[\s\S]*?\.btn-icon-label\s*\{[^}]*opacity:\s*1;/,
+  );
+  assert.match(
+    styles,
+    /\.panel-parchment__sheet \.eyebrow\s*\{[^}]*color:\s*#60492e;[^}]*opacity:\s*1;/,
+  );
+  assert.match(
+    styles,
+    /\.panel-parchment__sheet \.panel-footnote\s*\{[^}]*color:\s*#55493a;[^}]*font-size:\s*12px;/,
+  );
 });

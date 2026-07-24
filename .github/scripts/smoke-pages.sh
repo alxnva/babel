@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: smoke-pages.sh <immutable-pages-deployment-url>" >&2
+  exit 2
+fi
+
+deployment_url="${1%/}"
+if [[ ! "$deployment_url" =~ ^https://[a-z0-9-]+\.alexnava-me\.pages\.dev$ ]]; then
+  echo "::error::Unexpected Pages deployment URL: $deployment_url"
+  exit 1
+fi
+deployment_host="${deployment_url#https://}"
+
+temp_root="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+mkdir -p "$temp_root"
+work_dir="$(mktemp -d "$temp_root/babel-pages-smoke.XXXXXX")"
+
+extract_final_headers() {
+  local raw_headers="$1"
+  local final_headers="$2"
+
+  tr -d '\r' < "$raw_headers" |
+    awk '/^HTTP\// { block = "" } { block = block $0 ORS } END { printf "%s", block }' \
+      > "$final_headers"
+}
+
+fetch_page_once() {
+  local label="$1"
+  local url="$2"
+  local expected_host="$3"
+  local require_security_headers="$4"
+  local body="$work_dir/${label}-body.html"
+  local raw_headers="$work_dir/${label}-headers.txt"
+  local final_headers="$work_dir/${label}-final-headers.txt"
+  local result
+  local status
+  local effective_url
+  local effective_host
+
+  : > "$body"
+  : > "$raw_headers"
+  result="$(
+    curl \
+      --silent \
+      --show-error \
+      --connect-timeout 10 \
+      --max-time 20 \
+      --dump-header "$raw_headers" \
+      --output "$body" \
+      --write-out '%{http_code}\t%{url_effective}' \
+      "$url" ||
+      true
+  )"
+  status="${result%%$'\t'*}"
+  effective_url="${result#*$'\t'}"
+  effective_host="${effective_url#*://}"
+  effective_host="${effective_host%%/*}"
+  effective_host="${effective_host%%:*}"
+  extract_final_headers "$raw_headers" "$final_headers"
+
+  [ "$status" = "200" ] &&
+    [ "$effective_host" = "$expected_host" ] &&
+    grep -Fq "Calm by design." "$body" &&
+    {
+      [ "$require_security_headers" != "true" ] ||
+        {
+          grep -Eiq '^content-security-policy:' "$final_headers" &&
+            grep -Eiq '^strict-transport-security:' "$final_headers" &&
+            grep -Eiq '^x-content-type-options:[[:space:]]*nosniff' "$final_headers"
+        }
+    }
+}
+
+retry_page() {
+  local label="$1"
+  local url="$2"
+  local expected_host="$3"
+  local require_security_headers="$4"
+
+  for attempt in 1 2 3 4 5 6; do
+    if fetch_page_once "$label" "$url" "$expected_host" "$require_security_headers"; then
+      echo "Smoke check passed for $url"
+      return 0
+    fi
+    if [ "$attempt" -lt 6 ]; then
+      echo "Smoke check attempt $attempt failed for $url; retrying in 5 seconds."
+      sleep 5
+    fi
+  done
+
+  echo "::error::Smoke check failed for $url after 6 attempts."
+  return 1
+}
+
+collect_assets() {
+  local body="$1"
+  local output="$2"
+
+  grep -oE '(css/styles|scripts/(app|scene))\.[a-f0-9]{8}\.(css|js)' "$body" |
+    sort -u > "$output" || true
+  [ "$(wc -l < "$output" | tr -d ' ')" -eq 3 ]
+}
+
+retry_page "deployment" "$deployment_url" "$deployment_host" "false"
+
+deployment_assets="$work_dir/deployment-assets.txt"
+if ! collect_assets "$work_dir/deployment-body.html" "$deployment_assets"; then
+  echo "::error::Immutable deployment must reference exactly three hashed app, scene, and CSS assets."
+  exit 1
+fi
+
+apex_assets="$work_dir/apex-assets.txt"
+for attempt in 1 2 3 4 5 6; do
+  if fetch_page_once "apex" "https://alexnava.me/" "alexnava.me" "true" &&
+    collect_assets "$work_dir/apex-body.html" "$apex_assets" &&
+    cmp -s "$deployment_assets" "$apex_assets"; then
+    echo "Apex marker, security-header, and asset-hash parity checks passed."
+    break
+  fi
+  if [ "$attempt" -eq 6 ]; then
+    echo "::error::Apex does not match the expected immutable deployment."
+    diff -u "$deployment_assets" "$apex_assets" || true
+    exit 1
+  fi
+  echo "Apex parity attempt $attempt failed; retrying in 5 seconds."
+  sleep 5
+done
+
+check_404_once() {
+  local body="$work_dir/missing-body.html"
+  local result
+  local status
+  local effective_url
+  local effective_host
+
+  : > "$body"
+  result="$(
+    curl \
+      --silent \
+      --show-error \
+      --connect-timeout 10 \
+      --max-time 20 \
+      --output "$body" \
+      --write-out '%{http_code}\t%{url_effective}' \
+      "https://alexnava.me/__babel-smoke-missing__" ||
+      true
+  )"
+  status="${result%%$'\t'*}"
+  effective_url="${result#*$'\t'}"
+  effective_host="${effective_url#*://}"
+  effective_host="${effective_host%%/*}"
+  effective_host="${effective_host%%:*}"
+
+  [ "$status" = "404" ] &&
+    [ "$effective_host" = "alexnava.me" ] &&
+    grep -Fq "That page isn't here." "$body"
+}
+
+for attempt in 1 2 3 4 5 6; do
+  if check_404_once; then
+    echo "404 smoke check passed."
+    break
+  fi
+  if [ "$attempt" -eq 6 ]; then
+    echo "::error::Missing paths must return the expected 404 from alexnava.me."
+    exit 1
+  fi
+  echo "404 smoke attempt $attempt failed; retrying in 5 seconds."
+  sleep 5
+done
+
+check_www_once() {
+  local raw_headers="$work_dir/www-headers.txt"
+  local final_headers="$work_dir/www-final-headers.txt"
+  local result
+  local status
+  local effective_url
+  local effective_host
+
+  : > "$raw_headers"
+  result="$(
+    curl \
+      --silent \
+      --show-error \
+      --connect-timeout 10 \
+      --max-time 20 \
+      --dump-header "$raw_headers" \
+      --output /dev/null \
+      --write-out '%{http_code}\t%{url_effective}' \
+      "https://www.alexnava.me/" ||
+      true
+  )"
+  status="${result%%$'\t'*}"
+  effective_url="${result#*$'\t'}"
+  effective_host="${effective_url#*://}"
+  effective_host="${effective_host%%/*}"
+  effective_host="${effective_host%%:*}"
+  extract_final_headers "$raw_headers" "$final_headers"
+
+  [ "$status" = "301" ] &&
+    [ "$effective_host" = "www.alexnava.me" ] &&
+    grep -Eiq '^location:[[:space:]]*https://alexnava\.me/[[:space:]]*$' "$final_headers"
+}
+
+for attempt in 1 2 3 4 5 6; do
+  if check_www_once; then
+    echo "www redirect check passed."
+    break
+  fi
+  if [ "$attempt" -eq 6 ]; then
+    echo "::error::www must return 301 with Location: https://alexnava.me/"
+    exit 1
+  fi
+  echo "www redirect attempt $attempt failed; retrying in 5 seconds."
+  sleep 5
+done
+
+echo "Cloudflare Pages production smoke contract passed."

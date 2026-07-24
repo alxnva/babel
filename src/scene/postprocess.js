@@ -17,10 +17,12 @@ const GRADING_SHADER = {
   name: "BabelGradingShader",
   uniforms: {
     tDiffuse: { value: null },
+    uHighlightCoolMix: { value: 0.14 },
   },
   vertexShader: PASS_VERTEX_SHADER,
   fragmentShader: `
 uniform sampler2D tDiffuse;
+uniform float uHighlightCoolMix;
 varying vec2 vUv;
 
 vec3 saturateColor(vec3 color, float amount) {
@@ -37,15 +39,15 @@ void main() {
 
   vec3 shadowLift = vec3(0.102, 0.086, 0.071);
   vec3 warmMidtone = color * vec3(1.03, 1.015, 0.979);
-  vec3 coolHighlight = color * vec3(0.987, 1.0, 1.034);
+  vec3 coolHighlight = color * vec3(0.993, 1.0, 1.018);
 
   float shadowMix = 1.0 - smoothstep(0.08, 0.32, luma);
   float midMix = smoothstep(0.22, 0.46, luma) * (1.0 - smoothstep(0.62, 0.82, luma));
-  float highlightMix = smoothstep(0.68, 0.96, luma);
+  float highlightMix = smoothstep(0.72, 0.97, luma);
 
   color = mix(color, max(color, shadowLift), 0.238 * shadowMix);
   color = mix(color, warmMidtone, 0.306 * midMix);
-  color = mix(color, coolHighlight, 0.204 * highlightMix);
+  color = mix(color, coolHighlight, uHighlightCoolMix * highlightMix);
   color = saturateColor(color, 1.0425);
 
   gl_FragColor = vec4(clamp(color, 0.0, 1.0), texel.a);
@@ -58,12 +60,14 @@ const VIGNETTE_GRAIN_SHADER = {
   uniforms: {
     tDiffuse: { value: null },
     uVignetteEnabled: { value: 1 },
+    uVignetteStrength: { value: 0.08 },
     uGrainEnabled: { value: 1 },
   },
   vertexShader: PASS_VERTEX_SHADER,
   fragmentShader: `
 uniform sampler2D tDiffuse;
 uniform int uVignetteEnabled;
+uniform float uVignetteStrength;
 uniform int uGrainEnabled;
 varying vec2 vUv;
 
@@ -77,8 +81,8 @@ void main() {
 
   if (uVignetteEnabled == 1) {
     float dist = distance(vUv, vec2(0.5));
-    float vignette = smoothstep(0.4, 1.0, dist);
-    color *= mix(1.0, 0.85, vignette);
+    float vignette = smoothstep(0.42, 1.0, dist);
+    color *= 1.0 - uVignetteStrength * vignette;
   }
 
   if (uGrainEnabled == 1) {
@@ -102,10 +106,12 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene, camera);
   const size = getSize(renderer);
-  const bloomPass = new UnrealBloomPass(size, 0.3, 0.6, 0.85);
+  const bloomPass = new UnrealBloomPass(size, 0.18, 0.45, 0.9);
   const gradingPass = new ShaderPass(GRADING_SHADER);
   const vignetteGrainPass = new ShaderPass(VIGNETTE_GRAIN_SHADER);
   const matchMedia = options.matchMedia || globalThis.window?.matchMedia?.bind(globalThis.window);
+  const onInvalidate =
+    typeof options.onInvalidate === "function" ? options.onInvalidate : () => {};
   const transparencyQuery = matchMedia?.("(prefers-reduced-transparency: reduce)");
 
   composer.addPass(renderPass);
@@ -129,8 +135,11 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
   }
 
   function onTransparencyChange(event) {
-    reducedTransparency = Boolean(event?.matches);
+    const nextReducedTransparency = Boolean(event?.matches);
+    if (nextReducedTransparency === reducedTransparency) return;
+    reducedTransparency = nextReducedTransparency;
     applyProfile(currentProfile);
+    onInvalidate();
   }
 
   let currentProfile = qualityProfile || {};

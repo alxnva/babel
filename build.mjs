@@ -33,7 +33,7 @@ const STATIC_FILES = [
   "_headers",
   "_redirects",
 ];
-const STATIC_DIRS = ["fonts"];
+const STATIC_DIRS = ["fonts", "images"];
 const DIST_DIR = join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = join(DIST_DIR, "scripts");
 const DIST_CSS_DIR = join(DIST_DIR, "css");

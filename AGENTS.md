@@ -9,7 +9,7 @@ This contract applies to any AI agent working in this repository.
 - **Project:** `babel`
 - **Live site:** `alexnava.me`
 - **Repo role:** authoritative working source for the live site
-- **Stack:** static site (HTML, CSS, vanilla JS, esbuild-generated UI bundle plus deferred tree-shaken Three.js r160 scene bundle, self-hosted font subsets)
+- **Stack:** static site (HTML, CSS, vanilla JS, responsive tower posters, esbuild-generated UI bundle plus deferred tree-shaken Three.js r160 scene bundle, self-hosted font subsets)
 - **Host:** Cloudflare Pages project `alexnava-me` (re-confirm before deploy or DNS changes)
 - **Build step:** esbuild via `npm run build` / `npm run build:dist` — source in `src/`, generated publish payload in `dist/` (not tracked)
 - **Package manager:** npm on Node.js 22+ (devDependencies only: esbuild, prettier, three, wrangler)
@@ -39,31 +39,36 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 | `index.html`                                    | Landing page markup and panel structure                                      |
 | `styles.css`                                    | Visual styling, `@font-face` blocks, tokens, and responsive rules            |
 | `src/`                                          | Readable JS source of truth — edit here                                      |
+| `src/scene/runtime.js` / `rendering.js`         | Scene scheduling, resize, renderer, postprocess, and teardown lifecycles      |
+| `src/scene/tower.js` / `environment.js` / `atmosphere.js` | Scene-domain lifecycle ownership and per-frame updates               |
 | `dist/`                                         | Generated publish payload for Cloudflare Pages — gitignored, never hand-edit |
 | `fonts/`                                        | Self-hosted Instrument Sans + Cormorant Garamond woff2 subsets               |
+| `images/`                                       | Responsive WebP tower posters used for first paint and static scene delivery |
 | `build.mjs`, `package.json`, `.prettierrc.json` | Build + format tooling                                                       |
 | `wrangler.jsonc`                                | Cloudflare Pages project config (`pages_build_output_dir: ./dist`)           |
 | `_headers` / `_redirects`                       | Static hosting config copied into `dist/` at build time                      |
 | `404.html`, `favicon.svg`, `LICENSE`            | Root assets copied into `dist/` at build time                                |
 | `.github/workflows/`                            | CI (`ci.yml`) and production deploy (`deploy.yml`)                           |
 | `README.md`                                     | Local preview and deployment notes                                           |
+| `OPERATIONS.md`                                 | Release gates, credentials, audits, smoke checks, and rollback               |
 | `PLANS.md`                                      | Backlog and recent implementation notes                                      |
 | `STYLE.md`                                      | Design and motion constraints                                                |
 | `CONTRIBUTING.md`, `SECURITY.md`, `CREDITS.md`  | Public contribution, security reporting, and third-party attribution         |
 
 ## Standard commands
 
-| Action         | Command                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| Install        | `npm install`                                                            |
-| Build          | `npm run build` (same as `npm run build:dist`)                           |
-| Preview        | `npm run preview` (builds `dist/` then serves it through Wrangler Pages) |
-| Verify         | `npm run verify` (compile-check, no writes)                              |
-| Test           | `npm test`                                                               |
-| Watch          | `npm run watch` (rebuild `dist/scripts/` on src change)                  |
-| Format         | `npm run format`                                                         |
-| Deploy preview | `npm run deploy:preview` (requires Wrangler auth)                        |
-| Deploy prod    | `npm run deploy:prod` (requires Wrangler auth)                           |
+| Action         | Command                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| Install        | `npm install`                                                              |
+| Build          | `npm run build` (same as `npm run build:dist`)                             |
+| Preview        | `npm run preview` (builds `dist/` then serves it through Wrangler Pages)   |
+| Verify         | `npm run verify` (compile-check, no writes)                                |
+| Test           | `npm test`                                                                 |
+| Audit          | `npm run audit:ci` (fails on high or critical advisories)                  |
+| Watch          | `npm run watch` (rebuild `dist/scripts/` on src change)                    |
+| Format         | `npm run format`                                                           |
+| Deploy preview | `npm run deploy:preview` (requires Wrangler auth)                          |
+| Release prod   | Merge the approved protected PR to `main`; `deploy.yml` owns production     |
 
 ## Operating principles
 

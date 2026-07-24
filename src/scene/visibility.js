@@ -2,7 +2,7 @@
   const site = (window.BabelSite = window.BabelSite || {});
   const scene = (site.scene = site.scene || {});
 
-  function createSceneVisibilityTracker({ THREE, camera }) {
+  function createSceneVisibilityTracker({ THREE, camera, getVisibleDistance }) {
     const projectionViewMatrix = new THREE.Matrix4();
     const frustum = new THREE.Frustum();
     const forward = new THREE.Vector3();
@@ -37,6 +37,11 @@
 
       toCenter.copy(center).sub(camera.position);
       const distance = toCenter.length();
+      const visibleDistance =
+        typeof getVisibleDistance === "function" ? getVisibleDistance() : camera.far;
+      if (Number.isFinite(visibleDistance) && distance - Math.max(0, radius) > visibleDistance) {
+        return "backsideDecor";
+      }
       const frontDot = distance > 1e-6 ? toCenter.multiplyScalar(1 / distance).dot(forward) : 1;
 
       if (importance === "nearAtmosphere") {

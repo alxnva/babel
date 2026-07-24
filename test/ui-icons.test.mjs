@@ -9,7 +9,6 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testDir, "..");
 const iconsSourcePath = path.join(projectRoot, "src", "ui", "icons.js");
 const colorSourcePath = path.join(projectRoot, "src", "shared", "color.js");
-const motionSourcePath = path.join(projectRoot, "src", "shared", "motion.js");
 
 class FakeCanvasContext {
   setTransform() {}
@@ -106,10 +105,9 @@ class FakeCanvas {
   }
 }
 
-test("bottom nav holy-fire proc draws without missing helper errors", async () => {
+test("bottom nav icons initialize without random click effects", async () => {
   const source = await readFile(iconsSourcePath, "utf8");
   const colorSource = await readFile(colorSourcePath, "utf8");
-  const motionSource = await readFile(motionSourcePath, "utf8");
   const aboutButton = new FakeButton();
   const contactButton = new FakeButton();
   const aboutCanvas = new FakeCanvas(aboutButton);
@@ -127,10 +125,6 @@ test("bottom nav holy-fire proc draws without missing helper errors", async () =
     },
   };
 
-  const deterministicMath = Object.create(Math);
-  deterministicMath.random = () => 0.1;
-
-  const rafTimes = [100, 1500];
   const window = {
     BabelSite: {},
     devicePixelRatio: 1,
@@ -138,28 +132,25 @@ test("bottom nav holy-fire proc draws without missing helper errors", async () =
       return { matches: false };
     },
     addEventListener() {},
-    requestAnimationFrame(callback) {
-      const now = rafTimes.length ? rafTimes.shift() : 1500;
-      callback(now);
-      return 1;
-    },
+    requestAnimationFrame() {},
   };
 
   const sharedContext = {
     window,
     document,
     console,
-    Math: deterministicMath,
-    performance: { now: () => 0 },
     requestAnimationFrame: window.requestAnimationFrame,
     Uint8ClampedArray,
   };
   vm.runInNewContext(colorSource, sharedContext, { filename: colorSourcePath });
-  vm.runInNewContext(motionSource, sharedContext, { filename: motionSourcePath });
   vm.runInNewContext(source, sharedContext, { filename: iconsSourcePath });
 
   window.BabelSite.ui.initBottomNavIcons();
 
   assert.doesNotThrow(() => aboutButton.dispatchEvent({ type: "click" }));
-  assert.equal(aboutButton.dataset.holyFireActive, "0");
+  assert.equal(aboutButton.listeners.has("click"), false);
+  assert.equal(contactButton.listeners.has("click"), false);
+  assert.equal(aboutButton.children.length, 0);
+  assert.equal(contactButton.children.length, 0);
+  assert.doesNotMatch(source, /holy-fire|HOLY_FIRE|Math\.random/);
 });

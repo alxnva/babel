@@ -66,12 +66,12 @@
     // frame. Phone-class countScale still applies.
     landscapePhone: {
       camera: {
-        fov: 54.52,
-        heightBase: 18.6,
+        fov: 55.8,
+        heightBase: 22.4,
         heightScrollDelta: 0.4,
-        lookAtBase: 10.08,
+        lookAtBase: 10.8,
         lookAtScrollDelta: 1.3,
-        orbitBase: 71.8,
+        orbitBase: 63.2,
         orbitScale: 1.1,
         orbitScrollDelta: 1.9,
         orbitTrim: 0.144,
@@ -136,7 +136,7 @@
         fogFar: 150,
         ambientIntensity: 0.22,
         hemisphereIntensity: 0.71,
-        directionalIntensity: 3.55,
+        directionalIntensity: 2.9,
         extraDirectional: true,
       },
       counts: {

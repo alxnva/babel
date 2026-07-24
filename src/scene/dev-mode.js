@@ -35,6 +35,7 @@
   let homeScene = null;
   let canvas = null;
   let outlinePass = null;
+  let requestOutlinePass = null;
   let raycaster = null;
   let euler = null;
 
@@ -56,6 +57,7 @@
   let autoRun = false;
   let sessionAbort = null;
   let globalAbort = null;
+  let onActivityChange = null;
 
   function isTouchDevice() {
     try {
@@ -217,12 +219,29 @@
     return null;
   }
 
+  function setOutlineTarget(pass, target) {
+    if (!pass) return;
+    pass.selectedObjects = target ? [target] : [];
+    pass.enabled = Boolean(target);
+  }
+
+  function ensureDeveloperOutlinePass() {
+    if (!outlinePass && requestOutlinePass) {
+      outlinePass = requestOutlinePass() || null;
+    }
+    return outlinePass;
+  }
+
   function attach(refs) {
     THREE = refs.THREE;
     camera = refs.camera;
     homeScene = refs.homeScene;
     canvas = refs.canvas;
     outlinePass = refs.outlinePass || null;
+    requestOutlinePass =
+      typeof refs.ensureOutlinePass === "function" ? refs.ensureOutlinePass : null;
+    onActivityChange = typeof refs.onActivityChange === "function" ? refs.onActivityChange : null;
+    setOutlineTarget(outlinePass, null);
 
     raycaster = new THREE.Raycaster();
     euler = new THREE.Euler(0, 0, 0, "YXZ");
@@ -272,7 +291,9 @@
 
   function enter() {
     if (!camera || !canvas) return;
+    ensureDeveloperOutlinePass();
     devMode.active = true;
+    if (onActivityChange) onActivityChange(true);
 
     // Seed yaw/pitch from camera's current orientation.
     euler.setFromQuaternion(camera.quaternion);
@@ -325,7 +346,8 @@
       sessionAbort.abort();
       sessionAbort = null;
     }
-    if (outlinePass) outlinePass.selectedObjects = [];
+    setOutlineTarget(outlinePass, null);
+    if (onActivityChange) onActivityChange(false);
     if (hudRoot) hudRoot.hidden = true;
     if (document.body) document.body.classList.remove("dev-mode-active");
   }
@@ -449,13 +471,52 @@
       raycaster.setFromCamera({ x: 0, y: 0 }, activeCamera);
       const hits = raycaster.intersectObjects(homeScene.children, true);
       const target = pickFirstOutlineable(hits);
-      outlinePass.selectedObjects = target ? [target] : [];
+      setOutlineTarget(outlinePass, target);
     }
+  }
+
+  function dispose() {
+    if (devMode.active) exit();
+    if (globalAbort) {
+      globalAbort.abort();
+      globalAbort = null;
+    }
+    if (sessionAbort) {
+      sessionAbort.abort();
+      sessionAbort = null;
+    }
+    setOutlineTarget(outlinePass, null);
+    keys.clear();
+    THREE = null;
+    camera = null;
+    homeScene = null;
+    canvas = null;
+    outlinePass = null;
+    requestOutlinePass = null;
+    raycaster = null;
+    euler = null;
+    hudRoot = null;
+    for (const field of Object.keys(hudFields)) {
+      delete hudFields[field];
+    }
+    onActivityChange = null;
+  }
+
+  function getAttachmentState() {
+    return {
+      hasCamera: Boolean(camera),
+      hasCanvas: Boolean(canvas),
+      hasHomeScene: Boolean(homeScene),
+      hasOutlinePass: Boolean(outlinePass),
+      hasRaycaster: Boolean(raycaster),
+      hasThree: Boolean(THREE),
+    };
   }
 
   const devMode = {
     active: false,
     attach,
+    dispose,
     update,
     _test: {
       applyMouseDelta,
@@ -463,7 +524,10 @@
       integrateMotion,
       applyGroundClamp,
       getMode,
+      getAttachmentState,
+      ensureDeveloperOutlinePass,
       pickFirstOutlineable,
+      setOutlineTarget,
       isTouchDevice,
       isFormTarget,
       ACTIVATION_KEY,

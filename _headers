@@ -4,10 +4,13 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; frame-src 'none'; object-src 'none'; worker-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+
+https://alexnava-me.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
 
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
@@ -16,26 +19,44 @@
   Cache-Control: public, max-age=0, must-revalidate
 
 /favicon.svg
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
   Content-Type: image/svg+xml
 
 /icon.svg
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
   Content-Type: image/svg+xml
 
 /icon-maskable.svg
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
   Content-Type: image/svg+xml
 
 /manifest.webmanifest
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=604800, must-revalidate
   Content-Type: application/manifest+json
 
-/css/*
+/og.png
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/robots.txt
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/sitemap.xml
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/LICENSE
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/css/styles.*.css
   Cache-Control: public, max-age=31536000, immutable
 
-/scripts/*
+/scripts/app.*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/scripts/scene.*.js
   Cache-Control: public, max-age=31536000, immutable
 
 /fonts/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/images/*
+  Cache-Control: public, max-age=604800, must-revalidate

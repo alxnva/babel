@@ -1,6 +1,9 @@
 (() => {
   const site = (window.BabelSite = window.BabelSite || {});
   let sceneInitialized = false;
+  let staticRecoveryInstalled = false;
+  let staticRecoveryAttempted = false;
+  const staticRecoveryCleanups = [];
 
   function initUi() {
     const ui = site.ui || {};
@@ -10,27 +13,37 @@
   }
 
   function initScene() {
-    if (sceneInitialized) return;
+    if (sceneInitialized) return true;
     const scene = site.scene || {};
     if (typeof scene.initHomeScene === "function") {
-      scene.initHomeScene();
+      const initialized = scene.initHomeScene();
+      if (initialized === false) return false;
       sceneInitialized = true;
+      return true;
     }
+    return false;
   }
 
   function getSceneScriptUrl() {
-    const link = document.querySelector("link[data-scene-script]");
-    return link?.href || "/scripts/scene.js";
+    const metadata = document.querySelector("meta[data-scene-script]");
+    const configuredUrl = metadata?.getAttribute?.("content")?.trim();
+    return configuredUrl || "/scripts/scene.js";
   }
 
   // src/shared/webgl-probe.js is bundled into both the UI and scene entries so
   // the pre-download gate here and the in-scene check (`scene.supportsWebGL`)
-  // share one implementation. Skipping the scene-bundle download on no-WebGL
-  // browsers is the reason this check happens in the UI bundle.
+  // share one implementation. Skipping the scene-bundle download on static
+  // preference/capability paths is the reason this check happens in the UI
+  // bundle.
 
   function disableSceneHost() {
     const host = document.getElementById("home-scene");
     if (host) host.hidden = true;
+  }
+
+  function enableSceneHost() {
+    const host = document.getElementById("home-scene");
+    if (host) host.hidden = false;
   }
 
   function readSceneQualityControls() {
@@ -43,9 +56,12 @@
       const params = new URLSearchParams(window.location?.search || "");
       const quality = (params.get("quality") || "").toLowerCase();
       const VALID_TIERS = ["low", "balanced", "high"];
-      return { overrideTier: VALID_TIERS.includes(quality) ? quality : null };
+      return {
+        debug: params.get("sceneDebug") === "1" || params.get("sceneDebug") === "true",
+        overrideTier: VALID_TIERS.includes(quality) ? quality : null,
+      };
     } catch {
-      return { overrideTier: null };
+      return { debug: false, overrideTier: null };
     }
   }
 
@@ -67,10 +83,57 @@
     }
   }
 
-  function shouldSkipSceneDownload() {
+  function detectsReducedMotion() {
+    try {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches === true;
+    } catch {
+      return false;
+    }
+  }
+
+  function forcesLiveScene(controls) {
+    return Boolean(controls?.overrideTier || controls?.debug);
+  }
+
+  function clearStaticPreferenceRecovery() {
+    while (staticRecoveryCleanups.length) {
+      staticRecoveryCleanups.pop()?.();
+    }
+    staticRecoveryInstalled = false;
+  }
+
+  function addChangeListener(target, handler) {
+    if (typeof target?.addEventListener === "function") {
+      target.addEventListener("change", handler);
+      return () => target.removeEventListener?.("change", handler);
+    }
+    if (typeof target?.addListener === "function") {
+      target.addListener(handler);
+      return () => target.removeListener?.(handler);
+    }
+    return null;
+  }
+
+  function installStaticPreferenceRecovery() {
+    if (staticRecoveryInstalled || staticRecoveryAttempted) return;
     const controls = readSceneQualityControls();
-    if (controls?.overrideTier) return false;
-    return detectsReducedData();
+    if (forcesLiveScene(controls) || (!detectsReducedData() && !detectsReducedMotion())) return;
+
+    const recover = () => {
+      if (staticRecoveryAttempted || detectsReducedData() || detectsReducedMotion()) return;
+      staticRecoveryAttempted = true;
+      clearStaticPreferenceRecovery();
+      void site.ensureSceneReady();
+    };
+
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const dataQuery = window.matchMedia?.("(prefers-reduced-data: reduce)");
+    const connection = typeof navigator !== "undefined" ? navigator.connection : null;
+    [motionQuery, dataQuery, connection].forEach((target) => {
+      const cleanup = addChangeListener(target, recover);
+      if (cleanup) staticRecoveryCleanups.push(cleanup);
+    });
+    staticRecoveryInstalled = staticRecoveryCleanups.length > 0;
   }
 
   function loadScriptOnce(src) {
@@ -107,21 +170,36 @@
 
   site.ensureSceneReady = async function ensureSceneReady() {
     if (site.scene?.initHomeScene) {
-      initScene();
-      return true;
+      const initialized = initScene();
+      if (initialized) {
+        enableSceneHost();
+        clearStaticPreferenceRecovery();
+      }
+      return initialized;
     }
-    if (shouldSkipSceneDownload()) {
+
+    const controls = readSceneQualityControls();
+    const forceLiveScene = forcesLiveScene(controls);
+    if (!forceLiveScene && (detectsReducedData() || detectsReducedMotion())) {
       disableSceneHost();
       return false;
     }
-    if (!site.shared.supportsWebGL()) {
+
+    const capabilities = site.shared.getWebGLCapabilities();
+    if (!capabilities.available || (!forceLiveScene && capabilities.softwareRenderer)) {
       disableSceneHost();
       return false;
     }
 
     try {
       await loadScriptOnce(getSceneScriptUrl());
-      initScene();
+      enableSceneHost();
+      const initialized = initScene();
+      if (!initialized) {
+        disableSceneHost();
+        return false;
+      }
+      clearStaticPreferenceRecovery();
       return true;
     } catch (error) {
       console.warn("Scene bundle failed to load.", error);
@@ -142,6 +220,7 @@
 
   function boot() {
     initUi();
+    installStaticPreferenceRecovery();
     afterFirstPaint(loadAndInitScene);
   }
 

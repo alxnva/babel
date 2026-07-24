@@ -24,17 +24,32 @@ function createRendererMock() {
 }
 
 function createMatchMedia(matches = false) {
+  let changeHandler = null;
   const query = {
     matches,
-    addEventListener() {},
-    removeEventListener() {},
+    addEventListener(type, handler) {
+      if (type === "change") changeHandler = handler;
+    },
+    removeEventListener(type, handler) {
+      if (type === "change" && changeHandler === handler) changeHandler = null;
+    },
   };
-  return () => query;
+  const matchMedia = () => query;
+  matchMedia.dispatch = (nextMatches) => {
+    query.matches = nextMatches;
+    changeHandler?.({ matches: nextMatches });
+  };
+  return matchMedia;
 }
 
-function createPipeline(profile, { reducedTransparency = false } = {}) {
+function createPipeline(
+  profile,
+  { reducedTransparency = false, matchMedia = createMatchMedia(reducedTransparency), onInvalidate } =
+    {},
+) {
   return createPostprocessPipeline(createRendererMock(), {}, {}, profile, {
-    matchMedia: createMatchMedia(reducedTransparency),
+    matchMedia,
+    onInvalidate,
   });
 }
 
@@ -51,7 +66,11 @@ test("postprocess pipeline creates render, bloom, grading, and vignette-grain pa
   assert.equal(pipeline.composer.passes[1], pipeline.passes.bloom);
   assert.equal(pipeline.composer.passes[2], pipeline.passes.grading);
   assert.equal(pipeline.composer.passes[3], pipeline.passes.vignetteGrain);
-  assert.equal(pipeline.passes.bloom.strength, 0.3);
+  assert.equal(pipeline.passes.bloom.strength, 0.18);
+  assert.equal(pipeline.passes.bloom.radius, 0.45);
+  assert.equal(pipeline.passes.bloom.threshold, 0.9);
+  assert.equal(pipeline.passes.grading.uniforms.uHighlightCoolMix.value, 0.14);
+  assert.equal(pipeline.passes.vignetteGrain.uniforms.uVignetteStrength.value, 0.08);
 
   pipeline.dispose();
 });
@@ -122,6 +141,34 @@ test("reduced transparency disables vignette but leaves static grain enabled", (
   assert.equal(pipeline.passes.vignetteGrain.uniforms.uVignetteEnabled.value, 0);
   assert.equal(pipeline.passes.vignetteGrain.uniforms.uGrainEnabled.value, 1);
 
+  pipeline.dispose();
+});
+
+test("live reduced-transparency changes invalidate a dirty-render scene", () => {
+  const matchMedia = createMatchMedia(false);
+  let invalidations = 0;
+  const pipeline = createPipeline(
+    {
+      postprocessGrading: true,
+      postprocessBloom: false,
+      postprocessVignette: true,
+      postprocessGrain: false,
+    },
+    {
+      matchMedia,
+      onInvalidate() {
+        invalidations += 1;
+      },
+    },
+  );
+
+  matchMedia.dispatch(true);
+  assert.equal(pipeline.passes.vignetteGrain.enabled, false);
+  assert.equal(invalidations, 1);
+
+  matchMedia.dispatch(false);
+  assert.equal(pipeline.passes.vignetteGrain.enabled, true);
+  assert.equal(invalidations, 2);
   pipeline.dispose();
 });
 

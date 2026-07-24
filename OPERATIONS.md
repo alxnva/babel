@@ -1,0 +1,83 @@
+# Operations
+
+This runbook covers the repository-owned path from source to Cloudflare Pages. Dashboard, DNS, secret, push, and deploy changes still require explicit approval.
+
+## Release gates
+
+Use Node.js 22 or newer. The local equivalent of CI is:
+
+```powershell
+npm.cmd ci
+npm.cmd run audit:ci
+npm.cmd run verify
+npm.cmd test
+npm.cmd run build:dist
+```
+
+`npm run audit:ci` fails on high or critical npm advisories. Lighthouse runs three times, asserts against the median to absorb runner warm-up variance, and hard-fails below performance 0.80, accessibility 1.00, best practices 0.95, or SEO 1.00, and above LCP 2500 ms, CLS 0.10, or TBT 200 ms. Lighthouse reports are retained as GitHub Actions artifacts instead of Lighthouse temporary public storage.
+
+## Scene delivery policy
+
+The responsive tower poster is eager and decorative, so it remains a truthful first visual even before JavaScript. Capable hardware, including real phones, follows the normal deferred live-Three.js path. Before downloading that bundle, the UI keeps the poster static when reduced data or reduced motion is requested, WebGL is unavailable, or the probed renderer is software-only (for example SwiftShader, llvmpipe, a software rasterizer, or Microsoft Basic Render Driver).
+
+`?quality=low|balanced|high` and `?sceneDebug=1` are explicit diagnostics that force the live path through preference and software-renderer gates. They still stop when WebGL is actually unavailable. Do not add user-agent, Lighthouse, or phone-viewport exceptions; the default audit must measure the same product policy visitors receive.
+
+## GitHub environments and credentials
+
+The deploy workflows declare separate `preview` and `production` GitHub environments.
+
+- Store `CLOUDFLARE_PAGES_API_TOKEN` as an environment secret in each environment. Restrict each token to the specific Cloudflare account and grant only `Account → Cloudflare Pages → Edit`; GitHub environments provide the preview/production separation.
+- Store the non-secret `CLOUDFLARE_ACCOUNT_ID` once as a repository Actions variable shared by both environments.
+- During migration, workflows fall back to the repository secret `CLOUDFLARE_API_TOKEN` and the repository secret `CLOUDFLARE_ACCOUNT_ID`.
+- Remove the legacy token fallback only after preview and production each validate with their environment secret. Remove the legacy account-ID secret after the repository variable validates.
+
+As of 2026-07-23, the `preview` and `production` GitHub environments exist. `preview` requires an approval from `alxnva` and accepts pull-request merge refs or `codex/*` branches; `production` accepts only `main`. The split Cloudflare tokens and account-ID repository variable are not yet configured. The legacy repository-secret fallback is transitional and must remain documented until both new credential paths validate.
+
+A production run fails when credentials are absent or invalid. Fork pull requests may build the preview artifact, but the credentialed preview job is explicitly skipped. Same-repository pull requests may request the `preview` environment, but its required owner review must be approved before the credentialed job is sent to a runner or any environment/repository secret becomes available. Review the workflow diff as part of that gate. Missing preview credentials produce a notice and skip deployment; invalid configured credentials still fail.
+
+## Deploy and smoke checks
+
+Production runs only from `main`. Before upload, the workflow captures Cloudflare's successful canonical production deployment as the rollback target. It publishes `dist/` to Pages project `alexnava-me`, then runs `.github/scripts/smoke-pages.sh` against both the new immutable deployment URL and `https://alexnava.me/`. Both responses must return `200` without redirecting to another host and contain `Calm by design.`; their hashed app/scene/CSS references must match, and the apex's final response must send CSP, HSTS, and `X-Content-Type-Options: nosniff`. The same script requires a real 404 response with the expected page marker and verifies that `www` returns `301` to the apex. If any post-upload check fails, the workflow calls Cloudflare's official Pages rollback endpoint for the captured deployment, reruns the identical script against its immutable URL, and remains failed even when recovery succeeds. Preview builds run without Cloudflare credentials and upload only `dist/`; a separate environment-gated job downloads that artifact and uses an independently installed, exact Wrangler version without checking out or installing pull-request code. It sanitizes the branch alias to lowercase ASCII letters, digits, and hyphens, prefixes it with `preview-` so it can never publish `main`, requires an exact project preview host and `200` response, then updates one bot-authored pull-request comment.
+
+For an approved preview deploy:
+
+```powershell
+npm.cmd run deploy:preview
+```
+
+Production has no direct local npm deploy command. The protected `main` branch requires an explicitly approved pull request; merging it triggers the workflow that owns every release gate. To retry an already approved `main` revision, dispatch the same workflow rather than invoking Wrangler directly:
+
+```powershell
+gh workflow run deploy.yml --ref main
+```
+
+Production releases serialize without canceling an in-progress upload or its verification. Do not treat a successful upload as a complete release until the smoke script passes. A post-upload failure automatically attempts and verifies rollback; the workflow remains failed so the original deployment and recovery still require investigation.
+
+## Response-header contract
+
+`_headers` is the tracked baseline. HTML revalidates immediately. Unhashed stable assets, including fonts, icons, and scene posters, revalidate after seven days. Content-hashed CSS and JavaScript are immutable for one year. The exact production Pages hostname, `alexnava-me.pages.dev`, carries a `noindex` fallback; Cloudflare supplies `noindex` on preview deployments by default.
+
+After an approved production deploy, compare live headers with `_headers`:
+
+```powershell
+curl.exe -sSI https://alexnava.me/
+curl.exe -sSI https://alexnava-me.pages.dev/
+```
+
+Confirm CSP, one-year HSTS, framing protections, MIME sniffing protection, COOP/CORP, cache policy, and `X-Robots-Tag` on the Pages hostname. Cloudflare dashboard transforms may override or append headers.
+
+## Scheduled Cloudflare audit
+
+`Cloudflare Audit` runs every Monday at 15:17 UTC and can be started manually. It reads the `production` environment and prefers a dedicated `CLOUDFLARE_AUDIT_API_TOKEN` limited to the Cloudflare account with `Account → Cloudflare Pages → Read`. During setup it can fall back to the production Pages deploy token and the legacy repository token.
+
+The workflow allowlists Pages project fields before writing output, extracts only each request's final response-header block, filters it to the security/cache set, and validates the apex marker and header baseline. The apex must return `200` directly with the effective host exactly `alexnava.me`; redirects are an audit failure. The exact Pages hostname must either return `200` with noindex or redirect its root with `301`/`308` to exactly `https://alexnava.me/`, then pass a separate path-and-query preservation check, so the audit remains compatible with a Cloudflare Bulk Redirect. Raw API responses and credentials are never uploaded. Sanitized reports are retained as GitHub Actions artifacts for 14 days.
+
+The exact-host Cloudflare Bulk Redirect is not yet configured; the tracked `X-Robots-Tag: noindex, nofollow` rule is the active interim control. The audit's HTTPS requests verify public reachability through DNS and TLS, not a full inventory of DNS records or certificate configuration.
+
+## Rollback
+
+The production workflow captures the successful canonical deployment before upload. If any later smoke check fails, it posts to Cloudflare's Pages rollback endpoint for that deployment, reruns `.github/scripts/smoke-pages.sh` against the restored immutable URL, and keeps the workflow red. If automated rollback or its verification fails, use the captured deployment ID from the workflow log to restore it from Cloudflare Pages, then run the same script manually. Do not rewrite Git history to roll back a release.
+
+## Repository security controls
+
+Keep GitHub Actions pinned to full commit SHAs and grant only job-required permissions. GitHub CodeQL default setup is enabled as the low-maintenance scanner for this JavaScript repository; its Actions and JavaScript/TypeScript analyses are strict required checks on `main`. Do not add a duplicate advanced-setup workflow unless its configuration needs materially exceed default setup. Dependabot covers npm and GitHub Actions weekly.
