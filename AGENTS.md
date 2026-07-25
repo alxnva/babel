@@ -102,6 +102,6 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 ## Codex task-boundary board
 
 - This repository uses the opt-in Codex task-boundary board in `.codex/coordination/project.yaml`.
-- Before substantial writes, load the installed `codex-coordinator` skill, list active claims from the primary worktree, and publish only this task's bounded claim.
+- Before substantial writes, use the `codex-coordinator` skill when it is available to list active claims from the primary worktree and publish only this task's bounded claim. If it is unavailable, continue as one agent; do not treat the optional board as a blocker.
 - Native Codex tasks remain the execution, messaging, and transcript authority; an explicitly requested goal Coordinator is on demand, with no heartbeat or mandatory pull-request workflow.
 - Reject cross-project notices and never store transcripts, reasoning, prompts, or tool output in Coordinator state.
