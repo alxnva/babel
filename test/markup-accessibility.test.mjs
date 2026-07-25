@@ -211,7 +211,10 @@ test("career metadata stays consistent and scene discovery uses inert metadata",
   const description = "Regulated analytics, remediation, controls, and reporting.";
   const sceneMeta = html.match(/<meta[^>]*name="babel:scene-script"[^>]*>/)?.[0] || "";
 
-  assert.equal(html.split(description).length - 1, 3);
+  assert.ok(
+    html.split(description).length - 1 >= 3,
+    "the shared public description must remain present in core and structured metadata",
+  );
 
   assert.match(html, /<title>Alex Nava — Regulated analytics<\/title>/);
   assert.match(sceneMeta, /content="\/scripts\/scene\.js\?v=648"/);

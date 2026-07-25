@@ -32,6 +32,8 @@ npm-debug.log*
 !og.png
 .lighthouseci/
 .tmp-lighthouse-*/
+.tmp-preview-review/
+.playwright-cli/
 
 # Node / build
 node_modules/
@@ -43,3 +45,6 @@ scripts/
 !.github/scripts/*.sh
 !.github/scripts/*.mjs
 vendor/
+
+.codex/coordination/*
+!.codex/coordination/project.yaml

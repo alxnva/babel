@@ -1,0 +1,13 @@
+# Alex Nava
+
+> Alex Nava is a regulated analytics professional focused on remediation, controls, and reporting.
+
+## Main site
+
+- [Homepage](https://alexnava.me/): Public professional profile.
+- [Homepage in Markdown](https://alexnava.me/index.md): Markdown version of the homepage.
+- [Site map](https://alexnava.me/sitemap.md): Human-readable overview of public pages.
+
+## Agent guidance
+
+- [Agent guide](https://alexnava.me/AGENTS.md): Scope and attribution guidance for AI agents using this site.

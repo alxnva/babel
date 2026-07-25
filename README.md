@@ -68,6 +68,8 @@ GitHub CodeQL default setup is enabled as the repository's code scanner, avoidin
 | `images/*.webp`           | Responsive static tower posters                          |
 | `404.html`                | Not-found page                                           |
 | `og.png`                  | Social share image for Open Graph and Twitter cards      |
+| `llms.txt`, `sitemap.md`  | Public AI-agent discovery and site-map documents         |
+| `index.md`, `site-agents.md` | Markdown homepage and sanitized public `/AGENTS.md` guide |
 | `_headers` / `_redirects` | Static hosting config kept with the site                 |
 | `build.mjs`               | esbuild + asset assembly script                          |
 | `package.json`            | Build, deploy, and formatting scripts                    |
@@ -78,6 +80,10 @@ GitHub CodeQL default setup is enabled as the repository's code scanner, avoidin
 - Use [GitHub Issues](https://github.com/alxnva/babel/issues) for bug reports, questions, and feature ideas.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for the change flow and pull request expectations.
 - See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
+
+## AI agent discovery
+
+The build publishes a small, public agent-readable layer without exposing repository instructions: `/llms.txt`, `/sitemap.md`, `/index.md`, and `/AGENTS.md`. Keep these files accurate, public, and non-sensitive; the repository's root `AGENTS.md` remains internal.
 
 ## Deployment
 

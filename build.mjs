@@ -30,9 +30,13 @@ const STATIC_FILES = [
   "manifest.webmanifest",
   "og.png",
   "robots.txt",
+  "llms.txt",
+  "sitemap.md",
+  "index.md",
   "_headers",
   "_redirects",
 ];
+const STATIC_FILE_ALIASES = [{ source: "site-agents.md", destination: "AGENTS.md" }];
 const STATIC_DIRS = ["fonts", "images"];
 const DIST_DIR = join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = join(DIST_DIR, "scripts");
@@ -108,6 +112,11 @@ async function buildDist() {
 
   await Promise.all(
     STATIC_FILES.map((file) => copyFile(join(__dirname, file), join(DIST_DIR, file))),
+  );
+  await Promise.all(
+    STATIC_FILE_ALIASES.map(({ source, destination }) =>
+      copyFile(join(__dirname, source), join(DIST_DIR, destination)),
+    ),
   );
   await Promise.all(
     STATIC_DIRS.map((dir) => cp(join(__dirname, dir), join(DIST_DIR, dir), { recursive: true })),
