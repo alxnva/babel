@@ -70,7 +70,6 @@ import {
   runSceneInitialization,
 } from "./subsystem.js";
 import { createSceneTower } from "./tower.js";
-
 // Reconstruct a namespace object for dependency injection into sub-modules
 // that receive THREE as a parameter (scene/visibility.js, scene/textures.js,
 // scene/dev-mode.js, etc.) and for the dynamic-name lookup used by
@@ -356,18 +355,18 @@ function setSrgbTexture(texture) {
       skyHeightSegments = state.profile.geometry.skyHeightSegments,
       circleSegments = state.profile.geometry.circleSegments,
       overlaySegments = state.profile.geometry.overlaySegments,
-      upperGlowSpriteCount = state.profile.counts.upperGlowSprites,
+      upperGlowSpriteCount = 0,
       pointFieldCount = state.profile.geometry.pointFieldCount,
       lightingConfig = {
-        fogColor: 2236204,
+        fogColor: 0x333747,
         fogNear: state.profile.lighting.fogNear,
         fogFar: state.profile.lighting.fogFar,
-        ambientColor: 16048366,
+        ambientColor: 0xb8b0a2,
         ambientIntensity: state.profile.lighting.ambientIntensity,
-        hemisphereSkyColor: 8688804,
-        hemisphereGroundColor: 2104108,
+        hemisphereSkyColor: 0x59687f,
+        hemisphereGroundColor: 0x161923,
         hemisphereIntensity: state.profile.lighting.hemisphereIntensity,
-        directionalColor: 16764342,
+        directionalColor: 0xd0ad83,
         directionalIntensity: state.profile.lighting.directionalIntensity,
         directionalPosition: {
           x: 21,
@@ -376,12 +375,12 @@ function setSrgbTexture(texture) {
         },
       },
       skyConfig = {
-        skyTopColor: 2500953,
-        skyBottomColor: 794687,
-        skyGlowColor: 14927322,
+        skyTopColor: 0x181d2d,
+        skyBottomColor: 0x4f4d55,
+        skyGlowColor: 0xc0895d,
         sunDirection: new Vector3(...WORLD.SUN_DIRECTION).normalize(),
-        sunColor: 16638446,
-        shellOpacity: 0.472,
+        sunColor: 0xdfb882,
+        shellOpacity: 0.52,
       };
     const subsystemRegistry = createSceneSubsystemRegistry();
     const rendering = createSceneRendering({
@@ -1250,8 +1249,35 @@ function setSrgbTexture(texture) {
       })());
     const group6 = new Group();
     group4.add(group6);
-    const sphereGeometry = new SphereGeometry(1, state.lowPower ? 10 : 16, state.lowPower ? 8 : 12),
-      cylinderGeometry2 = new CylinderGeometry(0.04, 0.08, 0.65, 5),
+    function createIrregularFoliageGeometry(seed, detail = state.lowPower ? 0 : 1) {
+      const geometry = new IcosahedronGeometry(1, detail),
+        position = geometry.attributes.position;
+      for (let index = 0; index < position.count; index += 1) {
+        const x = position.getX(index),
+          y = position.getY(index),
+          z = position.getZ(index),
+          coordinateSeed = seed + 17.3 * x + 41.9 * y + 73.1 * z,
+          radialScale = 0.82 + 0.3 * tmpV65(coordinateSeed),
+          verticalScale = 0.9 + 0.18 * tmpV65(coordinateSeed + 19.7);
+        position.setXYZ(index, x * radialScale, y * radialScale * verticalScale, z * radialScale);
+      }
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+    const shrubFoliageGeometries = [
+        createIrregularFoliageGeometry(9101),
+        createIrregularFoliageGeometry(9203),
+        createIrregularFoliageGeometry(9311),
+        createIrregularFoliageGeometry(9433),
+      ],
+      treeFoliageGeometries = [
+        createIrregularFoliageGeometry(9601),
+        createIrregularFoliageGeometry(9719),
+        createIrregularFoliageGeometry(9833),
+        createIrregularFoliageGeometry(9949),
+        createIrregularFoliageGeometry(10061),
+      ],
+      cylinderGeometry2 = new CylinderGeometry(0.035, 0.075, 0.72, 5),
       canvas21 = document.createElement("canvas");
     ((canvas21.width = state.lowPower ? 64 : 128), (canvas21.height = state.lowPower ? 64 : 128));
     const ctx21 = canvas21.getContext("2d");
@@ -1265,7 +1291,15 @@ function setSrgbTexture(texture) {
           result15 = Math.floor(100 + 80 * Math.random());
         ((ctx21.fillStyle = `rgb(${result15}, ${result15}, ${result15})`),
           ctx21.beginPath(),
-          ctx21.ellipse(num62, num63, num64, 0.6 * num64, Math.random() * Math.PI, 0, 2 * Math.PI),
+          ctx21.ellipse(
+            num62,
+            num63,
+            num64,
+            0.6 * num64,
+            Math.random() * Math.PI,
+            0,
+            2 * Math.PI,
+          ),
           ctx21.fill());
       }
     }
@@ -1275,91 +1309,99 @@ function setSrgbTexture(texture) {
       canvasTexture20.repeat.set(3, 3));
     const arr15 = [
         new MeshStandardMaterial({
-          color: 8687723,
+          color: 0x354231,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.95,
           metalness: 0,
-          emissive: 2304024,
-          emissiveIntensity: 0.06,
+          emissive: 0x10170f,
+          emissiveIntensity: 0.025,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 9675129,
+          color: 0x46513a,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.95,
           metalness: 0,
-          emissive: 2633757,
-          emissiveIntensity: 0.05,
+          emissive: 0x151b12,
+          emissiveIntensity: 0.025,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 7503965,
+          color: 0x2c382b,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.95,
           metalness: 0,
-          emissive: 2040854,
-          emissiveIntensity: 0.06,
+          emissive: 0x0e140d,
+          emissiveIntensity: 0.025,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 9079386,
+          color: 0x596047,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.93,
           metalness: 0,
-          emissive: 2762776,
-          emissiveIntensity: 0.05,
+          emissive: 0x181d14,
+          emissiveIntensity: 0.02,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 6981752,
+          color: 0x303b31,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.96,
           metalness: 0,
-          emissive: 1714208,
-          emissiveIntensity: 0.05,
+          emissive: 0x101510,
+          emissiveIntensity: 0.025,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 10131552,
+          color: 0x66684a,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.92,
           metalness: 0,
-          emissive: 3156500,
-          emissiveIntensity: 0.06,
+          emissive: 0x1c1e15,
+          emissiveIntensity: 0.02,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 6189136,
+          color: 0x263328,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.97,
           metalness: 0,
-          emissive: 1580564,
-          emissiveIntensity: 0.06,
+          emissive: 0x0c120c,
+          emissiveIntensity: 0.025,
+          flatShading: true,
         }),
         new MeshStandardMaterial({
-          color: 8288850,
+          color: 0x4a5540,
           bumpMap: canvasTexture20,
           bumpScale: 0.08,
           roughness: 0.94,
           metalness: 0,
-          emissive: 2498578,
-          emissiveIntensity: 0.05,
+          emissive: 0x151a13,
+          emissiveIntensity: 0.02,
+          flatShading: true,
         }),
       ],
       meshStandardMaterial5 = new MeshStandardMaterial({
-        color: 7701086,
+        color: 0x42352a,
         roughness: 1,
         metalness: 0,
-        emissive: 2238488,
-        emissiveIntensity: 0.04,
+        emissive: 0x100c09,
+        emissiveIntensity: 0.02,
       }),
       meshStandardMaterial6 = new MeshStandardMaterial({
-        color: 12888194,
-        roughness: 0.88,
-        metalness: 0.01,
-        emissive: 3812896,
-        emissiveIntensity: 0.04,
+        color: 0x554334,
+        roughness: 1,
+        metalness: 0,
+        emissive: 0x140f0b,
+        emissiveIntensity: 0.02,
       });
     ([
       {
@@ -1555,14 +1597,14 @@ function setSrgbTexture(texture) {
           fn = function (arg3) {
             return tmpV65(result63 + arg3);
           },
-          num212 = 4 + Math.floor(5 * fn(1)),
+          num212 = 10 + Math.floor(5 * fn(1)),
           num213 = 0.5 + 1 * fn(2),
           num214 = 0.6 + 0.8 * fn(3);
-        var num215 = 2 + Math.floor(3 * fn(110));
+        var num215 = 3 + Math.floor(3 * fn(110));
         for (let num65 = 0; num65 < num215; num65++) {
           var num216 = (num65 / num215) * Math.PI * 2 + 1.2 * fn(120 + num65),
             num217 = (0.4 + 0.5 * fn(130 + num65)) * arg25 * num213,
-            num218 = (0.03 + 0.03 * fn(140 + num65)) * arg25,
+            num218 = (0.025 + 0.025 * fn(140 + num65)) * arg25,
             num219 = 0.15 + 0.35 * fn(150 + num65),
             cylinderGeometry = new CylinderGeometry(0.5 * num218, num218, num217, 5),
             mesh9 = new Mesh(cylinderGeometry, meshStandardMaterial6),
@@ -1574,18 +1616,26 @@ function setSrgbTexture(texture) {
             group2.add(mesh9));
         }
         for (let num66 = 0; num66 < num212; num66++) {
-          const num11 = (num66 / num212) * Math.PI * 2 + 0.8 * fn(10 + num66),
-            num12 = (0.3 + 0.7 * fn(20 + num66)) * num214,
+          const num11 = (num66 / num212) * Math.PI * 2 + 0.65 * fn(10 + num66),
+            num12 = (num66 === 0 ? 0.08 : 0.28 + 0.72 * fn(20 + num66)) * num214,
             num13 = Math.cos(num11) * num12,
             num14 = Math.sin(num11) * num12,
-            num15 = 0.4 * fn(30 + num66) * num213;
-          var num221 = 0.5 + 0.7 * fn(40 + num66),
-            num222 = (0.4 + 0.5 * fn(50 + num66)) * num213,
-            num223 = 0.5 + 0.6 * fn(60 + num66);
+            num15 = (0.12 + 0.28 * fn(30 + num66)) * num213;
+          var num221 = 0.24 + 0.26 * fn(40 + num66),
+            num222 = (0.18 + 0.2 * fn(50 + num66)) * num213,
+            num223 = 0.22 + 0.28 * fn(60 + num66);
           const result3 = Math.floor(fn(70 + num66) * arr15.length),
-            mesh2 = new Mesh(sphereGeometry, arr15[result3]);
+            mesh2 = new Mesh(
+              shrubFoliageGeometries[(result3 + arg26 + num66) % shrubFoliageGeometries.length],
+              arr15[result3],
+            );
           (mesh2.position.set(num13 * arg25, num15 * arg25, num14 * arg25),
             mesh2.scale.set(arg25 * num221, arg25 * num222, arg25 * num223),
+            mesh2.rotation.set(
+              0.18 * (fn(73 + num66) - 0.5),
+              Math.PI * 2 * fn(74 + num66),
+              0.16 * (fn(75 + num66) - 0.5),
+            ),
             (mesh2.castShadow = !1),
             (mesh2.receiveShadow = !1),
             group2.add(mesh2));
@@ -1664,24 +1714,43 @@ function setSrgbTexture(texture) {
           canvasTexture6.repeat.set(1.5, 2),
           setSrgbTexture(canvasTexture6));
         const meshStandardMaterial2 = new MeshStandardMaterial({
-            color: 10123868,
+            color: 0x6a513c,
             map: canvasTexture6,
             roughness: 0.96,
             metalness: 0.01,
           }),
           meshStandardMaterial3 = new MeshStandardMaterial({
-            color: 8282952,
+            color: 0x49372c,
             map: canvasTexture6,
             roughness: 1,
-            metalness: 0.01,
-          }),
-          meshStandardMaterial4 = new MeshStandardMaterial({
-            color: 7307098,
-            roughness: 1,
             metalness: 0,
-            emissive: 1909784,
-            emissiveIntensity: 0.05,
           }),
+          treeFoliageMaterials = [
+            new MeshStandardMaterial({
+              color: 0x33402f,
+              roughness: 1,
+              metalness: 0,
+              emissive: 0x10160e,
+              emissiveIntensity: 0.025,
+              flatShading: true,
+            }),
+            new MeshStandardMaterial({
+              color: 0x46513a,
+              roughness: 0.98,
+              metalness: 0,
+              emissive: 0x151a12,
+              emissiveIntensity: 0.02,
+              flatShading: true,
+            }),
+            new MeshStandardMaterial({
+              color: 0x596048,
+              roughness: 0.96,
+              metalness: 0,
+              emissive: 0x191b14,
+              emissiveIntensity: 0.018,
+              flatShading: true,
+            }),
+          ],
           mesh29 = new Mesh(
             new CylinderGeometry(0.9 * arg76, 1.25 * arg76, 8.2 * arg76, state.lowPower ? 7 : 12),
             meshStandardMaterial2,
@@ -1771,61 +1840,93 @@ function setSrgbTexture(texture) {
           }),
           [
             {
-              x: 1.55,
-              y: 12.35,
-              z: 0.32,
+              x: 1.72,
+              y: 12.15,
+              z: 0.38,
+              sx: 1.65,
+              sy: 1.18,
+              sz: 1.32,
+            },
+            {
+              x: 0.42,
+              y: 13.18,
+              z: -0.7,
               sx: 1.9,
-              sy: 1.4,
-              sz: 1.5,
-            },
-            {
-              x: 0.52,
-              y: 12.95,
-              z: -0.62,
-              sx: 2.15,
-              sy: 1.55,
-              sz: 1.9,
-            },
-            {
-              x: -0.45,
-              y: 11.6,
-              z: -0.45,
-              sx: 1.55,
               sy: 1.3,
-              sz: 1.5,
+              sz: 1.62,
             },
             {
-              x: 1.05,
-              y: 11.15,
-              z: -1.02,
-              sx: 1.25,
-              sy: 1,
-              sz: 1.1,
-            },
-            {
-              x: -0.85,
-              y: 12.6,
-              z: 0.48,
-              sx: 1.35,
-              sy: 1.15,
-              sz: 1.25,
-            },
-            {
-              x: 0.95,
-              y: 13.25,
-              z: 0.1,
-              sx: 1.45,
-              sy: 1.1,
+              x: -0.72,
+              y: 11.48,
+              z: -0.52,
+              sx: 1.38,
+              sy: 1.04,
               sz: 1.3,
+            },
+            {
+              x: 1.08,
+              y: 10.72,
+              z: -1.18,
+              sx: 1.08,
+              sy: 0.82,
+              sz: 0.96,
+            },
+            {
+              x: -1.08,
+              y: 12.72,
+              z: 0.55,
+              sx: 1.2,
+              sy: 0.92,
+              sz: 1.08,
+            },
+            {
+              x: 1.12,
+              y: 13.62,
+              z: 0.08,
+              sx: 1.28,
+              sy: 0.92,
+              sz: 1.14,
+            },
+            {
+              x: -0.18,
+              y: 14.18,
+              z: 0.18,
+              sx: 1.1,
+              sy: 0.86,
+              sz: 1,
+            },
+            {
+              x: 0.14,
+              y: 10.82,
+              z: 0.92,
+              sx: 1.24,
+              sy: 0.9,
+              sz: 1.04,
+            },
+            {
+              x: 2.05,
+              y: 11.35,
+              z: -0.5,
+              sx: 0.92,
+              sy: 0.7,
+              sz: 0.84,
+            },
+            {
+              x: -1.35,
+              y: 11.42,
+              z: 0.04,
+              sx: 0.88,
+              sy: 0.7,
+              sz: 0.82,
             },
           ].forEach((arg28, arg29) => {
             const mesh11 = new Mesh(
-              new SphereGeometry(1 * arg76, state.lowPower ? 8 : 12, state.lowPower ? 7 : 10),
-              arg29 % 2 == 0 ? meshStandardMaterial4 : meshStandardMaterial4.clone(),
+              treeFoliageGeometries[arg29 % treeFoliageGeometries.length],
+              treeFoliageMaterials[arg29 % treeFoliageMaterials.length],
             );
-            (arg29 % 2 == 1 && (mesh11.material.color = new Color(8359270)),
-              mesh11.position.set(arg28.x * arg76, arg28.y * arg76, arg28.z * arg76),
-              mesh11.scale.set(arg28.sx, arg28.sy, arg28.sz),
+            (mesh11.position.set(arg28.x * arg76, arg28.y * arg76, arg28.z * arg76),
+              mesh11.scale.set(arg28.sx * arg76, arg28.sy * arg76, arg28.sz * arg76),
+              mesh11.rotation.set(0.08 * (arg29 % 3), 0.73 * arg29, -0.05 * (arg29 % 4)),
               (mesh11.castShadow = !state.lowPower),
               (mesh11.receiveShadow = !state.lowPower),
               group3.add(mesh11));
@@ -1873,7 +1974,7 @@ function setSrgbTexture(texture) {
           }));
         const result87 = groundHeight(arg74, arg75);
         (group3.position.set(arg74, result87, arg75), group4.add(group3));
-      })(-42, 28, state.lowPower ? 1.25 : 1.5));
+      })(58, 38, state.lowPower ? 1.25 : 1.5));
     const towerSystem = createSceneTower({
       parent: group4,
       profile: state.profile,
@@ -2174,7 +2275,8 @@ function setSrgbTexture(texture) {
           canvasTexture9
         );
       })(),
-      groundPlantSprites = state.profile.counts.groundPlantSprites;
+      groundPlantSprites = 0,
+      foregroundPlantSprites = 0;
     if (result106)
       for (let num443 = 0; num443 < groundPlantSprites; num443 += 1) {
         const qeResult40 = tmpV65(1001 + 1.43 * num443),
@@ -2195,14 +2297,14 @@ function setSrgbTexture(texture) {
             }),
           ),
           num248 = (state.lowPower ? 0.85 : 1) + qeResult42 * (state.lowPower ? 1.05 : 1.45);
-        (sprite7.position.set(num245, num247 + 0.45 * num248, num246),
+        (sprite7.position.set(num245, num247 + 0.52 * num248 * (1.2 + 0.5 * qeResult41), num246),
           sprite7.scale.set(0.85 * num248, num248 * (1.2 + 0.5 * qeResult41), 1),
           group10.add(sprite7),
           arr19.push({
             mesh: sprite7,
             x: num245,
             z: num246,
-            baseY: num247 + 0.45 * num248,
+            baseY: num247 + 0.52 * num248 * (1.2 + 0.5 * qeResult41),
             phase: qeResult40 * Math.PI * 2,
             amp: 0.02 + 0.05 * qeResult41,
           }));
@@ -2210,7 +2312,7 @@ function setSrgbTexture(texture) {
     const result107 = groundHeight(0, 0),
       num511 = 0.32 * Math.PI,
       num512 = 0.88;
-    if (result106) {
+    if (result106 && foregroundPlantSprites > 0) {
       const num444 = num511 + Math.PI,
         tmpV34 = state.lowPower ? 34 : 72;
       for (let num249 = 0; num249 < tmpV34; num249 += 1) {
@@ -2232,14 +2334,14 @@ function setSrgbTexture(texture) {
             }),
           ),
           num90 = (state.lowPower ? 0.95 : 1.08) + qeResult6 * (state.lowPower ? 1.15 : 1.5);
-        (sprite4.position.set(num87, num89 + 0.45 * num90, num88),
+        (sprite4.position.set(num87, num89 + 0.52 * num90 * (1.24 + 0.46 * qeResult5), num88),
           sprite4.scale.set(0.82 * num90, num90 * (1.24 + 0.46 * qeResult5), 1),
           group10.add(sprite4),
           arr19.push({
             mesh: sprite4,
             x: num87,
             z: num88,
-            baseY: num89 + 0.45 * num90,
+            baseY: num89 + 0.52 * num90 * (1.24 + 0.46 * qeResult5),
             phase: qeResult4 * Math.PI * 2,
             amp: 0.024 + 0.05 * qeResult5,
           }));
@@ -2276,14 +2378,14 @@ function setSrgbTexture(texture) {
               (state.lowPower ? 1 : 1.12) +
               qeResult3 * (state.lowPower ? 1.25 : 1.7) +
               0.16 * qeResult9;
-          (sprite2.position.set(num3, num5 + 0.45 * num6, num4),
+          (sprite2.position.set(num3, num5 + 0.52 * num6 * (1.28 + 0.52 * qeResult2), num4),
             sprite2.scale.set(0.86 * num6, num6 * (1.28 + 0.52 * qeResult2), 1),
             group10.add(sprite2),
             arr19.push({
               mesh: sprite2,
               x: num3,
               z: num4,
-              baseY: num5 + 0.45 * num6,
+              baseY: num5 + 0.52 * num6 * (1.28 + 0.52 * qeResult2),
               phase: qeResult * Math.PI * 2,
               amp: 0.026 + 0.055 * qeResult2,
             }));
@@ -3762,6 +3864,7 @@ function setSrgbTexture(texture) {
         group14.add(mesh24));
     }
     group4.add(group14);
+    group14.visible = false;
     const io = [];
     group14.children.forEach((arg117) => {
       io.push({
@@ -4139,6 +4242,7 @@ function setSrgbTexture(texture) {
         group15.add(mesh34));
     });
     environmentSystem.setMonolithGroup(group15);
+    group15.visible = false;
     const preview = new URLSearchParams(window.location.search || "").get("preview");
     if (preview === "marble" && typeof createMarbleTextures === "function") {
       const marbleTextures = createMarbleTextures({
@@ -4448,8 +4552,8 @@ function setSrgbTexture(texture) {
     const pulseCloudTexture = driftCloudTexture || emberCloudTexture;
     if (pulseCloudTexture) {
       const pulsePuffsPerCluster = state.profile.counts.pulsePuffsPerCluster,
-        treeAlignedAngle = Math.atan2(28, -42),
-        treeAlignedDistance = Math.sqrt(2548);
+        treeAlignedAngle = Math.atan2(38, 58),
+        treeAlignedDistance = Math.sqrt(4808);
       for (let num401 = 0; num401 < pulseCloudCount; num401 += 1) {
         const isTree = num401 === 0,
           baseAngle = isTree ? treeAlignedAngle : tmpV65(5001 + num401) * Math.PI * 2,

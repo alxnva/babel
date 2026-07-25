@@ -94,7 +94,7 @@ export function createSceneRendering({
     lighting.directionalColor,
     lighting.directionalIntensity,
   );
-  const fillLight = new DirectionalLight(0x8aa7d0, 0.6);
+  const fillLight = new DirectionalLight(0x596b9c, 0.58);
   sunLight.position.set(
     lighting.directionalPosition.x,
     lighting.directionalPosition.y,
@@ -200,6 +200,7 @@ export function createSceneRendering({
       camera.updateProjectionMatrix();
       renderer.setSize(nextWidth, nextHeight);
       composer.setSize(nextWidth, nextHeight);
+      postprocessPipeline.resize?.(nextWidth, nextHeight);
       outlinePass?.setSize(nextWidth, nextHeight);
       return true;
     },

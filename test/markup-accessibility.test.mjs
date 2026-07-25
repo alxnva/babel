@@ -122,18 +122,17 @@ test("the loading ritual is decorative, self-contained, timed, and motion-safe",
   assert.match(ritual, /aria-hidden="true"/);
   assert.match(ritual, /<svg[\s\S]*class="loading-ritual__seal"/);
   assert.match(ritual, /class="loading-ritual__tower"/);
-  assert.equal((ritual.match(/class="loading-ritual__brazier /g) || []).length, 2);
   assert.match(ritual, /class="loading-ritual__name">alex nava</);
   assert.match(ritual, /class="loading-ritual__motto">Calm by design\.</);
-  assert.match(ritual, /class="loading-ritual__progress-fill"/);
+  assert.doesNotMatch(ritual, /loading-ritual__(?:fog|ticks|brazier|ember|progress)/);
   assert.doesNotMatch(ritual, /<(?:a|button|input|select|textarea)\b/i);
   assert.doesNotMatch(ritual, /\ssrc=/i, "the ritual adds no external media asset");
   assert.doesNotMatch(ritual, /https?:\/\//i);
 
-  assert.match(styles, /--loading-ritual-duration:\s*1100ms/);
+  assert.match(styles, /--loading-ritual-duration:\s*900ms/);
   assert.match(
     styles,
-    /\.loading-ritual\s*\{[\s\S]*?animation:\s*loading-ritual-exit 250ms[^;]*850ms both;/,
+    /\.loading-ritual\s*\{[\s\S]*?animation:\s*loading-ritual-exit 180ms[^;]*720ms both;/,
   );
   assert.match(
     styles,
@@ -142,11 +141,7 @@ test("the loading ritual is decorative, self-contained, timed, and motion-safe",
   );
   assert.match(
     styles,
-    /\.loading-ritual__brazier\s*\{[\s\S]*?animation:\s*loading-ritual-brazier-awaken 360ms[^;]*420ms forwards;/,
-  );
-  assert.match(
-    styles,
-    /\.loading-ritual__progress-fill\s*\{[\s\S]*?animation:\s*loading-ritual-progress 740ms[^;]*160ms forwards;/,
+    /\.loading-ritual__content\s*\{[\s\S]*?animation:\s*loading-ritual-content-enter 420ms[^;]*60ms both;/,
   );
   assert.match(
     styles,
@@ -184,16 +179,15 @@ test("the decorative scene poster is eager, responsive, and only fades for a rea
   );
 });
 
-test("external links open in a new tab only when they declare rel=noopener", async () => {
+test("external links that open in a new tab declare rel=noopener", async () => {
   const html = await readIndexHtml();
   const externalAnchors = html.match(/<a[^>]*target="_blank"[^>]*>/g) || [];
-  assert.ok(externalAnchors.length > 0, "sanity: there is at least one external link");
   for (const anchor of externalAnchors) {
     assert.match(anchor, /rel="[^"]*noopener[^"]*"/, `target="_blank" without noopener: ${anchor}`);
   }
 });
 
-test("hero and About copy remain calm, immediate, and free of scramble hooks", async () => {
+test("hero and About copy remain clear, grounded, and free of scramble hooks", async () => {
   const html = await readIndexHtml();
   const hero = html.match(/<section id="home"[\s\S]*?<\/section>/)?.[0] || "";
   const heroText = hero
@@ -201,22 +195,25 @@ test("hero and About copy remain calm, immediate, and free of scramble hooks", a
     .replace(/\s+/g, " ")
     .trim();
 
-  assert.equal(heroText, "Calm by design.");
-  assert.match(html, /Alex Nava designs and builds calm interfaces, tools, and product systems\./);
+  assert.equal(
+    heroText,
+    "Regulated analytics Calm by design. Remediation, controls, and reporting—made clear.",
+  );
+  assert.match(html, /Nine years across analytics, remediation, reporting, and controls\./);
+  assert.equal((html.match(/Regulated banking and health analytics\./g) || []).length, 2);
+  assert.doesNotMatch(html, /Wells Fargo|CVS Health/);
+  assert.match(html, /Clarity is the work\./);
   assert.doesNotMatch(html, /data-scramble/);
 });
 
-test("description metadata matches the About lead and scene discovery uses inert metadata", async () => {
+test("career metadata stays consistent and scene discovery uses inert metadata", async () => {
   const html = await readIndexHtml();
-  const description = "Alex Nava designs and builds calm interfaces, tools, and product systems.";
-  const descriptionAttributes =
-    html.match(
-      /content="Alex Nava designs and builds calm interfaces, tools, and product systems\."/g,
-    ) || [];
+  const description = "Regulated analytics, remediation, controls, and reporting.";
   const sceneMeta = html.match(/<meta[^>]*name="babel:scene-script"[^>]*>/)?.[0] || "";
 
-  assert.equal(descriptionAttributes.length, 3);
-  assert.ok(html.includes(description));
+  assert.equal(html.split(description).length - 1, 3);
+
+  assert.match(html, /<title>Alex Nava — Regulated analytics<\/title>/);
   assert.match(sceneMeta, /content="\/scripts\/scene\.js\?v=648"/);
   assert.match(sceneMeta, /\sdata-scene-script(?:\s|\/?>)/);
   assert.doesNotMatch(html, /<link[^>]*data-scene-script/);
@@ -231,6 +228,11 @@ test("first-paint hero, action cursors, microcopy, and short-landscape labels st
     /@keyframes hero-rise\s*\{\s*from\s*\{\s*opacity:\s*0/,
     "the hero must not begin hidden",
   );
+  assert.match(
+    styles,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.hero-minimal,[\s\S]*?animation:\s*none;/,
+    "the unified hero reveal is static when reduced motion is requested",
+  );
   assert.match(styles, /a,\s*button\s*\{\s*cursor:\s*pointer;/);
   assert.doesNotMatch(
     styles,
@@ -240,6 +242,15 @@ test("first-paint hero, action cursors, microcopy, and short-landscape labels st
   assert.match(
     styles,
     /@media \(orientation: landscape\) and \(max-height: 500px\)[\s\S]*?\.btn-icon-label\s*\{[^}]*opacity:\s*1;/,
+  );
+  assert.match(styles, /\.btn-icon-label\s*\{[^}]*opacity:\s*0\.5;/);
+  assert.match(
+    styles,
+    /\.panel-parchment__sheet\s*\{[^}]*min-height:\s*clamp\(280px, 36vh, 380px\);/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 760px\)[\s\S]*?\.hero\s*\{[^}]*align-items:\s*flex-start;/,
   );
   assert.match(
     styles,

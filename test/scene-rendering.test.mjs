@@ -38,6 +38,7 @@ test("scene rendering owns quality, sizing, rendering, and disposal lifecycle", 
   };
   const pipeline = {
     composer,
+    resize: (...args) => calls.push(["postprocessSize", ...args]),
     setQualityProfile: (profile) => calls.push(["quality", profile]),
   };
   const outline = {
@@ -101,6 +102,7 @@ test("scene rendering owns quality, sizing, rendering, and disposal lifecycle", 
   assert.equal(rendering.camera.fov, 52);
   assert.equal(rendering.camera.aspect, 2.25);
   assert.deepEqual(calls.find((entry) => entry[0] === "pixelRatio"), ["pixelRatio", 1.5]);
+  assert.deepEqual(calls.find((entry) => entry[0] === "postprocessSize"), ["postprocessSize", 900, 400]);
   assert.ok(calls.some((entry) => entry[0] === "render"));
   assert.deepEqual(rendering.dispose(), { geometries: 1 });
   assert.equal(rendering.dispose(), false);

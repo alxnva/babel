@@ -18,11 +18,15 @@ const GRADING_SHADER = {
   uniforms: {
     tDiffuse: { value: null },
     uHighlightCoolMix: { value: 0.14 },
+    uCelMix: { value: 0.28 },
+    uTexelSize: { value: new Vector2(1, 1) },
   },
   vertexShader: PASS_VERTEX_SHADER,
   fragmentShader: `
 uniform sampler2D tDiffuse;
 uniform float uHighlightCoolMix;
+uniform float uCelMix;
+uniform vec2 uTexelSize;
 varying vec2 vUv;
 
 vec3 saturateColor(vec3 color, float amount) {
@@ -30,25 +34,40 @@ vec3 saturateColor(vec3 color, float amount) {
   return mix(vec3(luma), color, amount);
 }
 
+float luminanceAt(vec2 offset) {
+  return dot(texture2D(tDiffuse, vUv + offset).rgb, vec3(0.299, 0.587, 0.114));
+}
+
 void main() {
   vec4 texel = texture2D(tDiffuse, vUv);
   vec3 color = texel.rgb;
   float luma = dot(color, vec3(0.299, 0.587, 0.114));
 
-  color = (color - 0.5) * 1.068 + 0.5;
+  color = (color - 0.5) * 1.06 + 0.5;
 
-  vec3 shadowLift = vec3(0.102, 0.086, 0.071);
-  vec3 warmMidtone = color * vec3(1.03, 1.015, 0.979);
-  vec3 coolHighlight = color * vec3(0.993, 1.0, 1.018);
+  vec3 shadowLift = vec3(0.065, 0.078, 0.115);
+  vec3 coolShadow = color * vec3(0.88, 0.94, 1.09);
+  vec3 warmMidtone = color * vec3(1.025, 1.012, 0.965);
+  vec3 parchmentHighlight = color * vec3(1.055, 1.025, 0.94);
 
   float shadowMix = 1.0 - smoothstep(0.08, 0.32, luma);
   float midMix = smoothstep(0.22, 0.46, luma) * (1.0 - smoothstep(0.62, 0.82, luma));
   float highlightMix = smoothstep(0.72, 0.97, luma);
 
-  color = mix(color, max(color, shadowLift), 0.238 * shadowMix);
-  color = mix(color, warmMidtone, 0.306 * midMix);
-  color = mix(color, coolHighlight, uHighlightCoolMix * highlightMix);
-  color = saturateColor(color, 1.0425);
+  color = mix(color, max(coolShadow, shadowLift), 0.25 * shadowMix);
+  color = mix(color, warmMidtone, 0.3 * midMix);
+  color = mix(color, parchmentHighlight, uHighlightCoolMix * highlightMix);
+
+  float gradedLuma = max(0.02, dot(color, vec3(0.299, 0.587, 0.114)));
+  float tonalBand = floor(gradedLuma * 5.0 + 0.5) / 5.0;
+  vec3 celColor = color * (tonalBand / gradedLuma);
+  color = mix(color, celColor, uCelMix);
+  color = saturateColor(color, 1.04);
+
+  float horizontalEdge = abs(luminanceAt(vec2(uTexelSize.x, 0.0)) - luminanceAt(vec2(-uTexelSize.x, 0.0)));
+  float verticalEdge = abs(luminanceAt(vec2(0.0, uTexelSize.y)) - luminanceAt(vec2(0.0, -uTexelSize.y)));
+  float inkContour = smoothstep(0.2, 0.48, max(horizontalEdge, verticalEdge));
+  color = mix(color, vec3(0.035, 0.055, 0.095), inkContour * 0.14);
 
   gl_FragColor = vec4(clamp(color, 0.0, 1.0), texel.a);
 }
@@ -87,7 +106,7 @@ void main() {
 
   if (uGrainEnabled == 1) {
     float grain = hash(floor(vUv * vec2(1280.0, 720.0))) - 0.5;
-    color += grain * 0.04;
+    color += grain * 0.022;
   }
 
   gl_FragColor = vec4(clamp(color, 0.0, 1.0), texel.a);
@@ -145,6 +164,12 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
   let currentProfile = qualityProfile || {};
   applyProfile(currentProfile);
 
+  function resize(width, height) {
+    gradingPass.uniforms.uTexelSize.value.set(1 / Math.max(1, width), 1 / Math.max(1, height));
+  }
+
+  resize(size.width, size.height);
+
   if (typeof transparencyQuery?.addEventListener === "function") {
     transparencyQuery.addEventListener("change", onTransparencyChange);
   } else if (typeof transparencyQuery?.addListener === "function") {
@@ -174,5 +199,6 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
       currentProfile = profile;
       applyProfile(currentProfile);
     },
+    resize,
   };
 }
