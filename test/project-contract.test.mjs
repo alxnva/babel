@@ -179,6 +179,9 @@ test("deploy workflows retry post-upload smoke checks", async () => {
     /\[\[ ! "\$deployment_url" =~ \^https:\/\/\[a-z0-9-\]\+\\\.alexnava-me\\\.pages\\\.dev\$\s*\]\]/,
   );
   assert.match(smoke, /for attempt in 1 2 3 4 5 6/);
+  assert.match(smoke, /apex_max_attempts=18/);
+  assert.match(smoke, /apex_sleep_seconds=10/);
+  assert.match(smoke, /for attempt in \$\(seq 1 "\$apex_max_attempts"\)/);
   assert.match(smoke, /grep -Fq "Calm by design\."/);
   assert.match(smoke, /grep -Eiq '\^content-security-policy:'/);
   assert.match(smoke, /grep -Eiq '\^strict-transport-security:'/);

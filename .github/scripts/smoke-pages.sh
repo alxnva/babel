@@ -111,21 +111,25 @@ if ! collect_assets "$work_dir/deployment-body.html" "$deployment_assets"; then
   exit 1
 fi
 
+# Custom-domain promotion can lag the immutable deployment URL. Allow ~3
+# minutes before treating apex hash mismatch as a failed release.
 apex_assets="$work_dir/apex-assets.txt"
-for attempt in 1 2 3 4 5 6; do
+apex_max_attempts=18
+apex_sleep_seconds=10
+for attempt in $(seq 1 "$apex_max_attempts"); do
   if fetch_page_once "apex" "https://alexnava.me/" "alexnava.me" "true" &&
     collect_assets "$work_dir/apex-body.html" "$apex_assets" &&
     cmp -s "$deployment_assets" "$apex_assets"; then
     echo "Apex marker, security-header, and asset-hash parity checks passed."
     break
   fi
-  if [ "$attempt" -eq 6 ]; then
+  if [ "$attempt" -eq "$apex_max_attempts" ]; then
     echo "::error::Apex does not match the expected immutable deployment."
     diff -u "$deployment_assets" "$apex_assets" || true
     exit 1
   fi
-  echo "Apex parity attempt $attempt failed; retrying in 5 seconds."
-  sleep 5
+  echo "Apex parity attempt $attempt failed; retrying in ${apex_sleep_seconds} seconds."
+  sleep "$apex_sleep_seconds"
 done
 
 check_404_once() {
