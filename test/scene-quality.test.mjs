@@ -209,7 +209,7 @@ test("quality profiles expose the postprocess tier matrix", async () => {
     [low.postprocessGrading, low.postprocessBloom, low.postprocessVignette, low.postprocessGrain],
     [true, false, false, false],
   );
-  assert.equal(high.lighting.directionalIntensity, 2.9);
+  assert.equal(high.lighting.directionalIntensity, 2.6);
 });
 
 test("readWebGLQualityCaps falls back when probing fails and reports parameters when it succeeds", async () => {

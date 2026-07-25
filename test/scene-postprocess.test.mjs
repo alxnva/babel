@@ -70,6 +70,8 @@ test("postprocess pipeline creates render, bloom, grading, and vignette-grain pa
   assert.equal(pipeline.passes.bloom.radius, 0.45);
   assert.equal(pipeline.passes.bloom.threshold, 0.9);
   assert.equal(pipeline.passes.grading.uniforms.uHighlightCoolMix.value, 0.14);
+  assert.equal(pipeline.passes.grading.uniforms.uCelMix.value, 0.28);
+  assert.deepEqual(pipeline.passes.grading.uniforms.uTexelSize.value.toArray(), [1 / 800, 1 / 600]);
   assert.equal(pipeline.passes.vignetteGrain.uniforms.uVignetteStrength.value, 0.08);
 
   pipeline.dispose();
@@ -191,6 +193,13 @@ test("setQualityProfile updates adaptive pass enablement without rebuilding the 
   assert.equal(pipeline.passes.grading.enabled, true);
   assert.equal(pipeline.passes.vignetteGrain.enabled, false);
 
+  pipeline.dispose();
+});
+
+test("resize updates texel sampling for the selective ink contour", () => {
+  const pipeline = createPipeline({ postprocessGrading: true });
+  pipeline.resize(1600, 900);
+  assert.deepEqual(pipeline.passes.grading.uniforms.uTexelSize.value.toArray(), [1 / 1600, 1 / 900]);
   pipeline.dispose();
 });
 

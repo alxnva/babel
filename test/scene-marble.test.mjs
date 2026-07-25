@@ -19,10 +19,10 @@ async function loadPalette() {
 test("MARBLE_PALETTE is frozen and exposes the documented tokens", async () => {
   const palette = await loadPalette();
   const expected = {
-    marbleBase: "#d8d2cc",
-    marbleVein: "#6f7886",
-    marbleHighlight: "#efeae3",
-    marbleShadow: "#9ea4ab",
+    marbleBase: "#ded1b8",
+    marbleVein: "#777681",
+    marbleHighlight: "#f5e7c9",
+    marbleShadow: "#a99c91",
   };
 
   assert.ok(Object.isFrozen(palette));

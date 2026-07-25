@@ -86,12 +86,10 @@
       4 14,
     auto;
   --max: 1180px;
-  --loading-ritual-duration: 1100ms;
+  --loading-ritual-duration: 900ms;
   --loading-ritual-seal-size: clamp(178px, 25vw, 244px);
-  --loading-ritual-fog-opacity: 0.42;
   --loading-ritual-stone-line: rgba(154, 145, 137, 0.38);
   --loading-ritual-brass-line: rgba(201, 159, 103, 0.9);
-  --loading-ritual-ember: #d9944e;
 }
 
 * {
@@ -197,7 +195,7 @@ main:focus {
     ),
     radial-gradient(circle at 50% 120%, rgba(117, 75, 43, 0.12) 0%, transparent 44%),
     linear-gradient(180deg, #070a11 0%, #0c0d14 52%, #111016 100%);
-  animation: loading-ritual-exit 250ms cubic-bezier(0.32, 0, 0.2, 1) 850ms both;
+  animation: loading-ritual-exit 180ms cubic-bezier(0.32, 0, 0.2, 1) 720ms both;
 }
 
 .loading-ritual::before,
@@ -235,37 +233,13 @@ main:focus {
   box-shadow: inset 0 0 110px rgba(0, 0, 0, 0.46);
 }
 
-.loading-ritual__fog {
-  position: absolute;
-  inset: -25%;
-  z-index: -1;
-  opacity: 0;
-  pointer-events: none;
-  animation: loading-ritual-fog var(--loading-ritual-duration) ease-out both;
-}
-
-.loading-ritual__fog--far {
-  background:
-    radial-gradient(ellipse at 34% 46%, rgba(158, 168, 171, 0.14) 0%, transparent 38%),
-    radial-gradient(ellipse at 70% 56%, rgba(124, 137, 145, 0.12) 0%, transparent 34%);
-  transform: translate3d(-3%, 0, 0) scale(1.05);
-}
-
-.loading-ritual__fog--near {
-  background:
-    radial-gradient(ellipse at 42% 58%, rgba(181, 183, 177, 0.1) 0%, transparent 32%),
-    radial-gradient(ellipse at 62% 38%, rgba(112, 126, 139, 0.11) 0%, transparent 30%);
-  transform: translate3d(4%, 2%, 0) scale(1.1);
-  animation-delay: 40ms;
-}
-
 .loading-ritual__content {
   display: grid;
   justify-items: center;
   width: min(78vw, 360px);
   transform: translateY(-1vh);
   opacity: 0;
-  animation: loading-ritual-content-enter 180ms ease-out 40ms both;
+  animation: loading-ritual-content-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
 }
 
 .loading-ritual__seal {
@@ -277,9 +251,7 @@ main:focus {
 }
 
 .loading-ritual__ring,
-.loading-ritual__ticks,
-.loading-ritual__tower,
-.loading-ritual__brazier-stand {
+.loading-ritual__tower {
   vector-effect: non-scaling-stroke;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -288,73 +260,25 @@ main:focus {
 .loading-ritual__ring {
   stroke: var(--loading-ritual-stone-line);
   stroke-width: 1;
-  stroke-dashoffset: 620;
 }
 
 .loading-ritual__ring--outer {
-  stroke-dasharray: 620;
-  animation: loading-ritual-draw-ring 550ms ease-out 100ms forwards;
+  opacity: 0.8;
 }
 
 .loading-ritual__ring--inner {
   stroke: rgba(193, 151, 100, 0.26);
-  stroke-dasharray: 500;
-  stroke-dashoffset: 500;
-  animation: loading-ritual-draw-inner-ring 470ms ease-out 180ms forwards;
-}
-
-.loading-ritual__ticks {
-  stroke: rgba(179, 164, 145, 0.46);
-  stroke-width: 1;
-  opacity: 0;
-  animation: loading-ritual-ticks 320ms ease-out 260ms forwards;
 }
 
 .loading-ritual__tower {
   stroke: var(--loading-ritual-brass-line);
   stroke-width: 1.35;
-  stroke-dasharray: 620;
-  stroke-dashoffset: 620;
-  animation: loading-ritual-draw-tower 550ms cubic-bezier(0.22, 0.72, 0.24, 1) 100ms forwards;
-}
-
-.loading-ritual__brazier {
-  stroke: rgba(192, 158, 118, 0.68);
-  stroke-width: 1;
-  opacity: 0;
-  transform: translateY(2px);
-  animation: loading-ritual-brazier-awaken 360ms ease-out 420ms forwards;
-}
-
-.loading-ritual__flame {
-  fill: rgba(217, 148, 78, 0.82);
-  stroke: rgba(244, 190, 108, 0.84);
-  stroke-width: 0.8;
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  transform: scaleY(0.3);
-  opacity: 0;
-  animation: loading-ritual-flame 360ms ease-out 420ms forwards;
-}
-
-.loading-ritual__ember-orbit {
-  transform-origin: 120px 120px;
-  opacity: 0;
-  animation: loading-ritual-ember-orbit 480ms ease-in-out 360ms forwards;
-}
-
-.loading-ritual__ember {
-  fill: var(--loading-ritual-ember);
-  filter: drop-shadow(0 0 5px rgba(226, 144, 72, 0.78));
 }
 
 .loading-ritual__identity {
   display: grid;
   justify-items: center;
   margin-top: clamp(-12px, -1.4vw, -7px);
-  opacity: 0;
-  transform: translateY(4px);
-  animation: loading-ritual-identity 220ms ease-out 100ms forwards;
 }
 
 .loading-ritual__name,
@@ -383,29 +307,6 @@ main:focus {
   text-transform: uppercase;
 }
 
-.loading-ritual__progress {
-  width: clamp(104px, 18vw, 142px);
-  height: 1px;
-  margin-top: 22px;
-  overflow: hidden;
-  background: rgba(167, 151, 133, 0.2);
-}
-
-.loading-ritual__progress-fill {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(130, 104, 79, 0.52),
-    rgba(218, 168, 103, 0.94),
-    rgba(244, 206, 142, 0.84)
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: loading-ritual-progress 740ms cubic-bezier(0.22, 0.72, 0.24, 1) 160ms forwards;
-}
-
 @keyframes loading-ritual-exit {
   from {
     visibility: visible;
@@ -418,26 +319,6 @@ main:focus {
   }
 }
 
-@keyframes loading-ritual-fog {
-  0% {
-    opacity: 0;
-    transform: translate3d(-6%, 2%, 0) scale(1.16);
-  }
-
-  18% {
-    opacity: var(--loading-ritual-fog-opacity);
-  }
-
-  72% {
-    opacity: 0.3;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(7%, -2%, 0) scale(1.02);
-  }
-}
-
 @keyframes loading-ritual-content-enter {
   from {
     opacity: 0;
@@ -447,88 +328,6 @@ main:focus {
   to {
     opacity: 1;
     transform: translateY(-1vh) scale(1);
-  }
-}
-
-@keyframes loading-ritual-draw-ring {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes loading-ritual-draw-inner-ring {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes loading-ritual-ticks {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes loading-ritual-draw-tower {
-  to {
-    stroke-dashoffset: 0;
-    filter: drop-shadow(0 0 4px rgba(220, 158, 89, 0.22));
-  }
-}
-
-@keyframes loading-ritual-brazier-awaken {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes loading-ritual-flame {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.3);
-  }
-
-  62% {
-    opacity: 1;
-    transform: scaleY(1.08);
-  }
-
-  100% {
-    opacity: 0.82;
-    transform: scaleY(0.9);
-  }
-}
-
-@keyframes loading-ritual-ember-orbit {
-  0% {
-    opacity: 0;
-    transform: rotate(-34deg);
-  }
-
-  18% {
-    opacity: 1;
-  }
-
-  78% {
-    opacity: 0.9;
-  }
-
-  100% {
-    opacity: 0;
-    transform: rotate(300deg);
-  }
-}
-
-@keyframes loading-ritual-identity {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes loading-ritual-progress {
-  to {
-    transform: scaleX(1);
   }
 }
 
@@ -554,10 +353,6 @@ main:focus {
     margin-top: 6px;
     font-size: 12px;
   }
-
-  .loading-ritual__progress {
-    margin-top: 14px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -565,43 +360,10 @@ main:focus {
     animation: loading-ritual-exit 120ms linear 250ms both;
   }
 
-  .loading-ritual__fog {
-    opacity: 0.08;
-  }
-
-  .loading-ritual__fog,
-  .loading-ritual__content,
-  .loading-ritual__ring,
-  .loading-ritual__ticks,
-  .loading-ritual__tower,
-  .loading-ritual__brazier,
-  .loading-ritual__flame,
-  .loading-ritual__ember-orbit,
-  .loading-ritual__identity,
-  .loading-ritual__progress-fill {
+  .loading-ritual__content {
     animation: none;
-  }
-
-  .loading-ritual__content,
-  .loading-ritual__ticks,
-  .loading-ritual__brazier,
-  .loading-ritual__flame,
-  .loading-ritual__identity {
     opacity: 1;
     transform: none;
-  }
-
-  .loading-ritual__ring,
-  .loading-ritual__tower {
-    stroke-dashoffset: 0;
-  }
-
-  .loading-ritual__ember-orbit {
-    display: none;
-  }
-
-  .loading-ritual__progress-fill {
-    transform: scaleX(1);
   }
 }
 
@@ -612,9 +374,7 @@ main:focus {
   }
 
   .loading-ritual::before,
-  .loading-ritual::after,
-  .loading-ritual__fog,
-  .loading-ritual__ember-orbit {
+  .loading-ritual::after {
     display: none;
   }
 
@@ -623,28 +383,14 @@ main:focus {
   }
 
   .loading-ritual__ring,
-  .loading-ritual__ticks,
-  .loading-ritual__tower,
-  .loading-ritual__brazier-stand,
-  .loading-ritual__flame {
+  .loading-ritual__tower {
     stroke: CanvasText;
-  }
-
-  .loading-ritual__flame,
-  .loading-ritual__progress-fill {
-    fill: CanvasText;
-    background: CanvasText;
   }
 
   .loading-ritual__name,
   .loading-ritual__motto {
     color: CanvasText;
     text-shadow: none;
-  }
-
-  .loading-ritual__progress {
-    border: 1px solid CanvasText;
-    background: Canvas;
   }
 }
 
@@ -713,12 +459,12 @@ main:focus {
   background:
     radial-gradient(circle at 26% 18%, rgba(226, 230, 221, 0.065) 0%, rgba(226, 230, 221, 0) 21%),
     radial-gradient(circle at 50% 31%, rgba(236, 232, 222, 0.08) 0%, rgba(236, 232, 222, 0) 26%),
-    radial-gradient(ellipse 120% 58% at 50% 50%, transparent 36%, rgba(10, 12, 24, 0.49) 100%),
+    radial-gradient(ellipse 120% 58% at 50% 50%, transparent 36%, rgba(10, 12, 24, 0.35) 100%),
     linear-gradient(
       180deg,
       rgba(7, 9, 18, 0.04) 0%,
       rgba(10, 12, 22, 0.22) 42%,
-      rgba(12, 13, 25, 0.69) 100%
+      rgba(12, 13, 25, 0.48) 100%
     );
 }
 
@@ -764,7 +510,42 @@ main:focus {
 
 .hero-minimal {
   position: relative;
+  isolation: isolate;
   max-width: 720px;
+  animation: hero-reveal 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-minimal::before {
+  position: absolute;
+  inset: -88px -180px -96px -96px;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 28% 56%,
+    rgba(7, 10, 18, 0.58) 0%,
+    rgba(7, 10, 18, 0.3) 44%,
+    rgba(7, 10, 18, 0) 72%
+  );
+}
+
+.hero-kicker {
+  margin: 0 0 18px;
+  color: var(--text-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.88;
+}
+
+.hero-intro {
+  max-width: 46ch;
+  margin: 18px 0 0;
+  color: var(--text-secondary);
+  font-size: clamp(14px, 1.25vw, 17px);
+  line-height: 1.55;
+  text-wrap: balance;
 }
 
 .eyebrow {
@@ -807,8 +588,6 @@ main:focus {
      background painted. */
   padding-bottom: 0.12em;
   color: var(--calm-prefix);
-  animation: hero-rise 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 80ms;
 }
 
 .hero h1 .hero-word--accent {
@@ -816,7 +595,16 @@ main:focus {
   /* Muted stone on the twilight scene can lose edge definition. A barely-
      there stroke nudges contrast up without reading as an outline. */
   -webkit-text-stroke: 0.3px rgba(30, 26, 22, 0.28);
-  animation-delay: 160ms;
+}
+
+@keyframes hero-reveal {
+  from {
+    transform: translateY(8px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes hero-rise {
@@ -938,6 +726,20 @@ main:focus {
   pointer-events: none;
 }
 
+.bottom-bar::before {
+  position: absolute;
+  inset: -52px 0 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 34% 120% at 50% 100%,
+    rgba(7, 10, 18, 0.56) 0%,
+    rgba(7, 10, 18, 0.34) 54%,
+    rgba(7, 10, 18, 0) 100%
+  );
+}
+
 .bottom-btn {
   pointer-events: auto;
   transition:
@@ -1009,7 +811,8 @@ main:focus {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-accent);
-  opacity: 0;
+  opacity: 0.5;
+  transform: translate(-50%, 0);
   pointer-events: none;
   transition:
     opacity 220ms ease,
@@ -1136,7 +939,7 @@ main:focus {
   grid-area: 1 / 1;
   position: relative;
   padding: clamp(40px, 5.4vw, 64px) clamp(34px, 4.8vw, 60px) clamp(46px, 6vw, 72px);
-  min-height: clamp(320px, 48vh, 460px);
+  min-height: clamp(280px, 36vh, 380px);
   overflow: hidden;
   color: #332d25;
   font-family: var(--font-body);
@@ -1274,7 +1077,7 @@ main:focus {
 
   .panel-parchment__sheet {
     padding: clamp(72px, 16vw, 82px) clamp(24px, 6vw, 36px) clamp(40px, 8vw, 56px);
-    min-height: 0;
+    min-height: clamp(280px, 36vh, 380px);
     max-height: none;
   }
 
@@ -1361,7 +1164,8 @@ main:focus {
 @media (max-width: 760px) {
   .hero {
     position: relative;
-    align-items: flex-end;
+    align-items: flex-start;
+    padding-top: max(56px, calc(42px + env(safe-area-inset-top)));
     padding-bottom: max(96px, calc(82px + env(safe-area-inset-bottom)));
   }
 
@@ -1371,7 +1175,7 @@ main:focus {
     bottom: auto;
     left: auto;
     max-width: min(82vw, 420px);
-    margin-bottom: max(18px, env(safe-area-inset-bottom));
+    margin: 0;
     padding: 0 0 0 clamp(14px, 4vw, 24px);
     text-align: left;
   }
@@ -1385,7 +1189,7 @@ main:focus {
   .hero {
     min-height: 100dvh;
     min-height: 100svh;
-    padding-top: max(28px, env(safe-area-inset-top));
+    padding-top: max(34px, calc(24px + env(safe-area-inset-top)));
     padding-bottom: max(124px, calc(104px + env(safe-area-inset-bottom)));
   }
 
@@ -1393,14 +1197,27 @@ main:focus {
     /* Kept close to the desktop clamp so the hero reads at the same
        visual weight across breakpoints — the prior 13vw target
        over-scaled on phones relative to what's shown on desktop. */
-    font-size: clamp(44px, 10vw, 80px);
-    max-width: 6ch;
+    font-size: clamp(44px, 13vw, 64px);
+    max-width: 8ch;
   }
 
   .hero-minimal {
     max-width: min(84vw, 360px);
-    margin-bottom: max(20px, env(safe-area-inset-bottom));
+    margin: 0;
     padding-left: clamp(18px, 5vw, 30px);
+  }
+
+  .hero-kicker {
+    max-width: 30ch;
+    margin-bottom: 12px;
+    letter-spacing: 0.16em;
+    line-height: 1.5;
+  }
+
+  .hero-intro {
+    max-width: 30ch;
+    margin-top: 10px;
+    font-size: 13px;
   }
 
   .story-text {
@@ -1448,6 +1265,11 @@ main:focus {
   .panel-card {
     background: linear-gradient(180deg, rgba(80, 80, 77, 0.98) 0%, rgba(38, 39, 42, 0.98) 100%);
   }
+
+  .hero-minimal::before,
+  .bottom-bar::before {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1467,9 +1289,12 @@ main:focus {
     transition: none;
   }
 
+  .hero-minimal,
   .hero h1,
   .hero h1 .hero-word,
   .hero h1 .hero-word--accent,
+  .hero-kicker,
+  .hero-intro,
   .scene-shell,
   .site-shell,
   .bottom-bar .bottom-btn,
@@ -1505,6 +1330,7 @@ main:focus {
 @media (orientation: landscape) and (max-height: 500px) {
   .hero {
     min-height: 100svh;
+    align-items: flex-end;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-bottom: max(68px, calc(58px + env(safe-area-inset-bottom)));
   }
@@ -1547,13 +1373,28 @@ main:focus {
 /* Tablets in portrait (iPad-class): wider copy allowance than phones, still
    touch-oriented, so nav stays phone-sized. */
 @media (min-width: 761px) and (max-width: 1024px) and (orientation: portrait) {
+  .hero {
+    align-items: flex-start;
+    padding-top: max(48px, calc(38px + env(safe-area-inset-top)));
+  }
+
   .hero h1 {
-    font-size: clamp(56px, 9vw, 104px);
+    max-width: 8ch;
+    font-size: clamp(54px, 8vw, 72px);
   }
 
   .hero-minimal {
-    max-width: min(72vw, 560px);
+    max-width: min(58vw, 440px);
     padding-left: clamp(24px, 5vw, 40px);
+  }
+
+  .hero-kicker {
+    margin-bottom: 14px;
+  }
+
+  .hero-intro {
+    max-width: 31ch;
+    margin-top: 12px;
   }
 
   .site-shell {
@@ -1635,6 +1476,11 @@ body.dev-mode-active > *:not(.scene-shell):not(.dev-mode-hud) {
     background: Canvas;
     color: CanvasText;
     forced-color-adjust: none;
+  }
+
+  .hero-minimal::before,
+  .bottom-bar::before {
+    display: none;
   }
 
   .bottom-btn[aria-expanded="true"] {

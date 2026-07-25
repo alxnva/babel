@@ -134,9 +134,9 @@
       lighting: {
         fogNear: 62,
         fogFar: 150,
-        ambientIntensity: 0.22,
-        hemisphereIntensity: 0.71,
-        directionalIntensity: 2.9,
+        ambientIntensity: 0.28,
+        hemisphereIntensity: 0.8,
+        directionalIntensity: 2.6,
         extraDirectional: true,
       },
       counts: {
@@ -194,9 +194,9 @@
       lighting: {
         fogNear: 60,
         fogFar: 146,
-        ambientIntensity: 0.2,
-        hemisphereIntensity: 0.67,
-        directionalIntensity: 2.7,
+        ambientIntensity: 0.26,
+        hemisphereIntensity: 0.76,
+        directionalIntensity: 2.4,
         extraDirectional: false,
       },
       counts: {
@@ -251,8 +251,8 @@
       lighting: {
         fogNear: 56,
         fogFar: 138,
-        ambientIntensity: 0.18,
-        hemisphereIntensity: 0.63,
+        ambientIntensity: 0.23,
+        hemisphereIntensity: 0.72,
         directionalIntensity: 2.05,
         extraDirectional: false,
       },
