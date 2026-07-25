@@ -116,7 +116,8 @@ fi
 apex_assets="$work_dir/apex-assets.txt"
 apex_max_attempts=18
 apex_sleep_seconds=10
-for attempt in $(seq 1 "$apex_max_attempts"); do
+attempt=1
+while [ "$attempt" -le "$apex_max_attempts" ]; do
   if fetch_page_once "apex" "https://alexnava.me/" "alexnava.me" "true" &&
     collect_assets "$work_dir/apex-body.html" "$apex_assets" &&
     cmp -s "$deployment_assets" "$apex_assets"; then
@@ -130,6 +131,7 @@ for attempt in $(seq 1 "$apex_max_attempts"); do
   fi
   echo "Apex parity attempt $attempt failed; retrying in ${apex_sleep_seconds} seconds."
   sleep "$apex_sleep_seconds"
+  attempt=$((attempt + 1))
 done
 
 check_404_once() {
