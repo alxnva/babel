@@ -55,6 +55,31 @@ test("site source includes a committed OG image and matching social metadata", a
   assert.match(gitignore, /^\.tmp-lighthouse-\*\/$/m);
 });
 
+test("public agent-discovery files are built from sanitized source artifacts", async () => {
+  const buildScript = await readProjectFile("build.mjs");
+  const headers = await readProjectFile("_headers");
+  const indexHtml = await readProjectFile("index.html");
+  const llms = await readProjectFile("llms.txt");
+  const sitemap = await readProjectFile("sitemap.md");
+  const publicAgents = await readProjectFile("site-agents.md");
+  const markdownHome = await readProjectFile("index.md");
+
+  assert.match(buildScript, /"llms\.txt"/);
+  assert.match(buildScript, /"sitemap\.md"/);
+  assert.match(buildScript, /"index\.md"/);
+  assert.match(buildScript, /source: "site-agents\.md", destination: "AGENTS\.md"/);
+  for (const pathName of ["/llms.txt", "/AGENTS.md", "/index.md", "/sitemap.md"]) {
+    assert.match(headers, new RegExp(`${pathName.replace(".", "\\.")}\\r?\\n\\s+Cache-Control`));
+  }
+  assert.match(headers, /\/llms\.txt\r?\n\s+Cache-Control[\s\S]*?Content-Type: text\/plain; charset=utf-8/);
+  assert.match(indexHtml, /rel="alternate" type="text\/markdown" href="\/index\.md"/);
+  assert.match(indexHtml, /application\/ld\+json/);
+  assert.match(llms, /^# Alex Nava/m);
+  assert.match(sitemap, /^# alexnava\.me site map/m);
+  assert.match(publicAgents, /^# alexnava\.me/m);
+  assert.match(markdownHome, /^---[\s\S]*?title: Alex Nava/m);
+});
+
 test("scene posters are committed, copied into dist, and use stable-asset caching", async () => {
   const buildScript = await readProjectFile("build.mjs");
   const headers = await readProjectFile("_headers");

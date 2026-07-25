@@ -37,6 +37,22 @@
 /robots.txt
   Cache-Control: public, max-age=604800, must-revalidate
 
+/llms.txt
+  Cache-Control: public, max-age=604800, must-revalidate
+  Content-Type: text/plain; charset=utf-8
+
+/AGENTS.md
+  Cache-Control: public, max-age=604800, must-revalidate
+  Content-Type: text/markdown; charset=utf-8
+
+/index.md
+  Cache-Control: public, max-age=604800, must-revalidate
+  Content-Type: text/markdown; charset=utf-8
+
+/sitemap.md
+  Cache-Control: public, max-age=604800, must-revalidate
+  Content-Type: text/markdown; charset=utf-8
+
 /sitemap.xml
   Cache-Control: public, max-age=604800, must-revalidate
 

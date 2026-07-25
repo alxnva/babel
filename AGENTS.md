@@ -47,6 +47,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 | `build.mjs`, `package.json`, `.prettierrc.json` | Build + format tooling                                                       |
 | `wrangler.jsonc`                                | Cloudflare Pages project config (`pages_build_output_dir: ./dist`)           |
 | `_headers` / `_redirects`                       | Static hosting config copied into `dist/` at build time                      |
+| `llms.txt`, `sitemap.md`, `index.md`, `site-agents.md` | Public AI-agent discovery files; `site-agents.md` publishes as `/AGENTS.md` |
 | `404.html`, `favicon.svg`, `LICENSE`            | Root assets copied into `dist/` at build time                                |
 | `.github/workflows/`                            | CI (`ci.yml`) and production deploy (`deploy.yml`)                           |
 | `README.md`                                     | Local preview and deployment notes                                           |
@@ -78,6 +79,7 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 4. Keep `file://` and HTTP preview both viable when possible; `npm run preview` is the preferred local check because it serves `dist/` through Wrangler Pages.
 5. Asset filenames in `dist/` are content-hashed by `build.mjs` (e.g. `scripts/app.HASH.js`, `scripts/scene.HASH.js`, `css/styles.HASH.css`); three.js is bundled into the deferred `scripts/scene.HASH.js` and tree-shaken by esbuild. Don't hand-bump version query strings — rerun `npm run build:dist` and the hash moves automatically.
 6. Update docs when file roles, preview assumptions, or deploy reality change. If a deploy detail matters, confirm it instead of trusting historical notes blindly.
+7. Keep public AI-agent files accurate and non-sensitive; do not publish this repository's internal `AGENTS.md`.
 
 ## Ask before
 
@@ -96,3 +98,10 @@ The Three.js scene in `src/scene/index.js` has a fixed compositional center:
 - `npm run verify` passes
 - `npm test` passes
 - `README.md` and any affected project docs reflect reality
+
+## Codex task-boundary board
+
+- This repository uses the opt-in Codex task-boundary board in `.codex/coordination/project.yaml`.
+- Before substantial writes, use the `codex-coordinator` skill when it is available to list active claims from the primary worktree and publish only this task's bounded claim. If it is unavailable, continue as one agent; do not treat the optional board as a blocker.
+- Native Codex tasks remain the execution, messaging, and transcript authority; an explicitly requested goal Coordinator is on demand, with no heartbeat or mandatory pull-request workflow.
+- Reject cross-project notices and never store transcripts, reasoning, prompts, or tool output in Coordinator state.
