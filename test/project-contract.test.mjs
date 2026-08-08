@@ -208,7 +208,7 @@ test("deploy workflows retry post-upload smoke checks", async () => {
   assert.match(smoke, /apex_sleep_seconds=10/);
   assert.match(smoke, /while \[ "\$attempt" -le "\$apex_max_attempts" \]/);
   assert.doesNotMatch(smoke, /\bseq\b/);
-  assert.match(smoke, /grep -Fq "Calm by design\."/);
+  assert.match(smoke, /grep -Fq "Built to hold up\."/);
   assert.match(smoke, /grep -Eiq '\^content-security-policy:'/);
   assert.match(smoke, /grep -Eiq '\^strict-transport-security:'/);
   assert.match(smoke, /grep -Eiq '\^x-content-type-options:/);

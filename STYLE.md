@@ -4,7 +4,7 @@ Design intent and aesthetic rules for alexnava.me. Read this before making visua
 
 ## Core ethos
 
-**Calm by design.** Quiet on load. Clear on click. Deep on scroll.
+**Built to hold up.** Quiet on load. Clear on click. Deep on scroll.
 
 The page should feel intentional and still. It can be atmospheric, but it should not read as generic dark UI or visual noise.
 

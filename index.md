@@ -2,12 +2,12 @@
 title: Alex Nava — Regulated analytics
 description: Regulated analytics, remediation, controls, and reporting.
 url: https://alexnava.me/
-dateModified: 2026-07-24
+dateModified: 2026-08-08
 ---
 
 # Alex Nava — Regulated analytics
 
-Calm by design.
+Built to hold up.
 
 Remediation, controls, and reporting—made clear.
 
