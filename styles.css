@@ -58,11 +58,11 @@
      competing with the hero word. Warm off-white — reads as legible white
      against the blue-black scene without clashing with the warm scene. */
   --text-muted-accent: #c5c9c2;
-  /* Prefix companion to the anchor. Used for "Calm by" so it reads as
-     legible white against the twilight scene while still letting "design."
+  /* Prefix companion to the anchor. Used for "Built to" so it reads as
+     legible white against the twilight scene while still letting "hold up."
      be the clear focal word. One notch brighter than --text-muted-accent
      so it holds hero-level presence. */
-  --calm-prefix: #ebe4d4;
+  --hero-prefix: #ebe4d4;
   --text: #f7f1ea;
   --muted: #d0c4ba;
   --text-primary: var(--text);
@@ -587,7 +587,7 @@ main:focus {
      altering the visual line spacing, so the full glyph gets its
      background painted. */
   padding-bottom: 0.12em;
-  color: var(--calm-prefix);
+  color: var(--hero-prefix);
 }
 
 .hero h1 .hero-word--accent {
