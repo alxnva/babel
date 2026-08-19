@@ -94,7 +94,10 @@ export function createSceneRendering({
     lighting.directionalColor,
     lighting.directionalIntensity,
   );
-  const fillLight = new DirectionalLight(0x596b9c, 0.58);
+  const fillLight = new DirectionalLight(
+    lighting.fillColor ?? 0x596b9c,
+    lighting.fillIntensity ?? 0.58,
+  );
   sunLight.position.set(
     lighting.directionalPosition.x,
     lighting.directionalPosition.y,
@@ -109,7 +112,7 @@ export function createSceneRendering({
   sunLight.shadow.bias = -0.00045;
   sunLight.shadow.normalBias = 0.028;
   sunLight.shadow.radius = 2.6;
-  fillLight.position.set(...world.FILL_LIGHT_POSITION);
+  fillLight.position.set(...(lighting.fillPosition ?? world.FILL_LIGHT_POSITION));
   homeScene.add(ambientLight, hemisphereLight, sunLight, fillLight);
 
   const renderTargets = new Set();
@@ -158,6 +161,9 @@ export function createSceneRendering({
       ambientLight.intensity = nextProfile.lighting.ambientIntensity;
       hemisphereLight.intensity = nextProfile.lighting.hemisphereIntensity;
       sunLight.intensity = nextProfile.lighting.directionalIntensity;
+      if (Number.isFinite(nextProfile.lighting.fillIntensity)) {
+        fillLight.intensity = nextProfile.lighting.fillIntensity;
+      }
       fillLight.visible = Boolean(nextProfile.lighting.extraDirectional);
       renderer.shadowMap.enabled = Boolean(nextProfile.shadows.enabled);
       sunLight.castShadow = Boolean(nextProfile.shadows.enabled);
