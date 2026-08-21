@@ -80,17 +80,17 @@ test("public agent-discovery files are built from sanitized source artifacts", a
   assert.match(markdownHome, /^---[\s\S]*?title: Alex Nava/m);
 });
 
-test("scene posters are committed, copied into dist, and use stable-asset caching", async () => {
+test("scene posters are committed, fingerprinted during the build, and cached immutably", async () => {
   const buildScript = await readProjectFile("build.mjs");
   const headers = await readProjectFile("_headers");
 
   await access(path.join(projectRoot, "images", "scene-poster-landscape.webp"));
   await access(path.join(projectRoot, "images", "scene-poster-portrait.webp"));
 
-  assert.match(buildScript, /const STATIC_DIRS = \["fonts", "images"\];/);
+  assert.match(buildScript, /const FINGERPRINTED_IMAGES = \["scene-poster-landscape\.webp", "scene-poster-portrait\.webp"\];/);
   assert.match(
     headers,
-    /\/images\/\*\r?\n\s+Cache-Control: public, max-age=604800, must-revalidate/,
+    /\/images\/scene-poster-\*\.\*\.webp\r?\n\s+Cache-Control: public, max-age=31536000, immutable/,
   );
 });
 
@@ -414,6 +414,7 @@ test("static headers separate immutable fingerprints from revalidated stable ass
     "/css/styles.*.css",
     "/scripts/app.*.js",
     "/scripts/scene.*.js",
+    "/images/scene-poster-*.*.webp",
   ]) {
     const escapedPath = fingerprintedPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(
