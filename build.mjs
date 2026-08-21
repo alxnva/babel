@@ -125,12 +125,12 @@ async function buildDist() {
   await Promise.all(
     STATIC_DIRS.map((dir) => cp(join(__dirname, dir), join(DIST_DIR, dir), { recursive: true })),
   );
+  await mkdir(join(DIST_DIR, "images"), { recursive: true });
   const imagePaths = Object.fromEntries(
     await Promise.all(
       FINGERPRINTED_IMAGES.map(async (name) => {
         const image = await readFile(join(__dirname, "images", name));
         const fingerprintedName = name.replace(/(\.[^.]+)$/, `.${sha8(image)}$1`);
-        await mkdir(join(DIST_DIR, "images"), { recursive: true });
         await writeFile(join(DIST_DIR, "images", fingerprintedName), image);
         return [`/images/${name}`, `/images/${fingerprintedName}`];
       }),
