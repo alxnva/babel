@@ -234,14 +234,28 @@ function setSrgbTexture(texture) {
               skyWidthSegments: 24,
             },
             lighting: {
-              ambientIntensity: 0.3,
-              directionalIntensity: 2.7,
-              fillIntensity: 0.48,
+              ambientIntensity: 0.2,
+              directionalIntensity: 3.1,
+              fillIntensity: 0.46,
               extraDirectional: true,
-              fogFar: 150,
-              fogNear: 62,
-              hemisphereIntensity: 0.84,
+              fogFar: 146,
+              fogNear: 60,
+              hemisphereIntensity: 0.62,
+              practicalIntensityScale: 1,
             },
+            postprocessBloom: true,
+            postprocessGrading: true,
+            postprocessGrain: true,
+            postprocessSettings: {
+              bloomStrength: 0.2,
+              celMix: 0.24,
+              contrast: 1.1,
+              grainStrength: 0.018,
+              highlightWarmMix: 0.2,
+              shadowCoolMix: 0.34,
+              vignetteStrength: 0.12,
+            },
+            postprocessVignette: true,
             shadows: {
               enabled: true,
               mapSize: 1536,
@@ -359,22 +373,22 @@ function setSrgbTexture(texture) {
       upperGlowSpriteCount = 0,
       pointFieldCount = state.profile.geometry.pointFieldCount,
       lightingConfig = {
-        fogColor: 0x333747,
+        fogColor: 0x2d3242,
         fogNear: state.profile.lighting.fogNear,
         fogFar: state.profile.lighting.fogFar,
-        ambientColor: 0xb8b0a2,
+        ambientColor: 0x9e9aa0,
         ambientIntensity: state.profile.lighting.ambientIntensity,
-        hemisphereSkyColor: 0x64789e,
-        hemisphereGroundColor: 0x252632,
+        hemisphereSkyColor: 0x596d96,
+        hemisphereGroundColor: 0x20232f,
         hemisphereIntensity: state.profile.lighting.hemisphereIntensity,
-        directionalColor: 0xe0b487,
+        directionalColor: 0xe6b681,
         directionalIntensity: state.profile.lighting.directionalIntensity,
-        fillColor: 0x6b84bd,
-        fillIntensity: state.profile.lighting.fillIntensity ?? 0.48,
+        fillColor: 0x7189c2,
+        fillIntensity: state.profile.lighting.fillIntensity ?? 0.46,
         directionalPosition: {
-          x: 25,
-          y: 32,
-          z: 18,
+          x: 32,
+          y: 28,
+          z: 14,
         },
       },
       skyConfig = {
@@ -2896,12 +2910,13 @@ function setSrgbTexture(texture) {
         for (let num276 = 0; num276 < position7.count; num276 += 1)
           num448 = Math.max(num448, position7.getY(num276));
       })(cylinderGeometry3));
+    let craterEmber = null;
     {
       const craterRimLocal = tmpV69(cylinderGeometry3, num511),
         craterRimWorld = Number.isFinite(craterRimLocal)
           ? mesh39.position.y + craterRimLocal
           : mesh39.position.y + 14,
-        craterEmber = new PointLight(15311978, state.lowPower ? 0.35 : 0.55, 14, 2);
+        craterEmber = new PointLight(15311978, 0.52, 14, 2);
       (craterEmber.position.set(Math.cos(num511) * 4, craterRimWorld - 1.5, Math.sin(num511) * 4),
         (craterEmber.castShadow = !1),
         group7.add(craterEmber));
@@ -3614,6 +3629,15 @@ function setSrgbTexture(texture) {
     }
     group4.add(group13);
     setShadowParticipation(group13);
+    towerSystem.setPracticalLights([
+      { light: plinthTorchLight, baseIntensity: 0.42 },
+      { light: craterEmber, baseIntensity: 0.52 },
+      ...arr23.map((record) => ({
+        baseIntensity: record.baseIntensity,
+        disableOnLow: true,
+        light: record.light,
+      })),
+    ]);
     const tmpV82 = state.lowPower ? 4 : 8,
       group14 = new Group();
     const PLANT = plantPalette || {
@@ -4705,10 +4729,13 @@ function setSrgbTexture(texture) {
     });
     resizeController.update({ force: true });
     const num516 = 0.12 * Math.PI;
+    let debugRenderFrameCount = 0;
+    let debugRenderWindowStart = null;
     function updateSceneFrame({
       deltaSeconds: result97,
       elapsedSeconds: elapsedTime,
       sampleDeltaSeconds,
+      timestamp,
     }) {
       const adaptiveProfile =
         typeof qualityState.sample === "function"
@@ -4933,16 +4960,7 @@ function setSrgbTexture(texture) {
                 });
               }
               if (arg52.light) {
-                const tmpV6 = arg52.baseIntensity || 0.4,
-                  result55 = Math.max(0, 0.5 + 0.5 * result77);
-                ((arg52.light.intensity =
-                  0.8 * (tmpV6 + num403 * tmpV6 * 1.8 + result79 * tmpV6 * 0.35)),
-                  (arg52.light.position.y = arg52.baseFlameY + 0.06 * result77),
-                  arg52.light.color.setHSL(
-                    (20 + 12 * result55) / 360,
-                    0.82,
-                    0.52 + 0.06 * result55,
-                  ));
+                arg52.light.position.y = arg52.baseFlameY;
               }
         }),
         plumeSystem.active
@@ -5174,20 +5192,28 @@ function setSrgbTexture(texture) {
       }
       skyShell.material.uniforms.uTime.value = elapsedTime;
       rendering.update();
+      if (qualityDebug) {
+        debugRenderWindowStart ??= timestamp;
+        debugRenderFrameCount += 1;
+        const debugRenderWindowMs = timestamp - debugRenderWindowStart;
+        if (debugRenderWindowMs >= 500) {
+          qualityDebug.renderFps = (1e3 * debugRenderFrameCount) / debugRenderWindowMs;
+          debugRenderFrameCount = 0;
+          debugRenderWindowStart = timestamp;
+        }
+      }
       if (!sceneReadyMarked) {
         sceneReadyMarked = true;
         if (container && container.classList) container.classList.add("is-ready");
       }
     }
-    const touchFrameStride =
-      typeof scene.detectTouchPrimary === "function" && scene.detectTouchPrimary() ? 2 : 1;
     frameScheduler = createSceneFrameScheduler({
-      frameStride: touchFrameStride,
       isRenderable() {
         return !document.hidden && sceneVisible && webglContextAvailable;
       },
       onUpdate: updateSceneFrame,
       reducedMotion,
+      targetFrameRate: 60,
     });
     const onReducedMotionChange = (event) => {
       reducedMotion = Boolean(event?.matches);

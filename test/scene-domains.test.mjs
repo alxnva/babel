@@ -6,7 +6,11 @@ import { createSceneAtmosphere } from "../src/scene/atmosphere.js";
 import { createSceneEnvironment } from "../src/scene/environment.js";
 import { createSceneTower } from "../src/scene/tower.js";
 
-const highProfile = { isLow: false, tier: "high" };
+const highProfile = {
+  isLow: false,
+  lighting: { practicalIntensityScale: 1 },
+  tier: "high",
+};
 
 test("environment owns composition and its small animated record sets", () => {
   const parent = new Group();
@@ -52,8 +56,14 @@ test("tower owns composition scale and orbital accent animation", () => {
   const parent = new Group();
   const tower = createSceneTower({ parent, profile: highProfile });
   const ground = { material: { opacity: 0 } };
+  const practicalLight = { intensity: 0 };
+  const tierGatedLight = { intensity: 0 };
   const ring = { material: { opacity: 0 }, rotation: { z: 0 } };
   tower.setOrbitDecor({ ground, rings: [ring] });
+  tower.setPracticalLights([
+    { light: practicalLight, baseIntensity: 0.5 },
+    { light: tierGatedLight, baseIntensity: 0.7, disableOnLow: true },
+  ]);
 
   tower.resize({ composition: { towerScale: 0.92 } });
   tower.update({ elapsedSeconds: 2 });
@@ -61,9 +71,16 @@ test("tower owns composition scale and orbital accent animation", () => {
   assert.notEqual(ground.material.opacity, 0);
   assert.equal(ring.rotation.z, 0.2);
   assert.notEqual(ring.material.opacity, 0);
+  assert.equal(practicalLight.intensity, 0.5);
+  assert.equal(tierGatedLight.intensity, 0.7);
 
-  tower.applyQuality({ isLow: true });
+  tower.applyQuality({
+    isLow: true,
+    lighting: { practicalIntensityScale: 0.58 },
+  });
   assert.equal(tower.root.userData.lowPower, true);
+  assert.equal(practicalLight.intensity, 0.29);
+  assert.equal(tierGatedLight.intensity, 0);
   tower.dispose();
   assert.equal(tower.root.visible, false);
   assert.equal(parent.children.includes(tower.root), true);
@@ -132,10 +149,10 @@ test("atmosphere owns cloud controls, visibility classification, composition, an
   atmosphere.applyQuality({ isLow: true });
   atmosphere.update({ elapsedSeconds: 0, visibilityScale: 1 });
   assert.equal(pointField.material.opacity, 0.42);
-  assert.deepEqual(calls.filter((value) => value === "invalidate"), [
-    "invalidate",
-    "invalidate",
-  ]);
+  assert.deepEqual(
+    calls.filter((value) => value === "invalidate"),
+    ["invalidate", "invalidate"],
+  );
 
   atmosphere.dispose();
   assert.equal(atmosphere.root.visible, false);
@@ -145,11 +162,7 @@ test("atmosphere owns cloud controls, visibility classification, composition, an
 test("scene bootstrap wires real domain systems and no longer owns their lifecycle loops", async () => {
   const source = await readFile(new URL("../src/scene/index.js", import.meta.url), "utf8");
 
-  for (const factory of [
-    "createSceneEnvironment",
-    "createSceneTower",
-    "createSceneAtmosphere",
-  ]) {
+  for (const factory of ["createSceneEnvironment", "createSceneTower", "createSceneAtmosphere"]) {
     assert.match(source, new RegExp(`${factory}\\(`));
   }
   assert.match(source, /subsystemRegistry\.register\(environmentSystem\);/);
@@ -160,4 +173,5 @@ test("scene bootstrap wires real domain systems and no longer owns their lifecyc
   assert.doesNotMatch(source, /arr19\.forEach\(/);
   assert.doesNotMatch(source, /arr24\.forEach\(/);
   assert.doesNotMatch(source, /arr26\.forEach\(/);
+  assert.doesNotMatch(source, /touchFrameStride/);
 });

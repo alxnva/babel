@@ -56,6 +56,71 @@ test("touch frame stride keeps render delta while sampling each rAF interval", (
   scheduler.dispose();
 });
 
+test("default scheduler renders every display frame for a 60 Hz-capable path", () => {
+  const frames = createFrameHarness();
+  const updates = [];
+  const scheduler = createSceneFrameScheduler({
+    cancelFrame: frames.cancelFrame,
+    onUpdate(frame) {
+      updates.push(frame);
+    },
+    requestFrame: frames.requestFrame,
+  });
+
+  scheduler.start();
+  frames.step(0);
+  frames.step(16);
+  frames.step(32);
+  frames.step(48);
+
+  assert.equal(updates.length, 4);
+  assert.ok(Math.abs(updates.at(-1).sampleDeltaSeconds - 0.016) < 1e-9);
+  scheduler.dispose();
+});
+
+test("target frame rate holds scene rendering near 60 FPS on high-refresh displays", () => {
+  const frames = createFrameHarness();
+  const updates = [];
+  const scheduler = createSceneFrameScheduler({
+    cancelFrame: frames.cancelFrame,
+    onUpdate(frame) {
+      updates.push(frame);
+    },
+    requestFrame: frames.requestFrame,
+    targetFrameRate: 60,
+  });
+
+  scheduler.start();
+  for (let frame = 0; frame <= 240; frame += 1) {
+    frames.step((frame * 1000) / 240);
+  }
+
+  assert.ok(updates.length >= 60 && updates.length <= 62);
+  assert.ok(Math.abs(updates.at(-1).elapsedSeconds - 1) < 1e-9);
+  scheduler.dispose();
+});
+
+test("60 FPS target preserves every frame on a 60 Hz display", () => {
+  const frames = createFrameHarness();
+  let updates = 0;
+  const scheduler = createSceneFrameScheduler({
+    cancelFrame: frames.cancelFrame,
+    onUpdate() {
+      updates += 1;
+    },
+    requestFrame: frames.requestFrame,
+    targetFrameRate: 60,
+  });
+
+  scheduler.start();
+  for (let frame = 0; frame <= 60; frame += 1) {
+    frames.step((frame * 1000) / 60);
+  }
+
+  assert.equal(updates, 61);
+  scheduler.dispose();
+});
+
 test("reduced motion freezes scene time and renders only dirty frames", () => {
   const frames = createFrameHarness();
   const updates = [];
@@ -162,11 +227,7 @@ test("runtime resource disposal deduplicates scene assets and leaves render-targ
     texture: renderTargetTexture,
     dispose: () => (calls.renderTarget += 1),
   };
-  const objects = [
-    { geometry, material },
-    { geometry, material },
-    { renderTarget },
-  ];
+  const objects = [{ geometry, material }, { geometry, material }, { renderTarget }];
   const scene = {
     background: texture,
     clear() {

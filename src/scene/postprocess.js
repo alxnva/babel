@@ -17,15 +17,19 @@ const GRADING_SHADER = {
   name: "BabelGradingShader",
   uniforms: {
     tDiffuse: { value: null },
-    uHighlightCoolMix: { value: 0.14 },
-    uCelMix: { value: 0.28 },
+    uCelMix: { value: 0.24 },
+    uContrast: { value: 1.1 },
+    uHighlightWarmMix: { value: 0.2 },
+    uShadowCoolMix: { value: 0.34 },
     uTexelSize: { value: new Vector2(1, 1) },
   },
   vertexShader: PASS_VERTEX_SHADER,
   fragmentShader: `
 uniform sampler2D tDiffuse;
-uniform float uHighlightCoolMix;
 uniform float uCelMix;
+uniform float uContrast;
+uniform float uHighlightWarmMix;
+uniform float uShadowCoolMix;
 uniform vec2 uTexelSize;
 varying vec2 vUv;
 
@@ -43,9 +47,9 @@ void main() {
   vec3 color = texel.rgb;
   float luma = dot(color, vec3(0.299, 0.587, 0.114));
 
-  color = (color - 0.5) * 1.06 + 0.5;
+  color = (color - 0.5) * uContrast + 0.5;
 
-  vec3 shadowLift = vec3(0.065, 0.078, 0.115);
+  vec3 shadowLift = vec3(0.045, 0.055, 0.09);
   vec3 coolShadow = color * vec3(0.88, 0.94, 1.09);
   vec3 warmMidtone = color * vec3(1.025, 1.012, 0.965);
   vec3 parchmentHighlight = color * vec3(1.055, 1.025, 0.94);
@@ -54,9 +58,9 @@ void main() {
   float midMix = smoothstep(0.22, 0.46, luma) * (1.0 - smoothstep(0.62, 0.82, luma));
   float highlightMix = smoothstep(0.72, 0.97, luma);
 
-  color = mix(color, max(coolShadow, shadowLift), 0.25 * shadowMix);
+  color = mix(color, max(coolShadow, shadowLift), uShadowCoolMix * shadowMix);
   color = mix(color, warmMidtone, 0.3 * midMix);
-  color = mix(color, parchmentHighlight, uHighlightCoolMix * highlightMix);
+  color = mix(color, parchmentHighlight, uHighlightWarmMix * highlightMix);
 
   float gradedLuma = max(0.02, dot(color, vec3(0.299, 0.587, 0.114)));
   float tonalBand = floor(gradedLuma * 5.0 + 0.5) / 5.0;
@@ -79,8 +83,9 @@ const VIGNETTE_GRAIN_SHADER = {
   uniforms: {
     tDiffuse: { value: null },
     uVignetteEnabled: { value: 1 },
-    uVignetteStrength: { value: 0.08 },
+    uVignetteStrength: { value: 0.12 },
     uGrainEnabled: { value: 1 },
+    uGrainStrength: { value: 0.018 },
   },
   vertexShader: PASS_VERTEX_SHADER,
   fragmentShader: `
@@ -88,6 +93,7 @@ uniform sampler2D tDiffuse;
 uniform int uVignetteEnabled;
 uniform float uVignetteStrength;
 uniform int uGrainEnabled;
+uniform float uGrainStrength;
 varying vec2 vUv;
 
 float hash(vec2 p) {
@@ -106,7 +112,7 @@ void main() {
 
   if (uGrainEnabled == 1) {
     float grain = hash(floor(vUv * vec2(1280.0, 720.0))) - 0.5;
-    color += grain * 0.022;
+    color += grain * uGrainStrength;
   }
 
   gl_FragColor = vec4(clamp(color, 0.0, 1.0), texel.a);
@@ -129,8 +135,7 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
   const gradingPass = new ShaderPass(GRADING_SHADER);
   const vignetteGrainPass = new ShaderPass(VIGNETTE_GRAIN_SHADER);
   const matchMedia = options.matchMedia || globalThis.window?.matchMedia?.bind(globalThis.window);
-  const onInvalidate =
-    typeof options.onInvalidate === "function" ? options.onInvalidate : () => {};
+  const onInvalidate = typeof options.onInvalidate === "function" ? options.onInvalidate : () => {};
   const transparencyQuery = matchMedia?.("(prefers-reduced-transparency: reduce)");
 
   composer.addPass(renderPass);
@@ -141,16 +146,24 @@ export function createPostprocessPipeline(renderer, scene, camera, qualityProfil
   let reducedTransparency = Boolean(transparencyQuery?.matches);
 
   function applyProfile(profile = {}) {
+    const settings = profile.postprocessSettings || {};
     const gradingEnabled = profile.postprocessGrading !== false;
     const bloomEnabled = profile.postprocessBloom === true;
     const vignetteEnabled = profile.postprocessVignette === true && !reducedTransparency;
     const grainEnabled = profile.postprocessGrain === true;
 
     bloomPass.enabled = bloomEnabled;
+    bloomPass.strength = settings.bloomStrength ?? 0.18;
     gradingPass.enabled = gradingEnabled;
+    gradingPass.uniforms.uCelMix.value = settings.celMix ?? 0.24;
+    gradingPass.uniforms.uContrast.value = settings.contrast ?? 1.06;
+    gradingPass.uniforms.uHighlightWarmMix.value = settings.highlightWarmMix ?? 0.14;
+    gradingPass.uniforms.uShadowCoolMix.value = settings.shadowCoolMix ?? 0.25;
     vignetteGrainPass.enabled = vignetteEnabled || grainEnabled;
     vignetteGrainPass.uniforms.uVignetteEnabled.value = vignetteEnabled ? 1 : 0;
+    vignetteGrainPass.uniforms.uVignetteStrength.value = settings.vignetteStrength ?? 0.08;
     vignetteGrainPass.uniforms.uGrainEnabled.value = grainEnabled ? 1 : 0;
+    vignetteGrainPass.uniforms.uGrainStrength.value = settings.grainStrength ?? 0.022;
   }
 
   function onTransparencyChange(event) {
