@@ -62,7 +62,7 @@ fetch_page_once() {
 
   [ "$status" = "200" ] &&
     [ "$effective_host" = "$expected_host" ] &&
-    grep -Fq "Governance." "$body" &&
+    grep -Fq "Built to hold up." "$body" &&
     {
       [ "$require_security_headers" != "true" ] ||
         {

@@ -4,7 +4,7 @@
 
 ## Pages
 
-- [Home](https://alexnava.me/): Governance, analytics, and effective challenge for audit-sensitive work.
+- [Home](https://alexnava.me/): Analytics, governance, and effective challenge for high-stakes decisions.
 
 ## Machine-readable resources
 

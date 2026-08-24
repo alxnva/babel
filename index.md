@@ -1,15 +1,15 @@
 ---
 title: Alex Nava — Regulated analytics
-description: Governance, analytics, and effective challenge for audit-sensitive work.
+description: Analytics, governance, and effective challenge for high-stakes decisions.
 url: https://alexnava.me/
 dateModified: 2026-08-23
 ---
 
 # Alex Nava — Regulated analytics
 
-Governance. Analytics. Effective challenge.
+Evidence that holds up.
 
-Traceable conclusions for risk, compliance, and audit.
+Analytics, governance, and effective challenge for high-stakes decisions.
 
 ## About
 
