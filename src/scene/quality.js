@@ -141,8 +141,8 @@
         vignetteStrength: 0.12,
       },
       lighting: {
-        fogNear: 60,
-        fogFar: 146,
+        fogNear: 66,
+        fogFar: 154,
         ambientIntensity: 0.2,
         hemisphereIntensity: 0.62,
         directionalIntensity: 3.25,
@@ -212,8 +212,8 @@
         vignetteStrength: 0.1,
       },
       lighting: {
-        fogNear: 58,
-        fogFar: 142,
+        fogNear: 64,
+        fogFar: 150,
         ambientIntensity: 0.22,
         hemisphereIntensity: 0.66,
         directionalIntensity: 2.95,
@@ -280,8 +280,8 @@
         vignetteStrength: 0,
       },
       lighting: {
-        fogNear: 56,
-        fogFar: 138,
+        fogNear: 60,
+        fogFar: 144,
         ambientIntensity: 0.24,
         hemisphereIntensity: 0.7,
         directionalIntensity: 2.45,

@@ -92,7 +92,7 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 **Implemented and regression-tested 2026-08-23.**
 
-- Rebalanced the live scene around a fixed warm raking key, restrained cool rear separator, lower global lift, and deeper twilight fog so the camera orbit reveals the tower's form without moving the lights.
+- Rebalanced the live scene around a fixed warm raking key, restrained cool rear separator, lower global lift, and controlled twilight fog so the camera orbit reveals the tower's form without moving the lights.
 - Settled on “Nava Designs.” as the landing page's only visible identity after copy exploration; kept résumé positioning out of the sparse visual experience and synchronized the browser title, Markdown mirror, and deployment smoke markers.
 - Warmed the key and practical-light balance slightly after visual review while preserving the fixed composition and cool separation.
 - Coordinated the existing plinth, crater, and brazier practicals under adaptive quality ownership; flame sprites retain subtle motion while emitted light stays stable, and low tier disables tier-gated brazier lights after runtime downgrades.
