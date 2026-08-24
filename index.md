@@ -7,7 +7,7 @@ dateModified: 2026-08-23
 
 # Alex Nava — Regulated analytics
 
-Analytics · Governance · Controls
+Calm by design.
 
 ## About
 
