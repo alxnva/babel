@@ -185,7 +185,7 @@ jobs:
             effective_host="${effective_host%%/*}"
             if [ "$status" = "200" ] &&
               [ "$effective_host" = "$expected_host" ] &&
-              grep -Fq "Calm by design." "$body"; then
+              grep -Fq "Governance." "$body"; then
               echo "Preview smoke check passed."
               exit 0
             fi

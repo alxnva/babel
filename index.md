@@ -1,15 +1,15 @@
 ---
 title: Alex Nava — Regulated analytics
-description: Regulated analytics, remediation, controls, and reporting.
+description: Governance, analytics, and effective challenge for audit-sensitive work.
 url: https://alexnava.me/
-dateModified: 2026-07-24
+dateModified: 2026-08-23
 ---
 
 # Alex Nava — Regulated analytics
 
-Calm by design.
+Governance. Analytics. Effective challenge.
 
-Remediation, controls, and reporting—made clear.
+Traceable conclusions for risk, compliance, and audit.
 
 ## About
 

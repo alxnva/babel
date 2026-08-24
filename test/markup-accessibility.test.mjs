@@ -123,7 +123,7 @@ test("the loading ritual is decorative, self-contained, timed, and motion-safe",
   assert.match(ritual, /<svg[\s\S]*class="loading-ritual__seal"/);
   assert.match(ritual, /class="loading-ritual__tower"/);
   assert.match(ritual, /class="loading-ritual__name">alex nava</);
-  assert.match(ritual, /class="loading-ritual__motto">Calm by design\.</);
+  assert.match(ritual, /class="loading-ritual__motto">Effective challenge\.</);
   assert.doesNotMatch(ritual, /loading-ritual__(?:fog|ticks|brazier|ember|progress)/);
   assert.doesNotMatch(ritual, /<(?:a|button|input|select|textarea)\b/i);
   assert.doesNotMatch(ritual, /\ssrc=/i, "the ritual adds no external media asset");
@@ -197,7 +197,7 @@ test("hero and About copy remain clear, grounded, and free of scramble hooks", a
 
   assert.equal(
     heroText,
-    "Regulated analytics Calm by design. Remediation, controls, and reporting—made clear.",
+    "Regulated analytics Governance. Analytics. Effective challenge. Traceable conclusions for risk, compliance, and audit.",
   );
   assert.match(html, /Nine years across analytics, remediation, reporting, and controls\./);
   assert.equal((html.match(/Regulated banking and health analytics\./g) || []).length, 2);
@@ -208,7 +208,7 @@ test("hero and About copy remain clear, grounded, and free of scramble hooks", a
 
 test("career metadata stays consistent and scene discovery uses inert metadata", async () => {
   const html = await readIndexHtml();
-  const description = "Regulated analytics, remediation, controls, and reporting.";
+  const description = "Governance, analytics, and effective challenge for audit-sensitive work.";
   const sceneMeta = html.match(/<meta[^>]*name="babel:scene-script"[^>]*>/)?.[0] || "";
 
   assert.ok(
