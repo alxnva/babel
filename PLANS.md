@@ -88,6 +88,19 @@ Copy this when starting a new task. Delete the template instructions in parenthe
 
 ## Completed tasks
 
+### Cinematic tower lighting
+
+**Implemented and regression-tested 2026-08-23.**
+
+- Rebalanced the live scene around a fixed warm raking key, restrained cool rear separator, lower global lift, and controlled twilight fog so the camera orbit reveals the tower's form without moving the lights.
+- Settled on “Nava Designs.” as the landing page's only visible identity after copy exploration; kept résumé positioning out of the sparse visual experience and synchronized the browser title, Markdown mirror, and deployment smoke markers.
+- Warmed the key and practical-light balance slightly after visual review while preserving the fixed composition and cool separation.
+- Added a dedicated pair of slow-breathing golden architectural lights around the tower; balanced quality reduces them, low quality disables them, and reduced motion holds them still.
+- Coordinated the existing plinth, crater, and brazier practicals under adaptive quality ownership; flame sprites retain subtle motion while emitted light stays stable, and low tier disables tier-gated brazier lights after runtime downgrades.
+- Made the existing grading, bloom, vignette, and grain strengths tier-aware, preserving reduced-transparency behavior and the deferred scene/poster architecture without adding effects, dependencies, or assets.
+- Replaced the blanket touch-device stride with a time-based 60 FPS scene cap: 60 Hz displays retain every frame, high-refresh displays skip only excess scene renders, and the browser/UI remain native-refresh. Adaptive quality, visibility culling, and page-visibility suspension retain thermal safeguards.
+- Extended scene-domain, rendering, quality, and postprocess coverage for the new hierarchy and adaptive transitions.
+
 ### Production-readiness and calm-interaction pass
 
 **Implemented and regression-tested 2026-07-23.**

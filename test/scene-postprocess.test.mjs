@@ -44,8 +44,11 @@ function createMatchMedia(matches = false) {
 
 function createPipeline(
   profile,
-  { reducedTransparency = false, matchMedia = createMatchMedia(reducedTransparency), onInvalidate } =
-    {},
+  {
+    reducedTransparency = false,
+    matchMedia = createMatchMedia(reducedTransparency),
+    onInvalidate,
+  } = {},
 ) {
   return createPostprocessPipeline(createRendererMock(), {}, {}, profile, {
     matchMedia,
@@ -69,10 +72,13 @@ test("postprocess pipeline creates render, bloom, grading, and vignette-grain pa
   assert.equal(pipeline.passes.bloom.strength, 0.18);
   assert.equal(pipeline.passes.bloom.radius, 0.45);
   assert.equal(pipeline.passes.bloom.threshold, 0.9);
-  assert.equal(pipeline.passes.grading.uniforms.uHighlightCoolMix.value, 0.14);
-  assert.equal(pipeline.passes.grading.uniforms.uCelMix.value, 0.28);
+  assert.equal(pipeline.passes.grading.uniforms.uHighlightWarmMix.value, 0.14);
+  assert.equal(pipeline.passes.grading.uniforms.uShadowCoolMix.value, 0.25);
+  assert.equal(pipeline.passes.grading.uniforms.uContrast.value, 1.06);
+  assert.equal(pipeline.passes.grading.uniforms.uCelMix.value, 0.24);
   assert.deepEqual(pipeline.passes.grading.uniforms.uTexelSize.value.toArray(), [1 / 800, 1 / 600]);
   assert.equal(pipeline.passes.vignetteGrain.uniforms.uVignetteStrength.value, 0.08);
+  assert.equal(pipeline.passes.vignetteGrain.uniforms.uGrainStrength.value, 0.022);
 
   pipeline.dispose();
 });
@@ -187,11 +193,27 @@ test("setQualityProfile updates adaptive pass enablement without rebuilding the 
     postprocessBloom: false,
     postprocessVignette: false,
     postprocessGrain: false,
+    postprocessSettings: {
+      bloomStrength: 0,
+      celMix: 0.2,
+      contrast: 1.05,
+      grainStrength: 0,
+      highlightWarmMix: 0.14,
+      shadowCoolMix: 0.22,
+      vignetteStrength: 0,
+    },
   });
 
   assert.equal(pipeline.passes.bloom.enabled, false);
   assert.equal(pipeline.passes.grading.enabled, true);
   assert.equal(pipeline.passes.vignetteGrain.enabled, false);
+  assert.equal(pipeline.passes.bloom.strength, 0);
+  assert.equal(pipeline.passes.grading.uniforms.uCelMix.value, 0.2);
+  assert.equal(pipeline.passes.grading.uniforms.uContrast.value, 1.05);
+  assert.equal(pipeline.passes.grading.uniforms.uHighlightWarmMix.value, 0.14);
+  assert.equal(pipeline.passes.grading.uniforms.uShadowCoolMix.value, 0.22);
+  assert.equal(pipeline.passes.vignetteGrain.uniforms.uVignetteStrength.value, 0);
+  assert.equal(pipeline.passes.vignetteGrain.uniforms.uGrainStrength.value, 0);
 
   pipeline.dispose();
 });
@@ -199,7 +221,10 @@ test("setQualityProfile updates adaptive pass enablement without rebuilding the 
 test("resize updates texel sampling for the selective ink contour", () => {
   const pipeline = createPipeline({ postprocessGrading: true });
   pipeline.resize(1600, 900);
-  assert.deepEqual(pipeline.passes.grading.uniforms.uTexelSize.value.toArray(), [1 / 1600, 1 / 900]);
+  assert.deepEqual(pipeline.passes.grading.uniforms.uTexelSize.value.toArray(), [
+    1 / 1600,
+    1 / 900,
+  ]);
   pipeline.dispose();
 });
 

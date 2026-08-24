@@ -71,13 +71,16 @@ test("public agent-discovery files are built from sanitized source artifacts", a
   for (const pathName of ["/llms.txt", "/AGENTS.md", "/index.md", "/sitemap.md"]) {
     assert.match(headers, new RegExp(`${pathName.replace(".", "\\.")}\\r?\\n\\s+Cache-Control`));
   }
-  assert.match(headers, /\/llms\.txt\r?\n\s+Cache-Control[\s\S]*?Content-Type: text\/plain; charset=utf-8/);
+  assert.match(
+    headers,
+    /\/llms\.txt\r?\n\s+Cache-Control[\s\S]*?Content-Type: text\/plain; charset=utf-8/,
+  );
   assert.match(indexHtml, /rel="alternate" type="text\/markdown" href="\/index\.md"/);
   assert.match(indexHtml, /application\/ld\+json/);
   assert.match(llms, /^# Alex Nava/m);
   assert.match(sitemap, /^# alexnava\.me site map/m);
   assert.match(publicAgents, /^# alexnava\.me/m);
-  assert.match(markdownHome, /^---[\s\S]*?title: Alex Nava/m);
+  assert.match(markdownHome, /^---[\s\S]*?title: Nava Designs — Alex Nava/m);
 });
 
 test("scene posters are committed, copied into dist, and use stable-asset caching", async () => {
@@ -208,7 +211,7 @@ test("deploy workflows retry post-upload smoke checks", async () => {
   assert.match(smoke, /apex_sleep_seconds=10/);
   assert.match(smoke, /while \[ "\$attempt" -le "\$apex_max_attempts" \]/);
   assert.doesNotMatch(smoke, /\bseq\b/);
-  assert.match(smoke, /grep -Fq "Calm by design\."/);
+  assert.match(smoke, /grep -Fq "Nava Designs\."/);
   assert.match(smoke, /grep -Eiq '\^content-security-policy:'/);
   assert.match(smoke, /grep -Eiq '\^strict-transport-security:'/);
   assert.match(smoke, /grep -Eiq '\^x-content-type-options:/);

@@ -25,10 +25,10 @@
     // --- Lights (positions are world-space, feet-anchored) ---
     // The sky shader reads SUN_DIRECTION as a normalized direction vector;
     // callers must `.normalize()` after construction.
-    SUN_DIRECTION: Object.freeze([18, 15, 33]),
+    SUN_DIRECTION: Object.freeze([32, 28, 14]),
     // A lateral, cool back-fill keeps the tower readable against the night
     // sky without flattening the warm key light on its front-facing shell.
-    FILL_LIGHT_POSITION: Object.freeze([-28, 26, -32]),
+    FILL_LIGHT_POSITION: Object.freeze([-30, 22, -28]),
 
     // --- Moon / orbital glow anchor ---
     MOON_POSITION: Object.freeze([-75, 50, -60]),

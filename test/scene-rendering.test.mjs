@@ -9,6 +9,7 @@ function createProfile() {
       ambientIntensity: 0.22,
       directionalIntensity: 2.9,
       extraDirectional: true,
+      fillIntensity: 0.31,
       fogFar: 150,
       fogNear: 62,
       hemisphereIntensity: 0.71,
@@ -91,9 +92,22 @@ test("scene rendering owns quality, sizing, rendering, and disposal lifecycle", 
   });
 
   assert.equal(rendering.outlinePass, null);
+  assert.equal(rendering.lights.fill.visible, true);
+  assert.equal(rendering.lights.fill.intensity, 0.58);
   assert.equal(rendering.ensureOutlinePass(), outline);
   assert.equal(rendering.ensureOutlinePass(), outline);
   rendering.applyQuality(profile, { pixelRatio: 1.5 });
+  assert.equal(rendering.lights.fill.intensity, 0.31);
+  rendering.applyQuality({
+    ...profile,
+    lighting: {
+      ...profile.lighting,
+      extraDirectional: false,
+      fillIntensity: 0,
+    },
+  });
+  assert.equal(rendering.lights.fill.visible, false);
+  assert.equal(rendering.lights.fill.intensity, 0);
   rendering.resize({ cameraFov: 52, height: 400, width: 900 });
   rendering.update();
   const renderTarget = { id: "reflection" };
@@ -101,8 +115,14 @@ test("scene rendering owns quality, sizing, rendering, and disposal lifecycle", 
 
   assert.equal(rendering.camera.fov, 52);
   assert.equal(rendering.camera.aspect, 2.25);
-  assert.deepEqual(calls.find((entry) => entry[0] === "pixelRatio"), ["pixelRatio", 1.5]);
-  assert.deepEqual(calls.find((entry) => entry[0] === "postprocessSize"), ["postprocessSize", 900, 400]);
+  assert.deepEqual(
+    calls.find((entry) => entry[0] === "pixelRatio"),
+    ["pixelRatio", 1.5],
+  );
+  assert.deepEqual(
+    calls.find((entry) => entry[0] === "postprocessSize"),
+    ["postprocessSize", 900, 400],
+  );
   assert.ok(calls.some((entry) => entry[0] === "render"));
   assert.deepEqual(rendering.dispose(), { geometries: 1 });
   assert.equal(rendering.dispose(), false);

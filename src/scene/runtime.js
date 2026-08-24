@@ -22,6 +22,7 @@ export function createSceneFrameScheduler({
   onUpdate,
   reducedMotion = false,
   requestFrame = globalThis.requestAnimationFrame?.bind(globalThis),
+  targetFrameRate = 0,
 } = {}) {
   if (typeof onUpdate !== "function") {
     throw new TypeError("createSceneFrameScheduler requires onUpdate");
@@ -31,14 +32,21 @@ export function createSceneFrameScheduler({
   }
 
   const stableStride = Math.max(1, Math.floor(frameStride || 1));
+  const stableTargetFrameRate =
+    Number.isFinite(targetFrameRate) && targetFrameRate > 0 ? targetFrameRate : 0;
+  const targetFrameSeconds = stableTargetFrameRate > 0 ? 1 / stableTargetFrameRate : 0;
+  const frameToleranceSeconds = Math.min(0.00075, targetFrameSeconds * 0.05);
   let active = false;
   let dirty = true;
   let elapsedSeconds = 0;
   let forceAnimation = false;
   let frameHandle = null;
   let frameTick = 0;
+  let hasRendered = false;
   let lastTimestamp = null;
+  let maxSampleDeltaSeconds = 0;
   let pendingDeltaSeconds = 0;
+  let renderAccumulatorSeconds = 0;
   let prefersReducedMotion = Boolean(reducedMotion);
 
   function isAnimated() {
@@ -52,8 +60,11 @@ export function createSceneFrameScheduler({
 
   function resetTiming() {
     lastTimestamp = null;
+    maxSampleDeltaSeconds = 0;
     pendingDeltaSeconds = 0;
+    renderAccumulatorSeconds = 0;
     frameTick = 0;
+    hasRendered = false;
   }
 
   function update(timestamp = now()) {
@@ -70,10 +81,12 @@ export function createSceneFrameScheduler({
         ? 0
         : clampFrameSeconds((safeTimestamp - lastTimestamp) / 1000, maxDeltaSeconds);
     lastTimestamp = safeTimestamp;
+    maxSampleDeltaSeconds = Math.max(maxSampleDeltaSeconds, sampleDeltaSeconds);
 
     const animated = isAnimated();
     if (animated) {
       pendingDeltaSeconds += sampleDeltaSeconds;
+      renderAccumulatorSeconds += sampleDeltaSeconds;
       elapsedSeconds += sampleDeltaSeconds;
       schedule();
     }
@@ -83,15 +96,35 @@ export function createSceneFrameScheduler({
       frameTick = (frameTick + 1) % stableStride;
       if (frameTick !== 0) return;
     }
+    if (
+      animated &&
+      hasRendered &&
+      targetFrameSeconds > 0 &&
+      renderAccumulatorSeconds + frameToleranceSeconds < targetFrameSeconds
+    ) {
+      return;
+    }
 
     const deltaSeconds = animated ? clampFrameSeconds(pendingDeltaSeconds, maxDeltaSeconds) : 0;
+    const qualitySampleSeconds =
+      maxSampleDeltaSeconds > 0 ? maxSampleDeltaSeconds : DEFAULT_FRAME_SECONDS;
     pendingDeltaSeconds = 0;
+    maxSampleDeltaSeconds = 0;
+    if (targetFrameSeconds > 0) {
+      renderAccumulatorSeconds =
+        renderAccumulatorSeconds < targetFrameSeconds
+          ? 0
+          : renderAccumulatorSeconds % targetFrameSeconds;
+    } else {
+      renderAccumulatorSeconds = 0;
+    }
+    hasRendered = true;
     dirty = false;
     onUpdate({
       deltaSeconds,
       elapsedSeconds,
       reducedMotion: prefersReducedMotion,
-      sampleDeltaSeconds: sampleDeltaSeconds > 0 ? sampleDeltaSeconds : DEFAULT_FRAME_SECONDS,
+      sampleDeltaSeconds: qualitySampleSeconds,
       timestamp: safeTimestamp,
     });
   }
@@ -181,12 +214,7 @@ export function createSceneResizeController({
     const width = Math.max(1, Number(size.width) || 0);
     const height = Math.max(1, Number(size.height) || 0);
     const pixelRatio = Math.max(0.1, Number(size.pixelRatio) || 1);
-    if (
-      !force &&
-      width === lastWidth &&
-      height === lastHeight &&
-      pixelRatio === lastPixelRatio
-    ) {
+    if (!force && width === lastWidth && height === lastHeight && pixelRatio === lastPixelRatio) {
       return false;
     }
     lastWidth = width;
@@ -259,12 +287,8 @@ export function disposeSceneResources(root, { renderTargets = [] } = {}) {
   collectTexture(root?.environment, textures);
   root?.traverse?.((object) => {
     if (object.geometry) geometries.add(object.geometry);
-    const objectMaterials = Array.isArray(object.material)
-      ? object.material
-      : [object.material];
-    objectMaterials.forEach((material) =>
-      collectMaterialResources(material, materials, textures),
-    );
+    const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
+    objectMaterials.forEach((material) => collectMaterialResources(material, materials, textures));
     if (object.renderTarget?.isWebGLRenderTarget) {
       ownedRenderTargets.add(object.renderTarget);
     }

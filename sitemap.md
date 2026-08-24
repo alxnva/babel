@@ -4,7 +4,7 @@
 
 ## Pages
 
-- [Home](https://alexnava.me/): Regulated analytics, remediation, controls, and reporting.
+- [Home](https://alexnava.me/): Analytics, governance, and effective challenge for high-stakes decisions.
 
 ## Machine-readable resources
 
