@@ -62,7 +62,7 @@ fetch_page_once() {
 
   [ "$status" = "200" ] &&
     [ "$effective_host" = "$expected_host" ] &&
-    grep -Fq "Calm by design." "$body" &&
+    grep -Fq "Nava Designs." "$body" &&
     {
       [ "$require_security_headers" != "true" ] ||
         {

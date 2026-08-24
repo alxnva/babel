@@ -1,13 +1,13 @@
 ---
-title: Alex Nava — Regulated analytics
+title: Nava Designs — Alex Nava
 description: Analytics, governance, and effective challenge for high-stakes decisions.
 url: https://alexnava.me/
 dateModified: 2026-08-23
 ---
 
-# Alex Nava — Regulated analytics
+# Nava Designs — Alex Nava
 
-Calm by design.
+Nava Designs.
 
 ## About
 
