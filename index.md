@@ -7,9 +7,7 @@ dateModified: 2026-08-23
 
 # Alex Nava — Regulated analytics
 
-Evidence that holds up.
-
-Analytics, governance, and effective challenge for high-stakes decisions.
+Analytics · Governance · Controls
 
 ## About
 

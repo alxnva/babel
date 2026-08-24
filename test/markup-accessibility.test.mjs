@@ -197,7 +197,11 @@ test("hero and About copy remain clear, grounded, and free of scramble hooks", a
 
   assert.equal(
     heroText,
-    "Analytics · Governance · Controls Evidence that holds up. Analytics, governance, and effective challenge for high-stakes decisions.",
+    "Alex Nava Regulated analytics, governance, and controls Analytics · Governance · Controls",
+  );
+  assert.match(
+    html,
+    /<h1 class="hero-accessible-title">Regulated analytics, governance, and controls<\/h1>/,
   );
   assert.match(html, /Nine years across analytics, remediation, reporting, and controls\./);
   assert.equal((html.match(/Regulated banking and health analytics\./g) || []).length, 2);
