@@ -242,6 +242,7 @@ function setSrgbTexture(texture) {
               fogNear: 66,
               hemisphereIntensity: 0.62,
               practicalIntensityScale: 1.08,
+              towerLightIntensityScale: 1,
             },
             postprocessBloom: true,
             postprocessGrading: true,
@@ -1998,6 +1999,26 @@ function setSrgbTexture(texture) {
     });
     subsystemRegistry.register(towerSystem);
     const group7 = towerSystem.root;
+    const towerArchitecturalLights = [
+      {
+        baseIntensity: 0.5,
+        light: new PointLight(0xffc06a, 0.5, 34, 2),
+        phase: 0.35,
+        position: [15, 8, 11],
+      },
+      {
+        baseIntensity: 0.34,
+        light: new PointLight(0xeaa35d, 0.34, 30, 2),
+        phase: 3.4,
+        position: [-13, 6, -14],
+      },
+    ];
+    towerArchitecturalLights.forEach((record) => {
+      record.light.position.set(...record.position);
+      record.light.castShadow = false;
+      group7.add(record.light);
+    });
+    towerSystem.setArchitecturalLights(towerArchitecturalLights);
     function tmpV65(arg77) {
       const num433 = 43758.5453123 * Math.sin(12.9898 * arg77);
       return num433 - Math.floor(num433);

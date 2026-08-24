@@ -149,6 +149,7 @@
         fillIntensity: 0.46,
         extraDirectional: true,
         practicalIntensityScale: 1.08,
+        towerLightIntensityScale: 1,
       },
       counts: {
         orbitalGlowLayers: 3,
@@ -220,6 +221,7 @@
         fillIntensity: 0.28,
         extraDirectional: true,
         practicalIntensityScale: 0.84,
+        towerLightIntensityScale: 0.58,
       },
       counts: {
         orbitalGlowLayers: 2,
@@ -288,6 +290,7 @@
         fillIntensity: 0,
         extraDirectional: false,
         practicalIntensityScale: 0.58,
+        towerLightIntensityScale: 0,
       },
       counts: {
         orbitalGlowLayers: 1,

@@ -8,7 +8,10 @@ import { createSceneTower } from "../src/scene/tower.js";
 
 const highProfile = {
   isLow: false,
-  lighting: { practicalIntensityScale: 1 },
+  lighting: {
+    practicalIntensityScale: 1,
+    towerLightIntensityScale: 1,
+  },
   tier: "high",
 };
 
@@ -56,10 +59,12 @@ test("tower owns composition scale and orbital accent animation", () => {
   const parent = new Group();
   const tower = createSceneTower({ parent, profile: highProfile });
   const ground = { material: { opacity: 0 } };
+  const architecturalLight = { intensity: 0, visible: false };
   const practicalLight = { intensity: 0 };
   const tierGatedLight = { intensity: 0 };
   const ring = { material: { opacity: 0 }, rotation: { z: 0 } };
   tower.setOrbitDecor({ ground, rings: [ring] });
+  tower.setArchitecturalLights([{ light: architecturalLight, baseIntensity: 0.5, phase: 0 }]);
   tower.setPracticalLights([
     { light: practicalLight, baseIntensity: 0.5 },
     { light: tierGatedLight, baseIntensity: 0.7, disableOnLow: true },
@@ -73,14 +78,20 @@ test("tower owns composition scale and orbital accent animation", () => {
   assert.notEqual(ring.material.opacity, 0);
   assert.equal(practicalLight.intensity, 0.5);
   assert.equal(tierGatedLight.intensity, 0.7);
+  assert.equal(architecturalLight.visible, true);
+  assert.ok(architecturalLight.intensity > 0.4);
 
   tower.applyQuality({
     isLow: true,
-    lighting: { practicalIntensityScale: 0.58 },
+    lighting: {
+      practicalIntensityScale: 0.58,
+      towerLightIntensityScale: 0,
+    },
   });
   assert.equal(tower.root.userData.lowPower, true);
   assert.equal(practicalLight.intensity, 0.29);
   assert.equal(tierGatedLight.intensity, 0);
+  assert.equal(architecturalLight.visible, false);
   tower.dispose();
   assert.equal(tower.root.visible, false);
   assert.equal(parent.children.includes(tower.root), true);

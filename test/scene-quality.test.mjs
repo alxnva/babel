@@ -212,10 +212,13 @@ test("quality profiles expose the postprocess tier matrix", async () => {
   assert.equal(high.lighting.directionalIntensity, 3.25);
   assert.equal(high.lighting.fillIntensity, 0.46);
   assert.equal(high.lighting.practicalIntensityScale, 1.08);
+  assert.equal(high.lighting.towerLightIntensityScale, 1);
   assert.equal(balanced.lighting.extraDirectional, true);
   assert.equal(balanced.lighting.practicalIntensityScale, 0.84);
+  assert.equal(balanced.lighting.towerLightIntensityScale, 0.58);
   assert.equal(low.lighting.extraDirectional, false);
   assert.equal(low.lighting.practicalIntensityScale, 0.58);
+  assert.equal(low.lighting.towerLightIntensityScale, 0);
   assert.equal(high.postprocessSettings.contrast, 1.1);
   assert.equal(balanced.postprocessSettings.vignetteStrength, 0.1);
   assert.equal(low.postprocessSettings.grainStrength, 0);

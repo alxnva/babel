@@ -5,6 +5,8 @@ export function createSceneTower({ parent, profile }) {
   parent.add(root);
 
   let disposed = false;
+  let architecturalLights = [];
+  let architecturalLightScale = 1;
   let groundRing = null;
   let lowPower = Boolean(profile?.isLow);
   let orbitRings = [];
@@ -20,6 +22,15 @@ export function createSceneTower({ parent, profile }) {
     });
   }
 
+  function applyArchitecturalLightScale(lighting = {}) {
+    architecturalLightScale = Number.isFinite(lighting.towerLightIntensityScale)
+      ? lighting.towerLightIntensityScale
+      : 1;
+    architecturalLights.forEach((record) => {
+      record.light.visible = architecturalLightScale > 0;
+    });
+  }
+
   return {
     lifecycleOrder: 20,
     root,
@@ -27,6 +38,7 @@ export function createSceneTower({ parent, profile }) {
       if (disposed) return false;
       lowPower = Boolean(nextProfile.isLow);
       root.userData.lowPower = lowPower;
+      applyArchitecturalLightScale(nextProfile.lighting);
       applyPracticalLightScale(nextProfile.lighting);
       return true;
     },
@@ -34,6 +46,7 @@ export function createSceneTower({ parent, profile }) {
       if (disposed) return false;
       disposed = true;
       root.visible = false;
+      architecturalLights = [];
       groundRing = null;
       orbitRings = [];
       practicalLights = [];
@@ -48,6 +61,12 @@ export function createSceneTower({ parent, profile }) {
       groundRing = ground || null;
       orbitRings = Array.isArray(rings) ? rings : [];
     },
+    setArchitecturalLights(records) {
+      architecturalLights = Array.isArray(records)
+        ? records.filter((record) => record?.light && Number.isFinite(record.baseIntensity))
+        : [];
+      applyArchitecturalLightScale(profile?.lighting);
+    },
     setPracticalLights(records) {
       practicalLights = Array.isArray(records)
         ? records.filter((record) => record?.light && Number.isFinite(record.baseIntensity))
@@ -56,6 +75,14 @@ export function createSceneTower({ parent, profile }) {
     },
     update({ elapsedSeconds = 0 } = {}) {
       if (disposed) return false;
+      architecturalLights.forEach((record) => {
+        const slowBreath =
+          0.82 +
+          0.14 * Math.sin(0.24 * elapsedSeconds + record.phase) +
+          0.04 * Math.sin(0.071 * elapsedSeconds + 1.7 * record.phase);
+        record.light.intensity =
+          record.baseIntensity * architecturalLightScale * Math.max(0.64, slowBreath);
+      });
       if (groundRing) {
         groundRing.material.opacity = 0.12 + 0.02 * Math.sin(1.3 * elapsedSeconds);
       }
