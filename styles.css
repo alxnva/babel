@@ -1009,6 +1009,37 @@ main:focus {
   margin-top: 12px;
 }
 
+.panel-parchment__sheet .panel-list {
+  margin: clamp(16px, 2vw, 22px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-parchment__sheet .panel-list li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: rgba(53, 45, 36, 0.9);
+  font-size: clamp(14px, 1.15vw, 16px);
+  line-height: 1.58;
+}
+
+.panel-parchment__sheet .panel-list li + li {
+  margin-top: 8px;
+}
+
+.panel-parchment__sheet .panel-list li::before {
+  content: "";
+  position: absolute;
+  top: 0.66em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(96, 73, 46, 0.62);
+  transform: translateY(-50%);
+}
+
 #panel-contact .panel-parchment__sheet .panel-body {
   font-size: clamp(17px, 1.55vw, 20px);
 }

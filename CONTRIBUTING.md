@@ -4,7 +4,7 @@ Thanks for taking an interest in `babel`.
 
 ## Reporting defects
 
-- Use [GitHub Issues](https://github.com/alxnva/babel/issues) for bugs, UX regressions, broken links, and feature requests.
+- Use [GitHub Issues](https://github.com/alexonava/babel/issues) for bugs, UX regressions, broken links, and feature requests.
 - Include the page or interaction you exercised, what you expected, what happened instead, and any screenshots or console errors that help reproduce the problem.
 
 ## Proposing changes

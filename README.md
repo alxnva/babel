@@ -77,7 +77,7 @@ GitHub CodeQL default setup is enabled as the repository's code scanner, avoidin
 
 ## Reporting issues and discussing changes
 
-- Use [GitHub Issues](https://github.com/alxnva/babel/issues) for bug reports, questions, and feature ideas.
+- Use [GitHub Issues](https://github.com/alexonava/babel/issues) for bug reports, questions, and feature ideas.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for the change flow and pull request expectations.
 - See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
 
