@@ -61,6 +61,10 @@ function sha8(buf) {
   return createHash("sha256").update(buf).digest("hex").slice(0, 8);
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function buildScriptBundle(entry) {
   const result = await build(scriptBuildOptions(entry));
   const out = result.outputFiles?.[0];
@@ -72,7 +76,11 @@ function rewriteHtml(src, { appPath, cssPath, imagePaths = {}, scenePath }) {
   // Match source refs with or without a ?v=NNN query,
   // so stale query strings in source can't drift away from the real hashed path.
   return Object.entries(imagePaths).reduce(
-    (html, [sourcePath, fingerprintedPath]) => html.replaceAll(sourcePath, fingerprintedPath),
+    (html, [sourcePath, fingerprintedPath]) =>
+      html.replace(
+        new RegExp(`${escapeRegExp(sourcePath)}(?:\\?v=\\d+)?`, "g"),
+        fingerprintedPath,
+      ),
     src
     .replace(/\/styles\.css(\?v=\d+)?/g, cssPath)
     .replace(/\/scripts\/app\.js(\?v=\d+)?/g, appPath)
@@ -126,12 +134,14 @@ async function buildDist() {
     STATIC_DIRS.map((dir) => cp(join(__dirname, dir), join(DIST_DIR, dir), { recursive: true })),
   );
   await mkdir(join(DIST_DIR, "images"), { recursive: true });
+  await cp(join(__dirname, "images"), join(DIST_DIR, "images"), { recursive: true });
   const imagePaths = Object.fromEntries(
     await Promise.all(
       FINGERPRINTED_IMAGES.map(async (name) => {
         const image = await readFile(join(__dirname, "images", name));
         const fingerprintedName = name.replace(/(\.[^.]+)$/, `.${sha8(image)}$1`);
         await writeFile(join(DIST_DIR, "images", fingerprintedName), image);
+        await rm(join(DIST_DIR, "images", name));
         return [`/images/${name}`, `/images/${fingerprintedName}`];
       }),
     ),

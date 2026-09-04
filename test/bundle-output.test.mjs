@@ -50,6 +50,17 @@ test("built HTML references fingerprinted responsive scene posters", async () =>
     ...html.matchAll(/\/images\/(scene-poster-(?:landscape|portrait)\.[a-f0-9]{8}\.webp)/g),
   ].map((match) => match[1]);
 
-  assert.equal(posterPaths.length, 2, "both responsive poster variants are fingerprinted");
+  assert.deepEqual(
+    posterPaths
+      .map((name) => name.replace(/\.[a-f0-9]{8}(?=\.webp$)/, ""))
+      .sort(),
+    ["scene-poster-landscape.webp", "scene-poster-portrait.webp"],
+    "both responsive poster variants are fingerprinted exactly once",
+  );
+  assert.doesNotMatch(
+    html,
+    /\/images\/scene-poster-(?:landscape|portrait)\.webp(?:\?v=\d+)?/,
+    "stable poster URLs are removed from built HTML",
+  );
   await Promise.all(posterPaths.map((name) => access(path.join(distDir, "images", name))));
 });

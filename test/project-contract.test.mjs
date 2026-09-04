@@ -83,6 +83,7 @@ test("public agent-discovery files are built from sanitized source artifacts", a
 test("scene posters are committed, fingerprinted during the build, and cached immutably", async () => {
   const buildScript = await readProjectFile("build.mjs");
   const headers = await readProjectFile("_headers");
+  const operations = await readProjectFile("OPERATIONS.md");
 
   await access(path.join(projectRoot, "images", "scene-poster-landscape.webp"));
   await access(path.join(projectRoot, "images", "scene-poster-portrait.webp"));
@@ -91,6 +92,10 @@ test("scene posters are committed, fingerprinted during the build, and cached im
   assert.match(
     headers,
     /\/images\/scene-poster-\*\.\*\.webp\r?\n\s+Cache-Control: public, max-age=31536000, immutable/,
+  );
+  assert.match(
+    operations,
+    /Unhashed stable assets[\s\S]*?revalidate after seven days\. Fingerprinted scene posters, CSS, and JavaScript are immutable for one year\./,
   );
 });
 
